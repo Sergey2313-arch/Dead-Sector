@@ -15,6 +15,84 @@ namespace DeadSector.Editor
             EditorSceneManager.OpenScene("Assets/DeadSector/Scenes/DeadSectorPrototype.unity");
         }
 
+
+        [MenuItem("Dead Sector/Setup/00 - PREPARE PLAYABLE PROTOTYPE")]
+        public static void PreparePlayablePrototype()
+        {
+            if (EditorApplication.isPlaying)
+                return;
+
+            DeadSector.Editor.Player.MixamoPlayerSetup.BuildEverything();
+            ZombieMixamoSetup.BuildEverything();
+            InstallFullBodyPlayer();
+
+            Debug.Log(
+                "[Dead Sector] Prototype preparation finished. " +
+                "Open DeadSectorPrototype and press Play.");
+        }
+
+        [MenuItem("Dead Sector/Setup/01 - Install Full-Body Player In Prototype")]
+        public static void InstallFullBodyPlayer()
+        {
+            if (EditorApplication.isPlaying ||
+                !EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
+            {
+                return;
+            }
+
+            const string scenePath =
+                "Assets/DeadSector/Scenes/DeadSectorPrototype.unity";
+
+            const string prefabPath =
+                "Assets/DeadSector/Characters/Player/Prefabs/Player_Mixamo_FullBody.prefab";
+
+            GameObject prefab =
+                AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
+
+            if (prefab == null)
+            {
+                Debug.LogError(
+                    "[Dead Sector] Player prefab not found. Run " +
+                    "Dead Sector > Character > Mixamo > 00 - BUILD EVERYTHING first.");
+                return;
+            }
+
+            Scene scene = EditorSceneManager.OpenScene(scenePath);
+
+            foreach (GameObject root in scene.GetRootGameObjects())
+            {
+                if (root.name == "Player_Mixamo_FullBody" ||
+                    root.name == "Player")
+                {
+                    Object.DestroyImmediate(root);
+                }
+            }
+
+            GameObject player =
+                PrefabUtility.InstantiatePrefab(prefab, scene) as GameObject;
+
+            if (player == null)
+            {
+                Debug.LogError(
+                    "[Dead Sector] Could not instantiate full-body player prefab.");
+                return;
+            }
+
+            player.name = "Player_Mixamo_FullBody";
+            player.transform.position = SectorLayout.Spawn;
+            player.transform.rotation = Quaternion.identity;
+
+            EditorSceneManager.MarkSceneDirty(scene);
+            EditorSceneManager.SaveScene(scene);
+
+            Selection.activeGameObject = player;
+            SceneView.lastActiveSceneView?.FrameSelected();
+
+            Debug.Log(
+                "[Dead Sector] Full-body X Bot installed into prototype scene at " +
+                SectorLayout.Spawn + ".");
+        }
+
         [MenuItem("Dead Sector/Bake editable 8 x 8 km map")]
         public static void BakeMap()
         {
