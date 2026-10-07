@@ -87,7 +87,14 @@ namespace DeadSector.Editor.Player
             AnimationClip idle = FindClip("Idle");
             AnimationClip walk = FindClip("Swagger Walk", "Walking", "Walk");
             AnimationClip run = FindClip("Running", "Run");
-            AnimationClip hardLand = FindClip("Falling To Roll");
+
+            AnimationClip jump = FindClip("Jumping");
+            AnimationClip runningJump = FindClip("Running Jump");
+            AnimationClip falling = FindClip("Jumping Down", "Falling Idle");
+            AnimationClip landing = FindClip("Falling To Landing", "Landing");
+            AnimationClip hardLanding = FindClip("Hard Landing");
+            AnimationClip rollLanding = FindClip("Falling To Roll");
+
             AnimationClip boxing = FindClip("Boxing");
             AnimationClip punch = FindClip("Punching");
             AnimationClip block = FindClip("Outward Block");
@@ -106,12 +113,22 @@ namespace DeadSector.Editor.Player
             AddParameter(controller, "Grounded", AnimatorControllerParameterType.Bool);
             AddParameter(controller, "IsRunning", AnimatorControllerParameterType.Bool);
             AddParameter(controller, "VerticalSpeed", AnimatorControllerParameterType.Float);
-            AddParameter(controller, "HardLand", AnimatorControllerParameterType.Trigger);
+            AddParameter(controller, "LandingType", AnimatorControllerParameterType.Int);
             AddParameter(controller, "CombatMode", AnimatorControllerParameterType.Bool);
             AddParameter(controller, "Punch", AnimatorControllerParameterType.Trigger);
             AddParameter(controller, "Block", AnimatorControllerParameterType.Bool);
 
-            BuildLocomotionLayer(controller, idle, walk, run, hardLand);
+            BuildLocomotionLayer(
+                controller,
+                idle,
+                walk,
+                run,
+                jump,
+                runningJump,
+                falling,
+                landing,
+                hardLanding,
+                rollLanding);
             BuildUpperBodyLayer(controller, boxing, punch, block);
 
             EditorUtility.SetDirty(controller);
@@ -122,7 +139,12 @@ namespace DeadSector.Editor.Player
                 "Current locomotion: Idle=" + NameOf(idle) +
                 ", Walk=" + NameOf(walk) +
                 ", Run=" + NameOf(run) +
-                ", HardLand=" + NameOf(hardLand) +
+                ", Jump=" + NameOf(jump) +
+                ", RunningJump=" + NameOf(runningJump) +
+                ", Falling=" + NameOf(falling) +
+                ", Landing=" + NameOf(landing) +
+                ", HardLanding=" + NameOf(hardLanding) +
+                ", RollLanding=" + NameOf(rollLanding) +
                 ". Combat: Boxing=" + NameOf(boxing) +
                 ", Punch=" + NameOf(punch) +
                 ", Block=" + NameOf(block));
@@ -178,6 +200,7 @@ namespace DeadSector.Editor.Player
             movement.runSpeed = 5.8f;
             movement.jumpHeight = 1.4f;
             movement.hardLandingVelocity = -7.5f;
+            movement.rollLandingVelocity = -11.5f;
 
             GameObject modelInstance =
                 PrefabUtility.InstantiatePrefab(modelAsset) as GameObject;
@@ -256,7 +279,12 @@ namespace DeadSector.Editor.Player
             AnimationClip idle,
             AnimationClip walk,
             AnimationClip run,
-            AnimationClip hardLand)
+            AnimationClip jump,
+            AnimationClip runningJump,
+            AnimationClip falling,
+            AnimationClip landing,
+            AnimationClip hardLanding,
+            AnimationClip rollLanding)
         {
             AnimatorStateMachine sm = controller.layers[0].stateMachine;
             sm.name = "Locomotion";
@@ -330,21 +358,197 @@ namespace DeadSector.Editor.Player
                     C(AnimatorConditionMode.Less, 0.10f, "Speed"));
             }
 
-            if (hardLand != null)
+            AnimatorState jumpState = null;
+            AnimatorState runningJumpState = null;
+            AnimatorState fallingState = null;
+            AnimatorState landingState = null;
+            AnimatorState hardLandingState = null;
+            AnimatorState rollLandingState = null;
+
+            if (jump != null)
             {
-                AnimatorState rollState = sm.AddState("Hard Landing Roll");
-                rollState.motion = hardLand;
+                jumpState = sm.AddState("Jump");
+                jumpState.motion = jump;
 
-                AnimatorStateTransition enterRoll = sm.AddAnyStateTransition(rollState);
-                enterRoll.hasExitTime = false;
-                enterRoll.duration = 0.06f;
-                enterRoll.canTransitionToSelf = false;
-                enterRoll.AddCondition(AnimatorConditionMode.If, 0f, "HardLand");
+                AddTransition(
+                    idleState,
+                    jumpState,
+                    0.06f,
+                    false,
+                    C(AnimatorConditionMode.IfNot, 0f, "Grounded"),
+                    C(AnimatorConditionMode.Greater, 0.05f, "VerticalSpeed"));
 
-                AnimatorStateTransition exitRoll = rollState.AddTransition(idleState);
-                exitRoll.hasExitTime = true;
-                exitRoll.exitTime = 0.92f;
-                exitRoll.duration = 0.12f;
+                if (walkState != null)
+                {
+                    AddTransition(
+                        walkState,
+                        jumpState,
+                        0.06f,
+                        false,
+                        C(AnimatorConditionMode.IfNot, 0f, "Grounded"),
+                        C(AnimatorConditionMode.Greater, 0.05f, "VerticalSpeed"),
+                        C(AnimatorConditionMode.IfNot, 0f, "IsRunning"));
+                }
+            }
+
+            if (runningJump != null && runState != null)
+            {
+                runningJumpState = sm.AddState("Running Jump");
+                runningJumpState.motion = runningJump;
+
+                AddTransition(
+                    runState,
+                    runningJumpState,
+                    0.05f,
+                    false,
+                    C(AnimatorConditionMode.IfNot, 0f, "Grounded"),
+                    C(AnimatorConditionMode.Greater, 0.05f, "VerticalSpeed"));
+            }
+
+            if (falling != null)
+            {
+                fallingState = sm.AddState("Falling");
+                fallingState.motion = falling;
+
+                AnimatorStateTransition fallFromIdle = idleState.AddTransition(fallingState);
+                fallFromIdle.hasExitTime = false;
+                fallFromIdle.duration = 0.08f;
+                fallFromIdle.AddCondition(AnimatorConditionMode.IfNot, 0f, "Grounded");
+                fallFromIdle.AddCondition(AnimatorConditionMode.Less, -0.05f, "VerticalSpeed");
+
+                if (walkState != null)
+                {
+                    AnimatorStateTransition fallFromWalk = walkState.AddTransition(fallingState);
+                    fallFromWalk.hasExitTime = false;
+                    fallFromWalk.duration = 0.08f;
+                    fallFromWalk.AddCondition(AnimatorConditionMode.IfNot, 0f, "Grounded");
+                    fallFromWalk.AddCondition(AnimatorConditionMode.Less, -0.05f, "VerticalSpeed");
+                }
+
+                if (runState != null)
+                {
+                    AnimatorStateTransition fallFromRun = runState.AddTransition(fallingState);
+                    fallFromRun.hasExitTime = false;
+                    fallFromRun.duration = 0.08f;
+                    fallFromRun.AddCondition(AnimatorConditionMode.IfNot, 0f, "Grounded");
+                    fallFromRun.AddCondition(AnimatorConditionMode.Less, -0.05f, "VerticalSpeed");
+                }
+
+                if (jumpState != null)
+                {
+                    AddTransition(
+                        jumpState,
+                        fallingState,
+                        0.08f,
+                        false,
+                        C(AnimatorConditionMode.Less, -0.05f, "VerticalSpeed"));
+                }
+
+                if (runningJumpState != null)
+                {
+                    AddTransition(
+                        runningJumpState,
+                        fallingState,
+                        0.08f,
+                        false,
+                        C(AnimatorConditionMode.Less, -0.05f, "VerticalSpeed"));
+                }
+            }
+
+            if (landing != null)
+            {
+                landingState = sm.AddState("Landing");
+                landingState.motion = landing;
+            }
+
+            if (hardLanding != null)
+            {
+                hardLandingState = sm.AddState("Hard Landing");
+                hardLandingState.motion = hardLanding;
+            }
+
+            if (rollLanding != null)
+            {
+                rollLandingState = sm.AddState("Landing Roll");
+                rollLandingState.motion = rollLanding;
+            }
+
+            if (fallingState != null)
+            {
+                if (landingState != null)
+                {
+                    AddTransition(
+                        fallingState,
+                        landingState,
+                        0.04f,
+                        false,
+                        C(AnimatorConditionMode.If, 0f, "Grounded"),
+                        C(AnimatorConditionMode.Equals, 0f, "LandingType"));
+                }
+
+                if (hardLandingState != null)
+                {
+                    AddTransition(
+                        fallingState,
+                        hardLandingState,
+                        0.04f,
+                        false,
+                        C(AnimatorConditionMode.If, 0f, "Grounded"),
+                        C(AnimatorConditionMode.Equals, 1f, "LandingType"));
+                }
+
+                if (rollLandingState != null)
+                {
+                    AddTransition(
+                        fallingState,
+                        rollLandingState,
+                        0.04f,
+                        false,
+                        C(AnimatorConditionMode.If, 0f, "Grounded"),
+                        C(AnimatorConditionMode.Equals, 2f, "LandingType"));
+                }
+            }
+
+            if (landingState != null)
+                AddExitToLocomotion(landingState, idleState, walkState, runState);
+
+            if (hardLandingState != null)
+                AddExitToLocomotion(hardLandingState, idleState, walkState, runState);
+
+            if (rollLandingState != null)
+                AddExitToLocomotion(rollLandingState, idleState, walkState, runState);
+        }
+
+        private static void AddExitToLocomotion(
+            AnimatorState source,
+            AnimatorState idle,
+            AnimatorState walk,
+            AnimatorState run)
+        {
+            AnimatorStateTransition toIdle = source.AddTransition(idle);
+            toIdle.hasExitTime = true;
+            toIdle.exitTime = 0.90f;
+            toIdle.duration = 0.10f;
+            toIdle.AddCondition(AnimatorConditionMode.Less, 0.10f, "Speed");
+
+            if (walk != null)
+            {
+                AnimatorStateTransition toWalk = source.AddTransition(walk);
+                toWalk.hasExitTime = true;
+                toWalk.exitTime = 0.88f;
+                toWalk.duration = 0.10f;
+                toWalk.AddCondition(AnimatorConditionMode.Greater, 0.10f, "Speed");
+                toWalk.AddCondition(AnimatorConditionMode.IfNot, 0f, "IsRunning");
+            }
+
+            if (run != null)
+            {
+                AnimatorStateTransition toRun = source.AddTransition(run);
+                toRun.hasExitTime = true;
+                toRun.exitTime = 0.88f;
+                toRun.duration = 0.10f;
+                toRun.AddCondition(AnimatorConditionMode.Greater, 0.10f, "Speed");
+                toRun.AddCondition(AnimatorConditionMode.If, 0f, "IsRunning");
             }
         }
 
@@ -555,6 +759,8 @@ namespace DeadSector.Editor.Player
                 fileName.Contains("Walk", StringComparison.OrdinalIgnoreCase) ||
                 fileName.Contains("Running", StringComparison.OrdinalIgnoreCase) ||
                 fileName.Equals("Run", StringComparison.OrdinalIgnoreCase) ||
+                fileName.Contains("Jumping Down", StringComparison.OrdinalIgnoreCase) ||
+                fileName.Contains("Falling Idle", StringComparison.OrdinalIgnoreCase) ||
                 fileName.Contains("Boxing", StringComparison.OrdinalIgnoreCase);
         }
 
