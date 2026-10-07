@@ -41,7 +41,6 @@ namespace DeadSector
                 actor = existing;
                 actor.SetActive(false);
 
-                actor.name = "Player";
                 actor.tag = "Player";
                 actor.transform.position = SectorLayout.Spawn;
 
@@ -134,12 +133,13 @@ namespace DeadSector
 
         void OnGUI()
         {
-            GUI.Box(new Rect(12, 12, 350, 152), "DEAD SECTOR / 8 x 8 km prototype");
+            GUI.Box(new Rect(12, 12, 350, 176), "DEAD SECTOR / 8 x 8 km prototype");
             GUI.Label(new Rect(24, 42, 325, 24), "WASD move | Shift run | Space jump | V camera");
             GUI.Label(new Rect(24, 65, 325, 24), "Esc cursor | Click resume | R respawn");
             GUI.Label(new Rect(24, 88, 325, 24), "HP " + player.Health.ToString("0") + " | Terrain: " + world.LoadedTiles + "/64 | Zombies: " + navigation.ZombieCount);
             GUI.Label(new Rect(24, 111, 325, 24), "World: " + world.Status + " | AI: " + navigation.Status);
             GUI.Label(new Rect(24, 134, 325, 24), "Position: " + player.transform.position.ToString("F0"));
+            GUI.Label(new Rect(24, 157, 325, 24), "Anim: " + player.AnimationState + " | Grounded: " + player.IsGrounded);
             if (!world.Ready) GUI.Box(new Rect(Screen.width / 2 - 140, Screen.height / 2 - 25, 280, 50), "Preparing map, please wait...");
             if (player.Health <= 0) GUI.Box(new Rect(Screen.width / 2 - 140, Screen.height / 2 - 25, 280, 50), "You died. Press R to respawn.");
         }
