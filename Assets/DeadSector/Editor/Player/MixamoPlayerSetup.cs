@@ -91,6 +91,59 @@ namespace DeadSector.Editor.Player
             AssetDatabase.Refresh();
         }
 
+        [MenuItem("Dead Sector/Character/Mixamo/01B - Retarget Animations To Player Avatar")]
+        public static void RetargetAnimationsToPlayerAvatar()
+        {
+            EnsureFolders();
+
+            string modelPath = FindSkinnedHumanoidModel();
+            if (string.IsNullOrEmpty(modelPath))
+            {
+                Debug.LogError(
+                    "[Dead Sector] Cannot retarget animations: dedicated full-body model is missing. " +
+                    "Add X Bot.fbx (With Skin) or PlayerModel.fbx first.");
+                return;
+            }
+
+            Avatar playerAvatar = AssetDatabase
+                .LoadAllAssetsAtPath(modelPath)
+                .OfType<Avatar>()
+                .FirstOrDefault(a => a != null && a.isHuman);
+
+            if (playerAvatar == null)
+            {
+                Debug.LogError(
+                    "[Dead Sector] Cannot retarget animations: no valid Humanoid Avatar found in " +
+                    modelPath + ". Run '01 - Configure FBX As Humanoid' first.");
+                return;
+            }
+
+            string[] guids = AssetDatabase.FindAssets("t:Model", new[] { MixamoFolder });
+
+            foreach (string guid in guids)
+            {
+                string assetPath = AssetDatabase.GUIDToAssetPath(guid);
+
+                if (!assetPath.EndsWith(".fbx", StringComparison.OrdinalIgnoreCase) ||
+                    assetPath.Equals(modelPath, StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                if (AssetImporter.GetAtPath(assetPath) is not ModelImporter importer)
+                    continue;
+
+                importer.animationType = ModelImporterAnimationType.Human;
+                importer.avatarSetup = ModelImporterAvatarSetup.CopyFromOther;
+                importer.sourceAvatar = playerAvatar;
+                importer.importAnimation = true;
+                importer.SaveAndReimport();
+
+                Debug.Log(
+                    "[Dead Sector] Animation retargeted to player avatar: " + assetPath);
+            }
+
+            AssetDatabase.Refresh();
+        }
+
         [MenuItem("Dead Sector/Character/Mixamo/02 - Build Animator From Current FBX")]
         public static void BuildAnimator()
         {
@@ -235,7 +288,17 @@ namespace DeadSector.Editor.Player
                 animator = modelInstance.AddComponent<Animator>();
 
             animator.runtimeAnimatorController = controller;
+
+            Avatar modelAvatar = AssetDatabase
+                .LoadAllAssetsAtPath(modelPath)
+                .OfType<Avatar>()
+                .FirstOrDefault(a => a != null && a.isHuman);
+
+            if (modelAvatar != null)
+                animator.avatar = modelAvatar;
+
             animator.applyRootMotion = false;
+            animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
 
             if (!animator.isHuman)
             {
@@ -282,6 +345,7 @@ namespace DeadSector.Editor.Player
         public static void BuildEverything()
         {
             ConfigureFbxAsHumanoid();
+            RetargetAnimationsToPlayerAvatar();
             BuildAnimator();
             BuildPlayablePlayer();
         }
