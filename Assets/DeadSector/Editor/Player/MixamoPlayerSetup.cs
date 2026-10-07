@@ -18,6 +18,17 @@ namespace DeadSector.Editor.Player
         private const string UpperBodyMaskPath = ControllersFolder + "/MASK_Player_UpperBody.mask";
         private const string PlayerPrefabPath = PrefabsFolder + "/Player_Mixamo_FullBody.prefab";
 
+        // Only a dedicated character FBX may be used as the visible player body.
+        // Animation FBXs can also contain a skinned mesh, but using one of them
+        // makes the prefab silently pick the wrong character (for example Beta).
+        private static readonly string[] DedicatedPlayerModelNames =
+        {
+            "PlayerModel",
+            "Player Model",
+            "X Bot",
+            "Y Bot"
+        };
+
         [MenuItem("Dead Sector/Character/Mixamo/01 - Configure FBX As Humanoid")]
         public static void ConfigureFbxAsHumanoid()
         {
@@ -174,10 +185,10 @@ namespace DeadSector.Editor.Player
             if (string.IsNullOrEmpty(modelPath))
             {
                 Debug.LogError(
-                    "[Dead Sector] No skinned character model was found in " + MixamoFolder + ".\n" +
-                    "Your current X Bot upload is motion-only (Without Skin). " +
-                    "Download X Bot once more from Mixamo with Skin = With Skin, " +
-                    "put that FBX in the Mixamo folder, then rerun this command.");
+                    "[Dead Sector] No dedicated FULL-BODY player model was found in " + MixamoFolder + ".\n" +
+                    "Animation FBXs are intentionally NOT used as the visible body anymore. " +
+                    "Add a dedicated model named X Bot.fbx (or PlayerModel.fbx) downloaded with Skin = With Skin, " +
+                    "then rerun BUILD EVERYTHING.");
                 return;
             }
 
@@ -213,7 +224,7 @@ namespace DeadSector.Editor.Player
                 return;
             }
 
-            modelInstance.name = "Body";
+            modelInstance.name = "FullBody";
             modelInstance.transform.SetParent(root.transform, false);
             modelInstance.transform.localPosition = Vector3.zero;
             modelInstance.transform.localRotation = Quaternion.identity;
@@ -738,21 +749,41 @@ namespace DeadSector.Editor.Player
         {
             string[] guids = AssetDatabase.FindAssets("t:Model", new[] { MixamoFolder });
 
-            string preferred = FindSkinnedModelAmong(guids, true);
-            if (!string.IsNullOrEmpty(preferred))
-                return preferred;
+            // Exact dedicated model names first. This prevents Unity from
+            // accidentally using the skin embedded in Idle/Boxing/etc.
+            foreach (string preferredName in DedicatedPlayerModelNames)
+            {
+                string exact = FindDedicatedSkinnedModel(guids, preferredName, true);
+                if (!string.IsNullOrEmpty(exact))
+                    return exact;
+            }
 
-            return FindSkinnedModelAmong(guids, false);
+            // Then allow names such as "X Bot Character" or "PlayerModel Male".
+            foreach (string preferredName in DedicatedPlayerModelNames)
+            {
+                string partial = FindDedicatedSkinnedModel(guids, preferredName, false);
+                if (!string.IsNullOrEmpty(partial))
+                    return partial;
+            }
+
+            return null;
         }
 
-        private static string FindSkinnedModelAmong(string[] guids, bool preferXBot)
+        private static string FindDedicatedSkinnedModel(
+            string[] guids,
+            string preferredName,
+            bool exactMatch)
         {
             foreach (string guid in guids)
             {
                 string path = AssetDatabase.GUIDToAssetPath(guid);
                 string file = Path.GetFileNameWithoutExtension(path);
 
-                if (preferXBot && !file.Contains("X Bot", StringComparison.OrdinalIgnoreCase))
+                bool nameMatches = exactMatch
+                    ? file.Equals(preferredName, StringComparison.OrdinalIgnoreCase)
+                    : file.Contains(preferredName, StringComparison.OrdinalIgnoreCase);
+
+                if (!nameMatches)
                     continue;
 
                 GameObject asset = AssetDatabase.LoadAssetAtPath<GameObject>(path);
@@ -763,14 +794,19 @@ namespace DeadSector.Editor.Player
                 if (instance == null)
                     continue;
 
-                bool hasRenderer = instance.GetComponentsInChildren<SkinnedMeshRenderer>(true).Length > 0;
+                bool hasRenderer =
+                    instance.GetComponentsInChildren<SkinnedMeshRenderer>(true).Length > 0;
+
                 Animator animator = instance.GetComponentInChildren<Animator>();
                 bool isHumanoid = animator != null && animator.isHuman;
 
                 UnityEngine.Object.DestroyImmediate(instance);
 
                 if (hasRenderer && isHumanoid)
+                {
+                    Debug.Log("[Dead Sector] FULL-BODY player model selected: " + path);
                     return path;
+                }
             }
 
             return null;
