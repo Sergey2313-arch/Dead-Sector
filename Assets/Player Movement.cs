@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 [RequireComponent(typeof(CharacterController))]
@@ -8,6 +9,7 @@ public class PlayerMovement : MonoBehaviour
     public float runSpeed = 5.8f;
     public float gravity = -20f;
     public float jumpHeight = 1.5f;
+    public float hardLandingVelocity = -7.5f;
 
     [Header("Look")]
     public float mouseSensitivity = 150f;
@@ -34,6 +36,10 @@ public class PlayerMovement : MonoBehaviour
     public Transform rightHandSocket;
     public Transform leftHandSocket;
 
+    [Header("Prototype melee")]
+    public bool enablePrototypeMelee = true;
+    public KeyCode combatToggleKey = KeyCode.F;
+
     [Header("Camera")]
     [Range(0.01f, 0.3f)]
     public float nearClipPlane = 0.03f;
@@ -44,6 +50,11 @@ public class PlayerMovement : MonoBehaviour
     private float xRotation;
     private float currentMoveAmount;
     private bool running;
+    private bool combatMode;
+    private bool previousGrounded = true;
+    private float previousVerticalVelocity;
+
+    private readonly HashSet<int> animatorParameters = new();
 
     public Transform RightHandSocket => rightHandSocket;
     public Transform LeftHandSocket => leftHandSocket;
@@ -65,6 +76,7 @@ public class PlayerMovement : MonoBehaviour
             playerCamera.nearClipPlane = nearClipPlane;
         }
 
+        CacheAnimatorParameters();
         AutoFindHumanoidBones();
         HideLocalHeadParts();
     }
@@ -73,6 +85,9 @@ public class PlayerMovement : MonoBehaviour
     {
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
+
+        previousGrounded = controller.isGrounded;
+        previousVerticalVelocity = velocity.y;
     }
 
     private void Update()
@@ -80,6 +95,7 @@ public class PlayerMovement : MonoBehaviour
         HandleMovement();
         HandleLook();
         UpdateAnimator();
+        HandlePrototypeMelee();
     }
 
     private void LateUpdate()
@@ -90,6 +106,9 @@ public class PlayerMovement : MonoBehaviour
     private void HandleMovement()
     {
         bool grounded = controller.isGrounded;
+
+        if (grounded && !previousGrounded && previousVerticalVelocity <= hardLandingVelocity)
+            SetTriggerIfExists("HardLand");
 
         if (grounded && velocity.y < 0f)
             velocity.y = -2f;
@@ -112,6 +131,9 @@ public class PlayerMovement : MonoBehaviour
 
         Vector3 finalMove = move * moveSpeed + Vector3.up * velocity.y;
         controller.Move(finalMove * Time.deltaTime);
+
+        previousVerticalVelocity = velocity.y;
+        previousGrounded = controller.isGrounded;
     }
 
     private void HandleLook()
@@ -130,10 +152,25 @@ public class PlayerMovement : MonoBehaviour
         if (animator == null)
             return;
 
-        animator.SetFloat("Speed", currentMoveAmount, 0.1f, Time.deltaTime);
-        animator.SetBool("Grounded", controller.isGrounded);
-        animator.SetBool("IsRunning", running);
-        animator.SetFloat("VerticalSpeed", velocity.y);
+        SetFloatIfExists("Speed", currentMoveAmount, 0.1f);
+        SetBoolIfExists("Grounded", controller.isGrounded);
+        SetBoolIfExists("IsRunning", running);
+        SetFloatIfExists("VerticalSpeed", velocity.y);
+        SetBoolIfExists("CombatMode", combatMode);
+    }
+
+    private void HandlePrototypeMelee()
+    {
+        if (!enablePrototypeMelee || animator == null)
+            return;
+
+        if (Input.GetKeyDown(combatToggleKey))
+            combatMode = !combatMode;
+
+        if (Input.GetMouseButtonDown(0))
+            SetTriggerIfExists("Punch");
+
+        SetBoolIfExists("Block", Input.GetMouseButton(1));
     }
 
     private void UpdateFullBodyCamera()
@@ -182,6 +219,45 @@ public class PlayerMovement : MonoBehaviour
             if (target != null)
                 target.SetActive(false);
         }
+    }
+
+    private void CacheAnimatorParameters()
+    {
+        animatorParameters.Clear();
+
+        if (animator == null)
+            return;
+
+        foreach (AnimatorControllerParameter parameter in animator.parameters)
+            animatorParameters.Add(parameter.nameHash);
+    }
+
+    private bool HasAnimatorParameter(string parameterName)
+    {
+        return animator != null && animatorParameters.Contains(Animator.StringToHash(parameterName));
+    }
+
+    private void SetBoolIfExists(string parameterName, bool value)
+    {
+        if (HasAnimatorParameter(parameterName))
+            animator.SetBool(parameterName, value);
+    }
+
+    private void SetFloatIfExists(string parameterName, float value, float dampTime = 0f)
+    {
+        if (!HasAnimatorParameter(parameterName))
+            return;
+
+        if (dampTime > 0f)
+            animator.SetFloat(parameterName, value, dampTime, Time.deltaTime);
+        else
+            animator.SetFloat(parameterName, value);
+    }
+
+    private void SetTriggerIfExists(string parameterName)
+    {
+        if (HasAnimatorParameter(parameterName))
+            animator.SetTrigger(parameterName);
     }
 
 #if UNITY_EDITOR
