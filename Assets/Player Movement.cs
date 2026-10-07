@@ -4,7 +4,8 @@ using UnityEngine;
 public class PlayerMovement : MonoBehaviour
 {
     [Header("Movement")]
-    public float speed = 5f;
+    public float walkSpeed = 3.2f;
+    public float runSpeed = 5.8f;
     public float gravity = -20f;
     public float jumpHeight = 1.5f;
 
@@ -17,16 +18,16 @@ public class PlayerMovement : MonoBehaviour
     [Tooltip("Main gameplay camera. If empty, the first child Camera is used.")]
     public Camera playerCamera;
 
-    [Tooltip("Humanoid Animator. Used to find Head / LeftHand / RightHand automatically.")]
+    [Tooltip("Animator used for the player body.")]
     public Animator animator;
 
     [Tooltip("Optional manual head bone. For Humanoid rigs it is found automatically.")]
     public Transform headBone;
 
-    [Tooltip("Camera position relative to the head. Small forward offset helps avoid face clipping.")]
+    [Tooltip("Camera position relative to the player root axes and head position.")]
     public Vector3 cameraOffset = new Vector3(0f, 0.03f, 0.09f);
 
-    [Tooltip("Objects that should be hidden only from the local player, e.g. separate Head/Hair renderers. Do NOT add the full body renderer here.")]
+    [Tooltip("Objects hidden only for local first person. Do not add the whole body here.")]
     public GameObject[] localOnlyHiddenObjects;
 
     [Header("Weapon sockets")]
@@ -41,6 +42,8 @@ public class PlayerMovement : MonoBehaviour
     private Transform cameraTransform;
     private Vector3 velocity;
     private float xRotation;
+    private float currentMoveAmount;
+    private bool running;
 
     public Transform RightHandSocket => rightHandSocket;
     public Transform LeftHandSocket => leftHandSocket;
@@ -76,6 +79,7 @@ public class PlayerMovement : MonoBehaviour
     {
         HandleMovement();
         HandleLook();
+        UpdateAnimator();
     }
 
     private void LateUpdate()
@@ -96,12 +100,17 @@ public class PlayerMovement : MonoBehaviour
         Vector3 move = transform.right * x + transform.forward * z;
         move = Vector3.ClampMagnitude(move, 1f);
 
+        running = Input.GetKey(KeyCode.LeftShift) && move.sqrMagnitude > 0.01f;
+        float moveSpeed = running ? runSpeed : walkSpeed;
+
+        currentMoveAmount = move.magnitude;
+
         if (Input.GetButtonDown("Jump") && grounded)
             velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
 
         velocity.y += gravity * Time.deltaTime;
 
-        Vector3 finalMove = move * speed + Vector3.up * velocity.y;
+        Vector3 finalMove = move * moveSpeed + Vector3.up * velocity.y;
         controller.Move(finalMove * Time.deltaTime);
     }
 
@@ -114,6 +123,17 @@ public class PlayerMovement : MonoBehaviour
 
         xRotation -= mouseY;
         xRotation = Mathf.Clamp(xRotation, minPitch, maxPitch);
+    }
+
+    private void UpdateAnimator()
+    {
+        if (animator == null)
+            return;
+
+        animator.SetFloat("Speed", currentMoveAmount, 0.1f, Time.deltaTime);
+        animator.SetBool("Grounded", controller.isGrounded);
+        animator.SetBool("IsRunning", running);
+        animator.SetFloat("VerticalSpeed", velocity.y);
     }
 
     private void UpdateFullBodyCamera()
