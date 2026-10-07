@@ -4,6 +4,7 @@ using System.Linq;
 using UnityEditor;
 using UnityEditor.Animations;
 using UnityEngine;
+using DeadSector.Runtime.Player;
 
 namespace DeadSector.Editor.Player
 {
@@ -195,7 +196,7 @@ namespace DeadSector.Editor.Player
             characterController.center = new Vector3(0f, 0.91f, 0f);
             characterController.stepOffset = 0.30f;
 
-            global::PlayerMovement movement = root.AddComponent<global::PlayerMovement>();
+            PlayerMovement movement = root.AddComponent<PlayerMovement>();
             movement.walkSpeed = 3.2f;
             movement.runSpeed = 5.8f;
             movement.jumpHeight = 1.4f;
