@@ -10,6 +10,7 @@ public class PlayerMovement : MonoBehaviour
     public float gravity = -20f;
     public float jumpHeight = 1.5f;
     public float hardLandingVelocity = -7.5f;
+    public float rollLandingVelocity = -11.5f;
 
     [Header("Look")]
     public float mouseSensitivity = 150f;
@@ -107,8 +108,20 @@ public class PlayerMovement : MonoBehaviour
     {
         bool grounded = controller.isGrounded;
 
-        if (grounded && !previousGrounded && previousVerticalVelocity <= hardLandingVelocity)
-            SetTriggerIfExists("HardLand");
+        if (grounded && !previousGrounded)
+        {
+            int landingType = 0;
+
+            if (previousVerticalVelocity <= rollLandingVelocity)
+                landingType = 2;
+            else if (previousVerticalVelocity <= hardLandingVelocity)
+                landingType = 1;
+
+            SetIntIfExists("LandingType", landingType);
+        }
+
+        if (!grounded && previousGrounded)
+            SetIntIfExists("LandingType", 0);
 
         if (grounded && velocity.y < 0f)
             velocity.y = -2f;
@@ -252,6 +265,12 @@ public class PlayerMovement : MonoBehaviour
             animator.SetFloat(parameterName, value, dampTime, Time.deltaTime);
         else
             animator.SetFloat(parameterName, value);
+    }
+
+    private void SetIntIfExists(string parameterName, int value)
+    {
+        if (HasAnimatorParameter(parameterName))
+            animator.SetInteger(parameterName, value);
     }
 
     private void SetTriggerIfExists(string parameterName)
