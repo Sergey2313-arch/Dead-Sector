@@ -53,7 +53,6 @@ public class PlayerMovement : MonoBehaviour
     private bool running;
     private bool combatMode;
     private bool previousGrounded = true;
-    private float previousVerticalVelocity;
 
     private readonly HashSet<int> animatorParameters = new();
 
@@ -88,7 +87,6 @@ public class PlayerMovement : MonoBehaviour
         Cursor.visible = false;
 
         previousGrounded = controller.isGrounded;
-        previousVerticalVelocity = velocity.y;
     }
 
     private void Update()
@@ -106,24 +104,9 @@ public class PlayerMovement : MonoBehaviour
 
     private void HandleMovement()
     {
-        bool grounded = controller.isGrounded;
+        bool groundedBeforeMove = controller.isGrounded;
 
-        if (grounded && !previousGrounded)
-        {
-            int landingType = 0;
-
-            if (previousVerticalVelocity <= rollLandingVelocity)
-                landingType = 2;
-            else if (previousVerticalVelocity <= hardLandingVelocity)
-                landingType = 1;
-
-            SetIntIfExists("LandingType", landingType);
-        }
-
-        if (!grounded && previousGrounded)
-            SetIntIfExists("LandingType", 0);
-
-        if (grounded && velocity.y < 0f)
+        if (groundedBeforeMove && velocity.y < 0f)
             velocity.y = -2f;
 
         float x = Input.GetAxisRaw("Horizontal");
@@ -137,16 +120,39 @@ public class PlayerMovement : MonoBehaviour
 
         currentMoveAmount = move.magnitude;
 
-        if (Input.GetButtonDown("Jump") && grounded)
+        if (Input.GetButtonDown("Jump") && groundedBeforeMove)
+        {
             velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
+            SetIntIfExists("LandingType", 0);
+        }
 
         velocity.y += gravity * Time.deltaTime;
+        float impactVerticalVelocity = velocity.y;
 
         Vector3 finalMove = move * moveSpeed + Vector3.up * velocity.y;
         controller.Move(finalMove * Time.deltaTime);
 
-        previousVerticalVelocity = velocity.y;
-        previousGrounded = controller.isGrounded;
+        bool groundedAfterMove = controller.isGrounded;
+
+        if (!groundedAfterMove && previousGrounded)
+            SetIntIfExists("LandingType", 0);
+
+        if (groundedAfterMove && !previousGrounded)
+        {
+            int landingType = 0;
+
+            if (impactVerticalVelocity <= rollLandingVelocity)
+                landingType = 2;
+            else if (impactVerticalVelocity <= hardLandingVelocity)
+                landingType = 1;
+
+            SetIntIfExists("LandingType", landingType);
+        }
+
+        if (groundedAfterMove && velocity.y < 0f)
+            velocity.y = -2f;
+
+        previousGrounded = groundedAfterMove;
     }
 
     private void HandleLook()
