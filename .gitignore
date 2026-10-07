@@ -1,0 +1,16 @@
+/Library/
+/Temp/
+/Obj/
+/Build/
+/Builds/
+/Logs/
+/UserSettings/
+/MemoryCaptures/
+/Recordings/
+.vs/
+.idea/
+*.csproj
+*.sln
+*.slnx
+*.user
+*.unitypackage
