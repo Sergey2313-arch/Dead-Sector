@@ -46,6 +46,10 @@ namespace DeadSector
         {
             agent = GetComponent<NavMeshAgent>();
             home = transform.position;
+        }
+
+        void Start()
+        {
             CacheAnimatorParameters();
         }
 
