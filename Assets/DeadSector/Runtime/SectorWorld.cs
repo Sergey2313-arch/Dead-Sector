@@ -42,8 +42,11 @@ namespace DeadSector
         IEnumerator Start()
         {
             yield return Refresh(SectorLayout.TileAt(SectorLayout.Spawn));
-            BuildSettlement(); Physics.SyncTransforms();
-            Ready = true; Status = "Ready"; player.Ready = true;
+            BuildSettlement();
+            Physics.SyncTransforms();
+            player.ActivateAtSpawn();
+            Ready = true;
+            Status = "Ready";
         }
         void Update()
         {
