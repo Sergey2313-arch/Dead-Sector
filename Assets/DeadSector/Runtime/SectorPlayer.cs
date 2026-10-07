@@ -289,18 +289,18 @@ namespace DeadSector
             if (animator == null)
                 return;
 
+            // Rebind restores the X Bot bind pose before the controller starts.
+            // This prevents a previous landing/fall pose from surviving a
+            // prefab rebuild or respawn.
+            animator.Rebind();
+            animator.Update(0f);
+
             animator.SetFloat(SpeedHash, 0f);
             animator.SetBool(GroundedHash, true);
             animator.SetBool(RunningHash, false);
             animator.SetFloat(VerticalHash, -2f);
             animator.SetInteger(LandingHash, 0);
-
-            int idleHash = Animator.StringToHash("Idle");
-            if (animator.HasState(0, idleHash))
-            {
-                animator.Play(idleHash, 0, 0f);
-                animator.Update(0f);
-            }
+            animator.Update(0f);
 
             AnimationState = "Idle";
         }
