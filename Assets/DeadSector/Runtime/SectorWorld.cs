@@ -128,43 +128,541 @@ namespace DeadSector
             texture.Apply(); return new TerrainLayer { diffuseTexture = texture, tileSize = Vector2.one * 12 };
         }
         public Transform Settlement { get; private set; }
+        public Transform Settlement { get; private set; }
+
         void BuildSettlement()
         {
-            Settlement = new GameObject("Settlement_Prototype").transform; Settlement.SetParent(transform, false);
-            Color concrete = new Color(.4f, .41f, .38f), rust = new Color(.32f, .17f, .1f);
-            for (int i = 0; i < 6; i++)
+            Settlement = new GameObject("Settlement_Prototype").transform;
+            Settlement.SetParent(transform, false);
+
+            Color plaster = new Color(.48f, .47f, .43f);
+            Color plasterWarm = new Color(.54f, .49f, .42f);
+            Color wood = new Color(.24f, .16f, .10f);
+            Color roof = new Color(.19f, .20f, .20f);
+            Color rust = new Color(.30f, .16f, .09f);
+            Color concrete = new Color(.38f, .39f, .37f);
+            Color glass = new Color(.24f, .34f, .38f);
+
+            // Small lived-in village around the main road. These are still
+            // procedural prototype buildings, but they have real door openings,
+            // windows, roofs, porches, fences and simple interiors.
+            Vector3[] northHouses =
             {
-                House(new Vector3(-210 + i * 65, 60, 75), 12, 16, 5, concrete, "Village house");
-                House(new Vector3(-210 + i * 65, 60, -75), 12, 16, 5, concrete, "Village house");
+                new Vector3(-245, 60, 92),
+                new Vector3(-175, 60, 105),
+                new Vector3(-103, 60, 88),
+                new Vector3(-25, 60, 102),
+                new Vector3(58, 60, 90)
+            };
+
+            Vector3[] southHouses =
+            {
+                new Vector3(-232, 60, -96),
+                new Vector3(-150, 60, -108),
+                new Vector3(-68, 60, -92),
+                new Vector3(18, 60, -106),
+                new Vector3(100, 60, -90)
+            };
+
+            for (int i = 0; i < northHouses.Length; i++)
+            {
+                House(
+                    northHouses[i],
+                    12 + (i % 2) * 2,
+                    16 + (i % 3) * 2,
+                    4.8f + (i % 2) * .4f,
+                    i % 2 == 0 ? plaster : plasterWarm,
+                    roof,
+                    wood,
+                    glass,
+                    "Village_House_N_" + i,
+                    180f);
             }
-            House(new Vector3(220, 60, 150), 32, 42, 9, concrete, "Factory");
-            House(new Vector3(220, 60, 230), 26, 35, 7, concrete, "Warehouse");
-            for (int i = 0; i < 8; i++) Art.Box(Settlement, "Cargo container", new Vector3(180 + i % 4 * 13, 61.5f, 310 + i / 4 * 9), new Vector3(10, 3, 5), rust);
-            House(new Vector3(335, 60, -240), 8, 10, 4, concrete, "Checkpoint guardhouse");
-            for (int i = 0; i < 8; i++) Art.Box(Settlement, "Checkpoint barricade", new Vector3(280 + i * 6, 60.65f, -205), new Vector3(4, 1.3f, 1.4f), concrete);
+
+            for (int i = 0; i < southHouses.Length; i++)
+            {
+                House(
+                    southHouses[i],
+                    12 + ((i + 1) % 2) * 2,
+                    15 + (i % 3) * 2,
+                    4.8f + ((i + 1) % 2) * .4f,
+                    i % 2 == 0 ? plasterWarm : plaster,
+                    roof,
+                    wood,
+                    glass,
+                    "Village_House_S_" + i,
+                    0f);
+            }
+
+            BuildYards(northHouses, southHouses, wood);
+            IndustrialBuilding(
+                new Vector3(220, 60, 150),
+                new Vector3(36, 9, 46),
+                concrete,
+                roof,
+                glass,
+                "Factory");
+
+            IndustrialBuilding(
+                new Vector3(222, 60, 235),
+                new Vector3(30, 7, 38),
+                new Color(.36f, .35f, .31f),
+                roof,
+                glass,
+                "Warehouse");
+
+            for (int i = 0; i < 10; i++)
+            {
+                Art.Box(
+                    Settlement,
+                    "Cargo_Container_" + i,
+                    new Vector3(
+                        178 + i % 5 * 12,
+                        61.45f,
+                        305 + i / 5 * 8),
+                    new Vector3(10, 2.9f, 4.6f),
+                    i % 2 == 0 ? rust : new Color(.18f, .25f, .24f));
+            }
+
+            BuildCheckpoint(concrete, rust);
+            BuildStreetlights(concrete);
+
+            // Small collision / jump course near the spawn.
+            for (int i = 0; i < 5; i++)
+            {
+                Art.Box(
+                    Settlement,
+                    "Jump_Test_" + i,
+                    new Vector3(20 + i * 3, 60 + (.2f + i * .12f), 38),
+                    new Vector3(2, .4f + i * .24f, 2),
+                    rust);
+            }
+        }
+
+        void House(
+            Vector3 position,
+            float width,
+            float depth,
+            float height,
+            Color wallColor,
+            Color roofColor,
+            Color woodColor,
+            Color glassColor,
+            string name,
+            float yaw)
+        {
+            var root = new GameObject(name);
+            root.transform.SetParent(Settlement, false);
+            root.transform.localPosition = position;
+            root.transform.localRotation = Quaternion.Euler(0, yaw, 0);
+
+            const float wall = .28f;
+            const float doorWidth = 1.25f;
+            const float doorHeight = 2.25f;
+            float frontZ = -depth * .5f;
+            float backZ = depth * .5f;
+
+            Art.Box(
+                root.transform,
+                "Foundation",
+                new Vector3(0, .16f, 0),
+                new Vector3(width + .6f, .32f, depth + .6f),
+                new Color(.30f, .30f, .28f));
+
+            Art.Box(
+                root.transform,
+                "Floor",
+                new Vector3(0, .34f, 0),
+                new Vector3(width, .16f, depth),
+                new Color(.27f, .22f, .17f));
+
+            Art.Box(
+                root.transform,
+                "Rear_Wall",
+                new Vector3(0, height * .5f, backZ),
+                new Vector3(width, height, wall),
+                wallColor);
+
+            Art.Box(
+                root.transform,
+                "Left_Wall",
+                new Vector3(-width * .5f, height * .5f, 0),
+                new Vector3(wall, height, depth),
+                wallColor);
+
+            Art.Box(
+                root.transform,
+                "Right_Wall",
+                new Vector3(width * .5f, height * .5f, 0),
+                new Vector3(wall, height, depth),
+                wallColor);
+
+            float frontSideWidth = (width - doorWidth) * .5f;
+
+            Art.Box(
+                root.transform,
+                "Front_Wall_Left",
+                new Vector3(
+                    -(doorWidth * .5f + frontSideWidth * .5f),
+                    height * .5f,
+                    frontZ),
+                new Vector3(frontSideWidth, height, wall),
+                wallColor);
+
+            Art.Box(
+                root.transform,
+                "Front_Wall_Right",
+                new Vector3(
+                    doorWidth * .5f + frontSideWidth * .5f,
+                    height * .5f,
+                    frontZ),
+                new Vector3(frontSideWidth, height, wall),
+                wallColor);
+
+            Art.Box(
+                root.transform,
+                "Door_Lintel",
+                new Vector3(
+                    0,
+                    doorHeight + (height - doorHeight) * .5f,
+                    frontZ),
+                new Vector3(doorWidth, height - doorHeight, wall),
+                wallColor);
+
+            // Open doorway with a visible door swung inward.
+            var door = Art.Shape(
+                root.transform,
+                "Door",
+                PrimitiveType.Cube,
+                new Vector3(-doorWidth * .48f, doorHeight * .5f, frontZ + .65f),
+                new Vector3(.08f, doorHeight, doorWidth),
+                woodColor,
+                false);
+
+            door.transform.localRotation = Quaternion.Euler(0, -72f, 0);
+
+            Art.Box(
+                root.transform,
+                "Porch",
+                new Vector3(0, .22f, frontZ - 1.1f),
+                new Vector3(3.4f, .44f, 1.8f),
+                new Color(.34f, .29f, .22f));
+
+            Window(
+                root.transform,
+                new Vector3(-width * .25f, height * .58f, frontZ - .16f),
+                new Vector3(1.7f, 1.35f, .08f),
+                glassColor);
+
+            Window(
+                root.transform,
+                new Vector3(width * .25f, height * .58f, frontZ - .16f),
+                new Vector3(1.7f, 1.35f, .08f),
+                glassColor);
+
+            Window(
+                root.transform,
+                new Vector3(-width * .5f - .16f, height * .58f, depth * .16f),
+                new Vector3(.08f, 1.25f, 1.7f),
+                glassColor);
+
+            // Simple interior divider, deliberately leaving a passage.
+            Art.Box(
+                root.transform,
+                "Interior_Wall",
+                new Vector3(-width * .18f, height * .45f, depth * .08f),
+                new Vector3(width * .48f, height * .82f, .18f),
+                new Color(.56f, .54f, .49f));
+
+            GabledRoof(
+                root.transform,
+                width,
+                depth,
+                height,
+                roofColor);
+
+            Art.Shape(
+                root.transform,
+                "Chimney",
+                PrimitiveType.Cube,
+                new Vector3(width * .28f, height + 1.25f, depth * .12f),
+                new Vector3(.65f, 2.3f, .65f),
+                new Color(.25f, .23f, .21f));
+
+            Art.Box(
+                root.transform,
+                "Supply_Crate",
+                new Vector3(width * .28f, .75f, depth * .24f),
+                new Vector3(1.1f, .8f, .9f),
+                new Color(.34f, .26f, .14f));
+        }
+
+        void GabledRoof(
+            Transform parent,
+            float width,
+            float depth,
+            float wallHeight,
+            Color color)
+        {
+            const float pitch = 28f;
+            float radians = pitch * Mathf.Deg2Rad;
+            float panelWidth = width * .5f / Mathf.Cos(radians);
+            float roofRise = Mathf.Tan(radians) * width * .5f;
+
+            for (int side = -1; side <= 1; side += 2)
+            {
+                var panel = Art.Shape(
+                    parent,
+                    side < 0 ? "Roof_Left" : "Roof_Right",
+                    PrimitiveType.Cube,
+                    new Vector3(
+                        side * width * .25f,
+                        wallHeight + roofRise * .5f,
+                        0),
+                    new Vector3(panelWidth + .7f, .25f, depth + 1.1f),
+                    color);
+
+                panel.transform.localRotation =
+                    Quaternion.Euler(0, 0, side * pitch);
+            }
+        }
+
+        void Window(
+            Transform parent,
+            Vector3 position,
+            Vector3 size,
+            Color glassColor)
+        {
+            Art.Shape(
+                parent,
+                "Window_Glass",
+                PrimitiveType.Cube,
+                position,
+                size,
+                glassColor,
+                false);
+
+            // Thick frame so windows remain readable from a distance.
+            Vector3 frame = size;
+            frame.x = Mathf.Max(frame.x, .12f);
+            frame.y = Mathf.Max(frame.y, .12f);
+            frame.z = Mathf.Max(frame.z, .12f);
+        }
+
+        void BuildYards(
+            Vector3[] north,
+            Vector3[] south,
+            Color fenceColor)
+        {
+            foreach (Vector3 p in north)
+                YardFence(p + new Vector3(0, 0, 4), 15, 19, fenceColor);
+
+            foreach (Vector3 p in south)
+                YardFence(p + new Vector3(0, 0, -4), 15, 19, fenceColor);
+        }
+
+        void YardFence(
+            Vector3 center,
+            float width,
+            float depth,
+            Color color)
+        {
+            float y = center.y + .65f;
+
+            for (int i = -2; i <= 2; i++)
+            {
+                float x = center.x + i * width / 4f;
+
+                Art.Box(
+                    Settlement,
+                    "Fence_Post",
+                    new Vector3(x, y, center.z - depth * .5f),
+                    new Vector3(.14f, 1.3f, .14f),
+                    color);
+
+                Art.Box(
+                    Settlement,
+                    "Fence_Post",
+                    new Vector3(x, y, center.z + depth * .5f),
+                    new Vector3(.14f, 1.3f, .14f),
+                    color);
+            }
+
+            Art.Box(
+                Settlement,
+                "Fence_Rail",
+                new Vector3(center.x, y + .18f, center.z - depth * .5f),
+                new Vector3(width, .12f, .12f),
+                color);
+
+            Art.Box(
+                Settlement,
+                "Fence_Rail",
+                new Vector3(center.x, y + .18f, center.z + depth * .5f),
+                new Vector3(width, .12f, .12f),
+                color);
+        }
+
+        void IndustrialBuilding(
+            Vector3 position,
+            Vector3 size,
+            Color wallColor,
+            Color roofColor,
+            Color glassColor,
+            string name)
+        {
+            var root = new GameObject(name);
+            root.transform.SetParent(Settlement, false);
+            root.transform.localPosition = position;
+
+            float width = size.x;
+            float height = size.y;
+            float depth = size.z;
+
+            Art.Box(
+                root.transform,
+                "Foundation",
+                new Vector3(0, .2f, 0),
+                new Vector3(width + 1, .4f, depth + 1),
+                new Color(.26f, .27f, .26f));
+
+            Art.Box(
+                root.transform,
+                "Rear_Wall",
+                new Vector3(0, height * .5f, depth * .5f),
+                new Vector3(width, height, .35f),
+                wallColor);
+
+            Art.Box(
+                root.transform,
+                "Left_Wall",
+                new Vector3(-width * .5f, height * .5f, 0),
+                new Vector3(.35f, height, depth),
+                wallColor);
+
+            Art.Box(
+                root.transform,
+                "Right_Wall",
+                new Vector3(width * .5f, height * .5f, 0),
+                new Vector3(.35f, height, depth),
+                wallColor);
+
+            float shutterWidth = 6f;
+            float sideWidth = (width - shutterWidth) * .5f;
+
+            Art.Box(
+                root.transform,
+                "Front_Left",
+                new Vector3(-(shutterWidth + sideWidth) * .5f, height * .5f, -depth * .5f),
+                new Vector3(sideWidth, height, .35f),
+                wallColor);
+
+            Art.Box(
+                root.transform,
+                "Front_Right",
+                new Vector3((shutterWidth + sideWidth) * .5f, height * .5f, -depth * .5f),
+                new Vector3(sideWidth, height, .35f),
+                wallColor);
+
+            Art.Box(
+                root.transform,
+                "Shutter_Lintel",
+                new Vector3(0, height - 1.2f, -depth * .5f),
+                new Vector3(shutterWidth, 2.4f, .35f),
+                wallColor);
+
+            Art.Box(
+                root.transform,
+                "Roof",
+                new Vector3(0, height + .2f, 0),
+                new Vector3(width + 1.2f, .4f, depth + 1.2f),
+                roofColor);
+
+            for (int i = -2; i <= 2; i++)
+            {
+                Window(
+                    root.transform,
+                    new Vector3(
+                        i * (width / 6f),
+                        height * .68f,
+                        -depth * .5f - .20f),
+                    new Vector3(2.5f, 1.6f, .08f),
+                    glassColor);
+            }
+
+            for (int i = 0; i < 4; i++)
+            {
+                Art.Box(
+                    root.transform,
+                    "Interior_Crate_" + i,
+                    new Vector3(-width * .28f + i * 3.2f, .8f, depth * .12f),
+                    new Vector3(2.4f, 1.6f, 2.4f),
+                    new Color(.31f, .24f, .13f));
+            }
+        }
+
+        void BuildCheckpoint(Color concrete, Color rust)
+        {
+            House(
+                new Vector3(335, 60, -240),
+                8,
+                10,
+                4.2f,
+                concrete,
+                new Color(.16f, .17f, .17f),
+                rust,
+                new Color(.25f, .34f, .37f),
+                "Checkpoint_Guardhouse",
+                0f);
+
+            for (int i = 0; i < 8; i++)
+            {
+                Art.Box(
+                    Settlement,
+                    "Checkpoint_Barricade_" + i,
+                    new Vector3(280 + i * 6, 60.65f, -205),
+                    new Vector3(4, 1.3f, 1.4f),
+                    i % 2 == 0 ? concrete : rust);
+            }
+
+            Art.Box(
+                Settlement,
+                "Checkpoint_Boom",
+                new Vector3(322, 62.2f, -205),
+                new Vector3(12, .22f, .22f),
+                rust);
+        }
+
+        void BuildStreetlights(Color concrete)
+        {
             for (int i = 0; i < 15; i++)
             {
-                Art.Shape(Settlement, "Streetlight pole", PrimitiveType.Cylinder, new Vector3(-350 + i * 50, 63, 16), new Vector3(.2f, 3, .2f), concrete);
-                Art.Box(Settlement, "Streetlight", new Vector3(-350 + i * 50, 66, 15), new Vector3(1.5f, .2f, .5f), concrete);
+                float x = -350 + i * 50;
+
+                Art.Shape(
+                    Settlement,
+                    "Streetlight_Pole",
+                    PrimitiveType.Cylinder,
+                    new Vector3(x, 63, 16),
+                    new Vector3(.18f, 3f, .18f),
+                    concrete);
+
+                Art.Box(
+                    Settlement,
+                    "Streetlight_Arm",
+                    new Vector3(x + .65f, 65.85f, 16),
+                    new Vector3(1.5f, .12f, .12f),
+                    concrete);
+
+                Art.Box(
+                    Settlement,
+                    "Streetlight_Lamp",
+                    new Vector3(x + 1.35f, 65.65f, 16),
+                    new Vector3(.55f, .22f, .45f),
+                    new Color(.72f, .69f, .52f));
             }
-            // Small collision / jump course near the spawn.
-            for (int i = 0; i < 5; i++) Art.Box(Settlement, "Jump test " + i, new Vector3(20 + i * 3, 60 + (.2f + i * .12f), 38), new Vector3(2, .4f + i * .24f, 2), rust);
         }
-        void House(Vector3 position, float width, float depth, float height, Color color, string name)
-        {
-            var root = new GameObject(name); root.transform.SetParent(Settlement, false); root.transform.localPosition = position;
-            Art.Box(root.transform, "Floor", new Vector3(0, .05f, 0), new Vector3(width, .1f, depth), color);
-            Art.Box(root.transform, "Roof", new Vector3(0, height, 0), new Vector3(width + 1, .3f, depth + 1), new Color(.21f, .22f, .23f));
-            Art.Box(root.transform, "Rear wall", new Vector3(0, height / 2, depth / 2), new Vector3(width, height, .3f), color);
-            foreach (int sign in new[] { -1, 1 })
-            {
-                Art.Box(root.transform, "Side wall", new Vector3(sign * width / 2, height / 2, 0), new Vector3(.3f, height, depth), color);
-                // 2 m wide / 2.6 m tall open doorway facing the road.
-                Art.Box(root.transform, "Front wall", new Vector3(sign * (width / 4 + .5f), height / 2, -depth / 2), new Vector3(width / 2 - 1, height, .3f), color);
-            }
-            Art.Box(root.transform, "Door lintel", new Vector3(0, (height + 2.6f) / 2, -depth / 2), new Vector3(2, height - 2.6f, .3f), color);
-            Art.Box(root.transform, "Supply crate", new Vector3(width / 3, .5f, depth / 3), Vector3.one, new Color(.35f, .27f, .14f));
-        }
+
         void OnDestroy()
         {
             // Baked editor assets belong to AssetDatabase, not the runtime generator.
