@@ -9,7 +9,7 @@ namespace DeadSector
         public const float TileSize = 1000f;
         public const float HalfSize = 4000f;
         public const int Resolution = 257;
-        public static readonly Vector3 Spawn = new Vector3(30f, 61f, 20f);
+        public static readonly Vector3 Spawn = new Vector3(30f, 60.05f, 20f);
 
         public static float Height(float x, float z)
         {
