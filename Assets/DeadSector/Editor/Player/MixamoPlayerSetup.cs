@@ -91,8 +91,8 @@ namespace DeadSector.Editor.Player
             AssetDatabase.Refresh();
         }
 
-        [MenuItem("Dead Sector/Character/Mixamo/01B - Retarget Animations To Player Avatar")]
-        public static void RetargetAnimationsToPlayerAvatar()
+        [MenuItem("Dead Sector/Character/Mixamo/01B - Validate Humanoid Animation Avatars")]
+        public static void ValidateHumanoidAnimationAvatars()
         {
             EnsureFolders();
 
@@ -100,7 +100,7 @@ namespace DeadSector.Editor.Player
             if (string.IsNullOrEmpty(modelPath))
             {
                 Debug.LogError(
-                    "[Dead Sector] Cannot retarget animations: dedicated full-body model is missing. " +
+                    "[Dead Sector] Cannot validate animations: dedicated full-body model is missing. " +
                     "Add X Bot.fbx (With Skin) or PlayerModel.fbx first.");
                 return;
             }
@@ -113,7 +113,7 @@ namespace DeadSector.Editor.Player
             if (playerAvatar == null)
             {
                 Debug.LogError(
-                    "[Dead Sector] Cannot retarget animations: no valid Humanoid Avatar found in " +
+                    "[Dead Sector] No valid Humanoid Avatar found in " +
                     modelPath + ". Run '01 - Configure FBX As Humanoid' first.");
                 return;
             }
@@ -131,14 +131,32 @@ namespace DeadSector.Editor.Player
                 if (AssetImporter.GetAtPath(assetPath) is not ModelImporter importer)
                     continue;
 
+                // Humanoid clips are retargeted by Unity at runtime to the
+                // Animator avatar on X Bot. Keeping each FBX's own generated
+                // Humanoid avatar is safer than forcing CopyFromOther when
+                // Mixamo downloads were exported from slightly different rigs.
                 importer.animationType = ModelImporterAnimationType.Human;
-                importer.avatarSetup = ModelImporterAvatarSetup.CopyFromOther;
-                importer.sourceAvatar = playerAvatar;
+                importer.avatarSetup = ModelImporterAvatarSetup.CreateFromThisModel;
+                importer.sourceAvatar = null;
                 importer.importAnimation = true;
                 importer.SaveAndReimport();
 
-                Debug.Log(
-                    "[Dead Sector] Animation retargeted to player avatar: " + assetPath);
+                Avatar clipAvatar = AssetDatabase
+                    .LoadAllAssetsAtPath(assetPath)
+                    .OfType<Avatar>()
+                    .FirstOrDefault(a => a != null && a.isHuman);
+
+                if (clipAvatar == null)
+                {
+                    Debug.LogError(
+                        "[Dead Sector] Invalid Humanoid animation avatar: " + assetPath);
+                }
+                else
+                {
+                    Debug.Log(
+                        "[Dead Sector] Humanoid animation ready for runtime retargeting: " +
+                        assetPath);
+                }
             }
 
             AssetDatabase.Refresh();
@@ -345,7 +363,7 @@ namespace DeadSector.Editor.Player
         public static void BuildEverything()
         {
             ConfigureFbxAsHumanoid();
-            RetargetAnimationsToPlayerAvatar();
+            ValidateHumanoidAnimationAvatars();
             BuildAnimator();
             BuildPlayablePlayer();
         }
