@@ -9,30 +9,129 @@ namespace DeadSector
         SectorPlayer player;
         SectorNavigation navigation;
         SectorArt actorArt;
+
         void Awake()
         {
             actorArt = new SectorArt();
-            var sun = new GameObject("Sun").AddComponent<Light>(); sun.type = LightType.Directional;
-            sun.transform.rotation = Quaternion.Euler(38, -35, 0); sun.intensity = 1.4f; sun.shadows = LightShadows.Soft;
-            RenderSettings.ambientMode = AmbientMode.Flat; RenderSettings.ambientLight = new Color(.48f, .53f, .58f);
-            RenderSettings.fog = true; RenderSettings.fogMode = FogMode.ExponentialSquared;
-            RenderSettings.fogColor = new Color(.48f, .55f, .6f); RenderSettings.fogDensity = .0009f;
-            var actor = new GameObject("Player"); actor.transform.position = SectorLayout.Spawn;
-            actor.tag = "Player"; actor.layer = 2;
-            var controller = actor.AddComponent<CharacterController>(); controller.height = 1.8f; controller.radius = .3f;
-            controller.center = new Vector3(0, .9f, 0); controller.stepOffset = .3f; controller.slopeLimit = 48;
-            var rig = actorArt.Person(actor.transform, new Color(.18f, .28f, .22f));
-            var cameraObject = new GameObject("PlayerCamera"); var camera = cameraObject.AddComponent<Camera>();
-            cameraObject.tag = "MainCamera"; cameraObject.AddComponent<AudioListener>();
-            camera.fieldOfView = 75; camera.nearClipPlane = .05f; camera.farClipPlane = 1600;
-            camera.clearFlags = CameraClearFlags.SolidColor; camera.backgroundColor = RenderSettings.fogColor;
-            // Assign fields before Awake, so the controller sees the finished visual rig.
-            actor.SetActive(false);
-            player = actor.AddComponent<SectorPlayer>(); player.view = camera; player.visual = rig.transform;
+
+            var sun = new GameObject("Sun").AddComponent<Light>();
+            sun.type = LightType.Directional;
+            sun.transform.rotation = Quaternion.Euler(38, -35, 0);
+            sun.intensity = 1.4f;
+            sun.shadows = LightShadows.Soft;
+
+            RenderSettings.ambientMode = AmbientMode.Flat;
+            RenderSettings.ambientLight = new Color(.48f, .53f, .58f);
+            RenderSettings.fog = true;
+            RenderSettings.fogMode = FogMode.ExponentialSquared;
+            RenderSettings.fogColor = new Color(.48f, .55f, .6f);
+            RenderSettings.fogDensity = .0009f;
+
+            GameObject actor;
+            Transform rig;
+            Camera camera;
+
+            // Prefer the new Mixamo full-body prefab if the user has placed it
+            // in the prototype scene. This prevents the old procedural player
+            // from being spawned alongside it.
+            GameObject existing = GameObject.Find("Player_Mixamo_FullBody");
+
+            if (existing != null)
+            {
+                actor = existing;
+                actor.SetActive(false);
+
+                actor.name = "Player";
+                actor.tag = "Player";
+                actor.transform.position = SectorLayout.Spawn;
+
+                var controller = actor.GetComponent<CharacterController>();
+                if (controller == null)
+                {
+                    controller = actor.AddComponent<CharacterController>();
+                    controller.height = 1.8f;
+                    controller.radius = .3f;
+                    controller.center = new Vector3(0, .9f, 0);
+                    controller.stepOffset = .3f;
+                    controller.slopeLimit = 48;
+                }
+
+                // The prefab ships with PlayerMovement. The streamed world uses
+                // SectorPlayer, so disable the duplicate movement component.
+                foreach (var behaviour in actor.GetComponents<MonoBehaviour>())
+                {
+                    if (behaviour != null && behaviour.GetType().Name == "PlayerMovement")
+                        behaviour.enabled = false;
+                }
+
+                rig = actor.transform.Find("FullBody");
+                if (rig == null)
+                {
+                    var animator = actor.GetComponentInChildren<Animator>(true);
+                    rig = animator != null ? animator.transform : actor.transform;
+                }
+
+                camera = actor.GetComponentInChildren<Camera>(true);
+                if (camera == null)
+                {
+                    var cameraObject = new GameObject("PlayerCamera");
+                    cameraObject.transform.SetParent(actor.transform, false);
+                    camera = cameraObject.AddComponent<Camera>();
+                    cameraObject.tag = "MainCamera";
+                    cameraObject.AddComponent<AudioListener>();
+                }
+
+                SectorArt.SetActorLayer(actor.transform);
+                Debug.Log("[Dead Sector] Using scene full-body player. Old procedural player spawn skipped.");
+            }
+            else
+            {
+                actor = new GameObject("Player");
+                actor.transform.position = SectorLayout.Spawn;
+                actor.tag = "Player";
+                actor.layer = 2;
+
+                var controller = actor.AddComponent<CharacterController>();
+                controller.height = 1.8f;
+                controller.radius = .3f;
+                controller.center = new Vector3(0, .9f, 0);
+                controller.stepOffset = .3f;
+                controller.slopeLimit = 48;
+
+                rig = actorArt.Person(actor.transform, new Color(.18f, .28f, .22f)).transform;
+
+                var cameraObject = new GameObject("PlayerCamera");
+                camera = cameraObject.AddComponent<Camera>();
+                cameraObject.tag = "MainCamera";
+                cameraObject.AddComponent<AudioListener>();
+
+                Debug.LogWarning("[Dead Sector] Full-body player was not found in the scene. Using legacy procedural player.");
+                actor.SetActive(false);
+            }
+
+            camera.fieldOfView = 75;
+            camera.nearClipPlane = .05f;
+            camera.farClipPlane = 1600;
+            camera.clearFlags = CameraClearFlags.SolidColor;
+            camera.backgroundColor = RenderSettings.fogColor;
+
+            player = actor.GetComponent<SectorPlayer>();
+            if (player == null)
+                player = actor.AddComponent<SectorPlayer>();
+
+            player.view = camera;
+            player.visual = rig;
+
             actor.SetActive(true);
-            world = new GameObject("World_8x8km").AddComponent<SectorWorld>(); world.player = player;
-            navigation = new GameObject("StartZone_AI").AddComponent<SectorNavigation>(); navigation.world = world; navigation.player = player;
+
+            world = new GameObject("World_8x8km").AddComponent<SectorWorld>();
+            world.player = player;
+
+            navigation = new GameObject("StartZone_AI").AddComponent<SectorNavigation>();
+            navigation.world = world;
+            navigation.player = player;
         }
+
         void OnGUI()
         {
             GUI.Box(new Rect(12, 12, 350, 152), "DEAD SECTOR / 8 x 8 km prototype");
@@ -44,6 +143,7 @@ namespace DeadSector
             if (!world.Ready) GUI.Box(new Rect(Screen.width / 2 - 140, Screen.height / 2 - 25, 280, 50), "Preparing map, please wait...");
             if (player.Health <= 0) GUI.Box(new Rect(Screen.width / 2 - 140, Screen.height / 2 - 25, 280, 50), "You died. Press R to respawn.");
         }
+
         void OnDestroy() => actorArt?.Dispose();
     }
 }
