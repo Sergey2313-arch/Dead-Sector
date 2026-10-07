@@ -37,7 +37,7 @@ namespace DeadSector.Editor.Player
             AnimatorController controller = CreateAnimatorController(idle, walk, run, jump);
 
             CreatePlayerPrefab("Player_Mannequin_Broad", material, controller, 1.00f, 1.00f);
-            CreatePlayerPrefab("Player_Mannequin_Slim", material, controller, 0.86f, 0.96f);
+            CreatePlayerPrefab("Player_Mannequin_Slim", material, controller, 0.86f, 1.00f);
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
@@ -419,22 +419,22 @@ namespace DeadSector.Editor.Player
             sm.defaultState = idleState;
 
             AddTransition(idleState, walkState, 0.12f,
-                new AnimatorCondition(AnimatorConditionMode.Greater, 0.10f, "Speed"),
-                new AnimatorCondition(AnimatorConditionMode.IfNot, 0f, "IsRunning"),
-                new AnimatorCondition(AnimatorConditionMode.If, 0f, "Grounded"));
+                C(AnimatorConditionMode.Greater, 0.10f, "Speed"),
+                C(AnimatorConditionMode.IfNot, 0f, "IsRunning"),
+                C(AnimatorConditionMode.If, 0f, "Grounded"));
 
             AddTransition(walkState, idleState, 0.12f,
-                new AnimatorCondition(AnimatorConditionMode.Less, 0.10f, "Speed"));
+                C(AnimatorConditionMode.Less, 0.10f, "Speed"));
 
             AddTransition(walkState, runState, 0.10f,
-                new AnimatorCondition(AnimatorConditionMode.If, 0f, "IsRunning"));
+                C(AnimatorConditionMode.If, 0f, "IsRunning"));
 
             AddTransition(runState, walkState, 0.10f,
-                new AnimatorCondition(AnimatorConditionMode.IfNot, 0f, "IsRunning"),
-                new AnimatorCondition(AnimatorConditionMode.Greater, 0.10f, "Speed"));
+                C(AnimatorConditionMode.IfNot, 0f, "IsRunning"),
+                C(AnimatorConditionMode.Greater, 0.10f, "Speed"));
 
             AddTransition(runState, idleState, 0.10f,
-                new AnimatorCondition(AnimatorConditionMode.Less, 0.10f, "Speed"));
+                C(AnimatorConditionMode.Less, 0.10f, "Speed"));
 
             AnimatorStateTransition toJump = sm.AddAnyStateTransition(jumpState);
             toJump.hasExitTime = false;
@@ -443,17 +443,17 @@ namespace DeadSector.Editor.Player
             toJump.AddCondition(AnimatorConditionMode.IfNot, 0f, "Grounded");
 
             AddTransition(jumpState, idleState, 0.08f,
-                new AnimatorCondition(AnimatorConditionMode.If, 0f, "Grounded"),
-                new AnimatorCondition(AnimatorConditionMode.Less, 0.10f, "Speed"));
+                C(AnimatorConditionMode.If, 0f, "Grounded"),
+                C(AnimatorConditionMode.Less, 0.10f, "Speed"));
 
             AddTransition(jumpState, walkState, 0.08f,
-                new AnimatorCondition(AnimatorConditionMode.If, 0f, "Grounded"),
-                new AnimatorCondition(AnimatorConditionMode.Greater, 0.10f, "Speed"),
-                new AnimatorCondition(AnimatorConditionMode.IfNot, 0f, "IsRunning"));
+                C(AnimatorConditionMode.If, 0f, "Grounded"),
+                C(AnimatorConditionMode.Greater, 0.10f, "Speed"),
+                C(AnimatorConditionMode.IfNot, 0f, "IsRunning"));
 
             AddTransition(jumpState, runState, 0.08f,
-                new AnimatorCondition(AnimatorConditionMode.If, 0f, "Grounded"),
-                new AnimatorCondition(AnimatorConditionMode.If, 0f, "IsRunning"));
+                C(AnimatorConditionMode.If, 0f, "Grounded"),
+                C(AnimatorConditionMode.If, 0f, "IsRunning"));
 
             EditorUtility.SetDirty(controller);
             return controller;
@@ -463,14 +463,31 @@ namespace DeadSector.Editor.Player
             AnimatorState from,
             AnimatorState to,
             float duration,
-            params AnimatorCondition[] conditions)
+            params ConditionSpec[] conditions)
         {
             AnimatorStateTransition transition = from.AddTransition(to);
             transition.hasExitTime = false;
             transition.duration = duration;
 
-            foreach (AnimatorCondition condition in conditions)
-                transition.AddCondition(condition.mode, condition.threshold, condition.parameter);
+            foreach (ConditionSpec condition in conditions)
+                transition.AddCondition(condition.Mode, condition.Threshold, condition.Parameter);
+        }
+
+        private static ConditionSpec C(AnimatorConditionMode mode, float threshold, string parameter)
+        {
+            return new ConditionSpec
+            {
+                Mode = mode,
+                Threshold = threshold,
+                Parameter = parameter
+            };
+        }
+
+        private struct ConditionSpec
+        {
+            public AnimatorConditionMode Mode;
+            public float Threshold;
+            public string Parameter;
         }
 
         private static void EnsureFolder(string parent, string name)
