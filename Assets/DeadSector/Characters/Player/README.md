@@ -26,6 +26,11 @@ Current supported names:
 - Swagger Walk.fbx
 - Running.fbx
 - Falling To Roll.fbx
+- Jumping.fbx
+- Running Jump.fbx
+- Jumping Down.fbx
+- Falling To Landing.fbx
+- Hard Landing.fbx
 - Boxing.fbx
 - Punching.fbx
 - Outward Block.fbx
@@ -73,9 +78,6 @@ tool can use the animations but cannot build a visible X Bot player from that fi
 
 - normal Walking
 - Sprinting
-- Jump
-- Falling Idle
-- Landing
 - Standing To Crouched
 - Crouch Idle
 - Crouch Walk
@@ -84,3 +86,19 @@ tool can use the animations but cannot build a visible X Bot player from that fi
 
 Swagger Walk is currently used as the temporary Walk animation until a neutral
 walking clip is added.
+
+
+## Current jump mapping
+
+- Jumping.fbx -> normal jump
+- Running Jump.fbx -> jump while running
+- Jumping Down.fbx -> falling state
+- Falling To Landing.fbx -> normal landing
+- Hard Landing.fbx -> hard landing
+- Falling To Roll.fbx -> very hard landing / roll
+
+Landing severity is selected from vertical speed:
+
+- normal landing: above -7.5 m/s
+- hard landing: -7.5 m/s or faster downward
+- roll landing: -11.5 m/s or faster downward
