@@ -688,23 +688,46 @@ namespace DeadSector.Editor.Player
 
             foreach (string preferred in preferredNames)
             {
-                foreach (string guid in guids)
-                {
-                    string path = AssetDatabase.GUIDToAssetPath(guid);
-                    string file = Path.GetFileNameWithoutExtension(path);
+                AnimationClip exact = FindClipPass(guids, preferred, true);
+                if (exact != null)
+                    return exact;
+            }
 
-                    if (!file.Equals(preferred, StringComparison.OrdinalIgnoreCase) &&
-                        !file.Contains(preferred, StringComparison.OrdinalIgnoreCase))
-                        continue;
+            foreach (string preferred in preferredNames)
+            {
+                AnimationClip partial = FindClipPass(guids, preferred, false);
+                if (partial != null)
+                    return partial;
+            }
 
-                    AnimationClip clip = AssetDatabase
-                        .LoadAllAssetsAtPath(path)
-                        .OfType<AnimationClip>()
-                        .FirstOrDefault(c => !c.name.StartsWith("__preview__", StringComparison.OrdinalIgnoreCase));
+            return null;
+        }
 
-                    if (clip != null)
-                        return clip;
-                }
+        private static AnimationClip FindClipPass(
+            string[] guids,
+            string preferred,
+            bool exactMatch)
+        {
+            foreach (string guid in guids)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                string file = Path.GetFileNameWithoutExtension(path);
+
+                bool matches = exactMatch
+                    ? file.Equals(preferred, StringComparison.OrdinalIgnoreCase)
+                    : file.Contains(preferred, StringComparison.OrdinalIgnoreCase);
+
+                if (!matches)
+                    continue;
+
+                AnimationClip clip = AssetDatabase
+                    .LoadAllAssetsAtPath(path)
+                    .OfType<AnimationClip>()
+                    .FirstOrDefault(c =>
+                        !c.name.StartsWith("__preview__", StringComparison.OrdinalIgnoreCase));
+
+                if (clip != null)
+                    return clip;
             }
 
             return null;
