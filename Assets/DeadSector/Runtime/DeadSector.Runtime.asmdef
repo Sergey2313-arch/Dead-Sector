@@ -1,0 +1,7 @@
+{
+  "name": "DeadSector.Runtime",
+  "rootNamespace": "DeadSector",
+  "references": [
+    "Unity.InputSystem"
+  ]
+}

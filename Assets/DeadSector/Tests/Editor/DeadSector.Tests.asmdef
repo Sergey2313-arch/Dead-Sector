@@ -1,0 +1,12 @@
+{
+  "name": "DeadSector.Tests",
+  "references": [
+    "DeadSector.Runtime"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ]
+}

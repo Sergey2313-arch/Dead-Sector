@@ -1,0 +1,9 @@
+{
+  "name": "DeadSector.Editor",
+  "references": [
+    "DeadSector.Runtime"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ]
+}
