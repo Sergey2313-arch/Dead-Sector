@@ -37,6 +37,8 @@ namespace DeadSector
             new List<SectorPointOfInterest>();
         TerrainLayer[] layers;
         Material terrainMaterial;
+        Material roadMaterial;
+        Material waterMaterial;
         Vector2Int last = new Vector2Int(-99, -99);
         bool streaming;
         void Awake() => InitializeArt();
@@ -45,7 +47,32 @@ namespace DeadSector
             if (Art != null) return;
             Art = new SectorArt();
             layers = new[] { Layer(new Color(.23f, .28f, .16f)), Layer(new Color(.3f, .26f, .2f)), Layer(new Color(.35f, .37f, .37f)) };
-            terrainMaterial = new Material(Shader.Find("Universal Render Pipeline/Terrain/Lit"));
+            Shader terrainShader = Shader.Find("Universal Render Pipeline/Terrain/Lit");
+            if (terrainShader == null)
+                terrainShader = Shader.Find("Nature/Terrain/Standard");
+
+            terrainMaterial = new Material(terrainShader);
+
+            roadMaterial = Art.Material(new Color(.19f, .18f, .165f));
+
+            Shader waterShader = Shader.Find("Universal Render Pipeline/Unlit");
+            if (waterShader == null)
+                waterShader = Shader.Find("Unlit/Color");
+
+            waterMaterial = new Material(waterShader);
+            Color waterColor = new Color(.12f, .32f, .39f, .76f);
+
+            if (waterMaterial.HasProperty("_BaseColor"))
+                waterMaterial.SetColor("_BaseColor", waterColor);
+
+            waterMaterial.color = waterColor;
+            waterMaterial.SetOverrideTag("RenderType", "Transparent");
+            waterMaterial.SetInt("_Surface", 1);
+            waterMaterial.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+            waterMaterial.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+            waterMaterial.SetInt("_ZWrite", 0);
+            waterMaterial.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+            waterMaterial.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
         }
         // Editor tooling can bake the same deterministic map into editable scene objects.
         public void BuildEditorPreview()
@@ -98,7 +125,12 @@ namespace DeadSector
             foreach (var entry in tiles) if (!required.Contains(entry.Key)) old.Add(entry.Key);
             foreach (var key in old)
             {
-                var terrain = tiles[key]; Destroy(terrain.terrainData); Destroy(terrain.transform.parent.gameObject); tiles.Remove(key);
+                var terrain = tiles[key];
+                Transform tileRoot = terrain.transform.parent;
+                DisposeTileMeshes(tileRoot);
+                Destroy(terrain.terrainData);
+                Destroy(tileRoot.gameObject);
+                tiles.Remove(key);
             }
             foreach (var entry in tiles)
             {
@@ -122,7 +154,11 @@ namespace DeadSector
             {
                 float wx = origin.x + x * 1000f / 127, wz = origin.z + z * 1000f / 127;
                 float road = Mathf.Min(Mathf.Abs(wz), Mathf.Abs(wx - 300));
-                int layer = road < 9 ? 1 : SectorLayout.Height(wx, wz) > 185 ? 2 : 0;
+                float plannedRoad = SectorGeography.DistanceToRoad(wx, wz);
+                int layer = (road < 9 && Mathf.Max(Mathf.Abs(wx), Mathf.Abs(wz)) < 540f) ||
+                            plannedRoad < 9f
+                    ? 1
+                    : SectorLayout.Height(wx, wz) > 185f ? 2 : 0;
                 splat[z, x, layer] = 1;
             }
             data.SetAlphamaps(0, 0, splat);
@@ -134,13 +170,41 @@ namespace DeadSector
             {
                 float x = (float)random.NextDouble() * 1000, z = (float)random.NextDouble() * 1000;
                 float wx = origin.x + x, wz = origin.z + z;
-                if (new Vector2(wx, wz).magnitude < 470 || Mathf.Abs(wz) < 28 || Mathf.Abs(wx - 300) < 28) continue;
+                if (new Vector2(wx, wz).magnitude < 470 ||
+                    (Mathf.Abs(wz) < 28 && Mathf.Abs(wx) < 540) ||
+                    (Mathf.Abs(wx - 300) < 28 && Mathf.Abs(wz) < 540) ||
+                    SectorGeography.DistanceToRoad(wx, wz) < 20f ||
+                    SectorGeography.TryGetWaterLevel(wx, wz, out _))
+                    continue;
+
+                bool nearLandmark = false;
+                foreach (SectorMapPlan.Location poi in SectorMapPlan.Locations)
+                {
+                    float radius = poi.Id == "airfield" ? 435f :
+                        poi.Id == "abandoned_city" ? 270f :
+                        poi.Id == "quarry" ? 240f : 150f;
+
+                    if (Vector2.Distance(
+                        new Vector2(wx, wz), poi.MapPosition) < radius)
+                    {
+                        nearLandmark = true;
+                        break;
+                    }
+                }
+
+                if (nearLandmark)
+                    continue;
                 float h = data.GetInterpolatedHeight(x / 1000, z / 1000);
                 var tree = new GameObject("Pine"); tree.transform.SetParent(root.transform, false); tree.transform.localPosition = new Vector3(x, h, z);
                 float size = 6 + (float)random.NextDouble() * 5;
                 Art.Shape(tree.transform, "Trunk", PrimitiveType.Cylinder, Vector3.up * size * .25f, new Vector3(.5f, size * .25f, .5f), new Color(.2f, .14f, .09f));
                 Art.Shape(tree.transform, "Crown", PrimitiveType.Sphere, Vector3.up * size * .7f, new Vector3(size * .5f, size * .8f, size * .5f), new Color(.1f, .19f, .12f), false);
             }
+            SectorLandscapeBuilder.Build(
+                root.transform, origin, roadMaterial, waterMaterial);
+
+            SectorLandmarkBuilder.Build(root.transform, origin, Art);
+
             return terrain;
         }
         TerrainLayer Layer(Color color)
@@ -980,13 +1044,43 @@ namespace DeadSector
                 2.4f);
         }
 
+        static void DisposeTileMeshes(Transform tileRoot)
+        {
+            foreach (MeshFilter filter in tileRoot.GetComponentsInChildren<MeshFilter>())
+            {
+                Mesh mesh = filter.sharedMesh;
+                if (mesh != null &&
+                    (mesh.name.StartsWith("Road_") ||
+                     mesh.name == "Water_Surface"))
+                {
+                    Destroy(mesh);
+                }
+            }
+        }
+
         void OnDestroy()
         {
             // Baked editor assets belong to AssetDatabase, not the runtime generator.
             if (!Application.isPlaying) return;
-            foreach (var t in tiles.Values) if (t != null) Destroy(t.terrainData);
-            if (layers != null) foreach (var layer in layers) { Destroy(layer.diffuseTexture); Destroy(layer); }
+
+            foreach (Terrain t in tiles.Values)
+            {
+                if (t == null) continue;
+                DisposeTileMeshes(t.transform.parent);
+                Destroy(t.terrainData);
+            }
+
+            if (layers != null)
+            {
+                foreach (TerrainLayer layer in layers)
+                {
+                    Destroy(layer.diffuseTexture);
+                    Destroy(layer);
+                }
+            }
+
             if (terrainMaterial != null) Destroy(terrainMaterial);
+            if (waterMaterial != null) Destroy(waterMaterial);
             Art?.Dispose();
         }
     }
