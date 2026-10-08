@@ -1,6 +1,8 @@
 # Dead Sector — prototype roadmap
 
 ## Current target
+**Approved world design:** `Docs/World_Map_8km_Approved.md` (illustration approved 8 October 2026). Its 17+ landmark placements, routes and implementation status live in `Assets/DeadSector/Runtime/SectorMapPlan.cs`. The pictured landscape is still a target concept, not existing game geometry.
+
 Playable 8 x 8 km survival prototype with a full-body humanoid player, shoulder TPP/FPP switching, animated zombies, explorable settlement, streamed terrain and a stable base for combat/inventory work.
 
 ## Implemented
@@ -23,10 +25,13 @@ Playable 8 x 8 km survival prototype with a full-body humanoid player, shoulder 
 - M toggles a larger tactical map view.
 - Live azimuth compass: 0-359 degree heading, N/NE/E/SE/S/SW/W/NW marks, 5-degree minor ticks, 15-degree labels, and direction-relative POI labels with distances.
 - The compass hides while the enlarged tactical map is open; debug panel moved to the lower left.
+- M opens a schematic full 8 x 8 km design atlas with road corridors, planned POIs and the player's real world coordinates; this is explicitly not the fully built physical map.
 - One-click prototype preparation menu.
 
 ## Next work
-1. Verify player idle/walk/run/jump retargeting in Unity and remove any remaining bad pose.
+0. Validate approved tactical world atlas in Unity/URP and verify blueprint coordinates.
+1. Begin terrain/water/road implementation to match the approved map.
+2. Verify player idle/walk/run/jump retargeting in Unity and remove any remaining bad pose.
 2. Verify minimap/tactical-map rendering in URP and tune scale/viewport.
 3. Finish polished shoulder-camera behaviour and FPP head/body visibility.
 4. Add Zombie Idle and Zombie Walk clips when available.
