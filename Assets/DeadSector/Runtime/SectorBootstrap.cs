@@ -134,6 +134,11 @@ namespace DeadSector
             var minimap = minimapObject.AddComponent<SectorMinimap>();
             minimap.Configure(player, world);
 
+            var atlasObject = new GameObject("WorldAtlas_System");
+            var atlas = atlasObject.AddComponent<SectorWorldAtlas>();
+            atlas.player = player;
+            atlas.minimap = minimap;
+
             var compassObject = new GameObject("Compass_System");
             var compass = compassObject.AddComponent<SectorCompass>();
             compass.player = player;
