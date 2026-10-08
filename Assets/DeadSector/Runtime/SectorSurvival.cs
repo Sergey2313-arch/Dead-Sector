@@ -68,6 +68,16 @@ namespace DeadSector
             stamina = Mathf.Max(0f, stamina - 8f);
         }
 
+        // Punches always react on the mouse press, including when exhausted.
+        // Attack power is reduced rather than delayed or blocked.
+        public float SpendAttackStamina(float cost)
+        {
+            if (cost <= 0f) return 1f;
+            float available = stamina;
+            stamina = Mathf.Max(0f, stamina - cost);
+            return Mathf.Lerp(.45f, 1f, Mathf.Clamp01(available / cost));
+        }
+
         public void Restore(float food, float water)
         {
             hunger = Mathf.Clamp(hunger + food, 0f, 100f);
