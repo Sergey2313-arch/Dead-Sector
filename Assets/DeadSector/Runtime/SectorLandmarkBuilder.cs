@@ -334,6 +334,29 @@ namespace DeadSector
                 new Vector3(.55f, 13f, .55f), Concrete);
         }
 
+        static void HingedDoor(
+            Transform parent, SectorArt art,
+            float frontZ, float width, float height, Color color)
+        {
+            var hinge = new GameObject("Hinged_Door").transform;
+            hinge.SetParent(parent, false);
+            hinge.localPosition = new Vector3(-width * .5f, 0, frontZ);
+            hinge.gameObject.AddComponent<SectorDoor>();
+
+            art.Box(
+                hinge, "Door_Panel",
+                new Vector3(width * .5f, height * .5f, 0),
+                new Vector3(width - .07f, height, .10f),
+                color);
+
+            art.Shape(
+                hinge, "Handle",
+                PrimitiveType.Sphere,
+                new Vector3(width - .25f, height * .48f, -.12f),
+                Vector3.one * .13f,
+                new Color(.75f, .70f, .55f), false);
+        }
+
         static void BasicHouse(
             Transform parent, SectorArt art,
             Vector3 position, float width, float depth,
@@ -362,6 +385,8 @@ namespace DeadSector
             art.Box(root, "Door_Header",
                 new Vector3(0, 2.3f + (height - 2.3f) * .5f, front),
                 new Vector3(door, height - 2.3f, .3f), Wall);
+
+            HingedDoor(root, art, front, door, 2.28f, Wood);
 
             // Roof consists of two actual sloped panels.
             float pitch = 28f;
@@ -432,6 +457,11 @@ namespace DeadSector
             art.Box(root, "Entry_Header",
                 new Vector3(0, doorwayHeight + (height - doorwayHeight) * .5f, front),
                 new Vector3(entryWidth, height - doorwayHeight, thickness), color);
+
+            // Reserve usable doorway width for vehicles in hangars,
+            // but still provide functional interaction for small buildings.
+            if (entryWidth <= 5.6f && width < 40f)
+                HingedDoor(root, art, front, entryWidth, doorwayHeight, Dark);
 
             art.Box(root, "Roof",
                 new Vector3(0, height + .16f, 0),
