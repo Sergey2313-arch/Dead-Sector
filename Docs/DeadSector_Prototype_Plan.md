@@ -68,3 +68,10 @@ Playable 8 x 8 km survival prototype with a full-body humanoid player, shoulder 
 - Whole prototype: Dead Sector > Setup > 00 - PREPARE PLAYABLE PROTOTYPE
 - Inspect full world in Play Mode: Dead Sector > Debug > Visit World Locations; select a POI and teleport
 - M: approved 8km planning atlas; V: first-person / third-person toggle
+
+## Tracked GitHub work items
+
+- [#2 — Unity 6 integration and playtesting](https://github.com/Sergey2313-arch/Dead-Sector/issues/2) — blocker before claiming playable milestone.
+- [#3 — Production environment and modular world](https://github.com/Sergey2313-arch/Dead-Sector/issues/3).
+- [#4 — Survival gameplay polish and complete persistence](https://github.com/Sergey2313-arch/Dead-Sector/issues/4).
+- [#5 — Authoritative co-op multiplayer](https://github.com/Sergey2313-arch/Dead-Sector/issues/5) — planned, not working yet.
