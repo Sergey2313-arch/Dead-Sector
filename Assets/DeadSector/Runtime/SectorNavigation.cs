@@ -17,6 +17,10 @@ namespace DeadSector
         NavMeshData data;
         NavMeshDataInstance instance;
         GameObject zombieVisualPrefab;
+        NavMeshBuildSettings buildSettings;
+        Vector3 navigationCenter;
+        bool rebuilding;
+        float nextRebuild;
 
         IEnumerator Start()
         {
@@ -50,6 +54,8 @@ namespace DeadSector
             settings.overrideTileSize = true;
             settings.tileSize = 128;
 
+            buildSettings = settings;
+            navigationCenter = Vector3.zero;
             data = new NavMeshData(settings.agentTypeID);
 
             yield return NavMeshBuilder.UpdateNavMeshDataAsync(
@@ -77,6 +83,147 @@ namespace DeadSector
             Status = zombieVisualPrefab != null
                 ? "Ready / Full-body zombies"
                 : "Ready / Prototype zombies";
+        }
+
+        void Update()
+        {
+            if (!Ready || rebuilding || world == null || player == null ||
+                !world.Ready || world.Status != "Ready" ||
+                Time.time < nextRebuild)
+                return;
+
+            Vector2 moved = new Vector2(
+                player.transform.position.x - navigationCenter.x,
+                player.transform.position.z - navigationCenter.z);
+
+            if (moved.sqrMagnitude > 330f * 330f)
+                StartCoroutine(RebuildNearPlayer());
+        }
+
+        IEnumerator RebuildNearPlayer()
+        {
+            rebuilding = true;
+            nextRebuild = Time.time + 8f;
+            Status = "Refreshing local zombie navigation";
+
+            Vector3 center = player.transform.position;
+            var bounds = new Bounds(
+                new Vector3(center.x, center.y + 40f, center.z),
+                new Vector3(850f, 450f, 850f));
+            var sources = new List<NavMeshBuildSource>();
+
+            NavMeshBuilder.CollectSources(
+                bounds, ~(1 << 2),
+                NavMeshCollectGeometry.PhysicsColliders,
+                0, new List<NavMeshBuildMarkup>(), sources);
+
+            yield return NavMeshBuilder.UpdateNavMeshDataAsync(
+                data, buildSettings, sources, bounds);
+
+            navigationCenter = center;
+            rebuilding = false;
+            Status = "Ready / streamed local NavMesh";
+        }
+
+        /// <summary>
+        /// Create a capped wave in a ring outside close melee distance.
+        /// Returns actual spawned count; callers must not record success
+        /// if missing NavMesh or missing loaded terrain prevented spawns.
+        /// </summary>
+        public int SpawnHordeZombies(int requested, float minimumDistance = 48f)
+        {
+            if (!Ready || rebuilding || player == null ||
+                player.Health <= 0f || requested <= 0)
+                return 0;
+
+            int living = 0;
+            foreach (SectorZombie zombie in
+                FindObjectsByType<SectorZombie>(FindObjectsSortMode.None))
+                if (zombie != null && !zombie.Dead)
+                    living++;
+
+            int allowance = Mathf.Min(requested, Mathf.Max(0, 45 - living));
+            int made = 0;
+
+            for (int i = 0; i < allowance; i++)
+            {
+                bool found = false;
+                NavMeshHit hit = default;
+
+                for (int attempt = 0; attempt < 16; attempt++)
+                {
+                    float angle = Random.Range(0f, Mathf.PI * 2f);
+                    float radius = Random.Range(minimumDistance, 105f);
+                    Vector3 location = player.transform.position +
+                        new Vector3(Mathf.Cos(angle) * radius, 0f,
+                            Mathf.Sin(angle) * radius);
+
+                    if (NavMesh.SamplePosition(location, out hit, 13f,
+                        NavMesh.AllAreas) &&
+                        Vector3.Distance(hit.position, player.transform.position) > 35f)
+                    {
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (!found)
+                    continue;
+
+                GameObject root = new GameObject(
+                    "Horde_Zombie_" + i);
+                root.transform.SetParent(transform, true);
+                root.transform.position = hit.position;
+                SectorArt.SetActorLayer(root.transform);
+
+                CapsuleCollider collider =
+                    root.AddComponent<CapsuleCollider>();
+                collider.height = 1.8f;
+                collider.radius = .30f;
+                collider.center = Vector3.up * .9f;
+
+                NavMeshAgent agent = root.AddComponent<NavMeshAgent>();
+                agent.agentTypeID = buildSettings.agentTypeID;
+                agent.height = 1.8f;
+                agent.radius = .30f;
+                agent.speed = 3.5f;
+                agent.acceleration = 12f;
+                agent.angularSpeed = 520f;
+                agent.stoppingDistance = 1.3f;
+
+                SectorMannequin rig = null;
+                Animator animator = null;
+
+                if (zombieVisualPrefab != null)
+                {
+                    GameObject visual =
+                        Instantiate(zombieVisualPrefab, root.transform);
+                    visual.transform.localPosition = Vector3.zero;
+                    visual.transform.localRotation = Quaternion.identity;
+                    SectorArt.SetActorLayer(visual.transform);
+                    animator = visual.GetComponentInChildren<Animator>(true);
+                }
+                else
+                {
+                    rig = world.Art.Person(root.transform,
+                        new Color(.29f, .25f, .23f));
+                }
+
+                SectorZombie ai = root.AddComponent<SectorZombie>();
+                ai.target = player;
+                ai.rig = rig;
+                ai.animator = animator;
+                ai.homeRadius = 4f;
+                ai.chaseSpeed = 3.3f + Random.Range(0f, .6f);
+                ai.sightRange = 70f;
+                ai.hearingRange = 70f;
+                ai.AssignHorde();
+
+                made++;
+                ZombieCount++;
+            }
+
+            return made;
         }
 
         void SpawnGroup(int agentTypeId)
