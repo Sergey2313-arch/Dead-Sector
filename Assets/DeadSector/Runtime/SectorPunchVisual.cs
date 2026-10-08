@@ -21,6 +21,7 @@ namespace DeadSector
         float duration;
         bool heavy;
         bool useLeft;
+        bool proceduralPoseApplied;
         int jabCounter;
 
         public void Configure(SectorPlayer target)
@@ -55,6 +56,9 @@ namespace DeadSector
             if (player == null)
                 return;
 
+            if (animator == null || !animator.isActiveAndEnabled)
+                RestoreFallbackPose();
+
             heavy = strong;
             useLeft = !strong && (++jabCounter % 2 == 0);
             startedAt = Time.time;
@@ -68,7 +72,7 @@ namespace DeadSector
         {
             if (Time.time >= startedAt + duration || duration <= 0f)
             {
-                if (animator == null || !animator.isActiveAndEnabled)
+                if (proceduralPoseApplied)
                     RestoreFallbackPose();
                 return;
             }
@@ -84,7 +88,11 @@ namespace DeadSector
 
             // With an Animator, the bone is reposed every frame before
             // LateUpdate. Without Animator, apply from a fixed rest pose.
-            Quaternion basePose = animator != null && animator.isActiveAndEnabled
+            bool animated = animator != null && animator.isActiveAndEnabled;
+            if (!animated)
+                proceduralPoseApplied = true;
+
+            Quaternion basePose = animated
                 ? arm.localRotation
                 : useLeft ? leftRest : rightRest;
 
@@ -97,10 +105,15 @@ namespace DeadSector
 
         void RestoreFallbackPose()
         {
+            if (!proceduralPoseApplied)
+                return;
+
             if (leftArm != null)
                 leftArm.localRotation = leftRest;
             if (rightArm != null)
                 rightArm.localRotation = rightRest;
+
+            proceduralPoseApplied = false;
         }
 
         void OnDisable()
