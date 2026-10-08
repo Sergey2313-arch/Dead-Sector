@@ -1,3 +1,20 @@
+## Unity first-play visual bugfixes — 8 October 2026
+
+Observed in the user's live Unity Game view:
+- Mixamo player partly submerged in terrain / apparently too small.
+- First-person view clipping inside player face/body meshes.
+- V-shaped inverted gabled roofs.
+
+Source-code changes (pending a new live Unity test):
+- `SectorPlayer` now spawns onto the **actual loaded terrain height** (fallback: procedural design height), and rescues any controller that sinks materially below the terrain.
+- Imported Mixamo `SkinnedMeshRenderer` body height is normalized once relative to the 1.8-meter CharacterController; model feet are lifted/aligned to ground without editing the original FBX.
+- FPP camera uses a stable height relative to CharacterController instead of raw Mixamo Head bone coordinates, and hides player layer 2 from the gameplay camera to prevent camera-in-face clipping. TPP remains enabled and a little closer.
+- Both `SectorWorld.GabledRoof` and `SectorLandmarkBuilder.BasicHouse` now use `SectorRoofGeometry.PanelRotationZ` to make the panels rise toward the center, not downward.
+- Added `SectorWorldVisualRegressionTests` for correct roof inclination and imported body scale-factor fallback.
+
+**Validation gate:** Unity Console must compile; press Play and compare FPP / TPP with V; check X Bot feet against road, terrain and porch, move away from spawn, inspect at least two roofs, and inspect appearance/camera after respawn R. Tests committed, **not yet run**. All fixes are isolated to the working branch; local scene/prefab changes need to be preserved during Git merge.
+
+
 # Dead Sector — prototype roadmap
 
 ## Current target
