@@ -33,6 +33,20 @@ Playable 8 x 8 km survival prototype with a full-body humanoid player, shoulder 
 - Important: blockout props are not final art; global NavMesh/zombies, bridge supports, swimming and terrain/URP profiling still require local Unity verification.
 - One-click prototype preparation menu.
 
+## Latest playable-systems source-code milestone (Unity validation pending)
+
+- Item definitions for food, water, bandages, medical kits, materials, knives, hatchets, pistols, rifles and ammunition. There are NO rarity/quality tiers.
+- Transactional slot-limited (22 slots), weight-limited (35 kg), stackable inventory; invalid/oversized save entries are rejected.
+- Runtime supply crates at starter spawn and POIs, deterministic contents, non-duplicating across tile revisit.
+- E pickup and E swing hinged doors on streamed modular buildings.
+- I inventory GUI with Use/Equip actions, 1/2/3 equipment slots, prototype backpack and held/stowed gun models on X Bot bones.
+- Basic hitscan / melee logic with line-of-sight, ammo consumption and zombie health/death; not yet polished ballistics, animations or ragdolls.
+- Hunger, thirst, stamina, sprint/jump costs, exhaustion damage, edible/drinkable/medical effects.
+- Dynamic day/night light and fog, 60-minute default in-game day.
+- JSON Save V1: F5 write, F9 load, autosave, health/needs/time, position, inventory/equipment and depleted loot. Not yet full dynamic-world persistence.
+- Test suite for inventory atomicity, stack/weight limits, save JSON, loot transfer, geography and compass. **Tests have been committed but NOT executed in Unity.**
+- [Full production and co-op plan](Production_And_Coop_Roadmap.md) records validation, future real art, networking and release gates.
+
 ## Next work
 0. Validate current game map, water, roads and world blockouts in Unity 6 / URP; fix compile or rendering issues first.
 1. Improve road-to-terrain slope smoothing, bridge transitions, and shore edge meshes; current blockouts are first-pass geometry.
