@@ -45,6 +45,12 @@ namespace DeadSector
             return true;
         }
 
+        public void Unequip(GearSlot slot, SectorInventory inventory)
+        {
+            gear[(int)slot] = "";
+            Refresh(inventory);
+        }
+
         public void Refresh(SectorInventory inventory)
         {
             if (inventory == null)
