@@ -78,7 +78,8 @@ namespace DeadSector
                 ? animator.GetBoneTransform(HumanBodyBones.Head)
                 : null;
 
-            PrimeAnimation();
+            if (animator != null && animator.isActiveAndEnabled)
+                PrimeAnimation();
         }
 
         void Update()
