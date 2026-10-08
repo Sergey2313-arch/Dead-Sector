@@ -44,6 +44,7 @@ namespace DeadSector
         public SectorEquipmentVisuals EquipmentVisuals { get; private set; }
         public SectorWorldClock WorldClock { get; private set; }
         public SectorPunchVisual PunchVisual { get; private set; }
+        public SectorCombatFeedback CombatFeedback { get; private set; }
         public SectorResources Resources { get; private set; }
         public SectorJournal Journal { get; private set; }
         public SectorEquipment Armor { get; private set; }
@@ -109,6 +110,11 @@ namespace DeadSector
                 PunchVisual = target.gameObject.AddComponent<SectorPunchVisual>();
 
             PunchVisual.Configure(target);
+
+            CombatFeedback = GetComponent<SectorCombatFeedback>();
+            if (CombatFeedback == null)
+                CombatFeedback = gameObject.AddComponent<SectorCombatFeedback>();
+            CombatFeedback.Configure(target);
 
             Resources = GetComponent<SectorResources>();
             if (Resources == null)
@@ -449,10 +455,18 @@ namespace DeadSector
             float damage = SectorCombatRules.FinalDamage(attack, staminaFactor);
             nextAttack = Time.time + attack.Cooldown;
 
-            if (attack.Kind != SectorAttackKind.Firearm)
-                PunchVisual?.Play(strong);
-
             bool firearm = attack.Kind == SectorAttackKind.Firearm;
+
+            if (firearm)
+            {
+                EquipmentVisuals?.PlayMuzzleFlash();
+                player.ApplyCombatRecoil(id == "rifle" ? 1.0f : .75f);
+            }
+            else
+            {
+                PunchVisual?.Play(strong);
+                player.ApplyCombatRecoil(strong ? .32f : .12f);
+            }
 
             Vector3 origin = firearm && player.view != null
                 ? player.view.transform.position
@@ -502,6 +516,10 @@ namespace DeadSector
                 Notify((strong ? "Strong" : "Quick") +
                     " hit: " + Mathf.RoundToInt(damage));
             }
+
+            CombatFeedback?.ShowAttack(
+                target != null, strong, firearm,
+                target != null ? damage : 0f);
         }
 
         void UseItem(string id)
