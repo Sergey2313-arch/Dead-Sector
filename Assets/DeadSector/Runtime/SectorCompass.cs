@@ -38,6 +38,7 @@ namespace DeadSector
         GUIStyle cardinalStyle;
         GUIStyle headingStyle;
         GUIStyle poiStyle;
+        readonly float[] poiLabelPositions = new float[32];
 
         public static float Bearing(Vector3 from, Vector3 to)
         {
@@ -67,7 +68,8 @@ namespace DeadSector
 
             EnsureStyles();
 
-            float width = Mathf.Min(maxWidth, Screen.width - 24f);
+            // Leave the upper-right corner for the minimap at narrow aspect ratios.
+            float width = Mathf.Min(maxWidth, Screen.width * .52f - 20f);
             if (width < 180f)
                 return;
 
@@ -144,7 +146,6 @@ namespace DeadSector
         void DrawPoiIndicators(float heading, float cx, float halfWidth, float y)
         {
             int displayed = 0;
-            float lastX = -10000f;
             Vector3 origin = player.transform.position;
 
             // POIs come from the same registry as the minimap.
@@ -166,11 +167,22 @@ namespace DeadSector
 
                 float x = cx + relative / halfVisibleDegrees * halfWidth;
 
-                // Keep marker captions legible when buildings are close together.
-                if (Mathf.Abs(x - lastX) < 95f)
+                // Compare against every label, not merely the previous POI:
+                // registry order does not necessarily match screen order.
+                bool overlaps = false;
+                for (int i = 0; i < displayed; i++)
+                {
+                    if (Mathf.Abs(x - poiLabelPositions[i]) < 95f)
+                    {
+                        overlaps = true;
+                        break;
+                    }
+                }
+
+                if (overlaps)
                     continue;
 
-                lastX = x;
+                poiLabelPositions[displayed] = x;
                 displayed++;
 
                 DrawRect(new Rect(x - 3f, y, 6f, 6f), poi.MapColor);
