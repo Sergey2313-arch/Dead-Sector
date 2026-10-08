@@ -1057,10 +1057,10 @@ namespace DeadSector
                 int col = i % columns;
                 float x = 4f + col * (cellWidth + 5f);
                 float y = 4f + row * (cellHeight + 5f);
-                bool selected = selectedInventoryItem == stack.id;
+                bool isSelected = selectedInventoryItem == stack.id;
 
                 Color old = GUI.color;
-                if (selected) GUI.color =
+                if (isSelected) GUI.color =
                     new Color(.75f, .95f, .84f);
 
                 if (GUI.Button(
