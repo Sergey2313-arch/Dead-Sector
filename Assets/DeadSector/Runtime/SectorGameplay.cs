@@ -122,11 +122,12 @@ namespace DeadSector
 
             WorldClock = FindFirstObjectByType<SectorWorldClock>();
 
-            Inventory.Add("knife", 1);
+            // Primitive-survival start: fists only, no free weapon.
+            // Gather stones and dry branches before the first crafted knife.
             Inventory.Add("water", 1);
             Inventory.Add("bandage", 2);
-            // Start unarmed so left and right click have weak/strong punches.
-            // The starter knife stays in inventory until manually equipped.
+            // Start unarmed so LMB/RMB punches are essential.
+            // Stone knife and wooden weapons must be gathered and crafted.
             equipment[2] = "";
             selectedSlot = 2;
             EquipmentVisuals.UpdateLoadout(
