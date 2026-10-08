@@ -62,6 +62,7 @@ namespace DeadSector
                 case KeyCode.Alpha1: return k.digit1Key.wasPressedThisFrame;
                 case KeyCode.Alpha2: return k.digit2Key.wasPressedThisFrame;
                 case KeyCode.Alpha3: return k.digit3Key.wasPressedThisFrame;
+                case KeyCode.F3: return k.f3Key.wasPressedThisFrame;
                 case KeyCode.F5: return k.f5Key.wasPressedThisFrame;
                 case KeyCode.F9: return k.f9Key.wasPressedThisFrame;
                 default: return false;
