@@ -613,7 +613,8 @@ namespace DeadSector
                     color);
 
                 panel.transform.localRotation =
-                    Quaternion.Euler(0, 0, side * pitch);
+                    // Slopes must rise inward to the ridge; the former sign made a V-shaped roof.
+                    Quaternion.Euler(0, 0, -side * pitch);
             }
         }
 
