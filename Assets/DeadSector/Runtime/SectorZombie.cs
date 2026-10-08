@@ -31,6 +31,7 @@ namespace DeadSector
         public float AttackCooldown { get; private set; } = 1.2f;
         SectorZombieAppearance appearance;
         SectorZombieReaction reaction;
+        SectorZombieRagdoll ragdoll;
 
         NavMeshAgent agent;
         Vector3 home;
@@ -142,6 +143,13 @@ namespace DeadSector
                 if (reaction == null)
                     reaction = gameObject.AddComponent<SectorZombieReaction>();
                 reaction.Configure(model);
+
+                // Build joints only when killed: no expensive simulated
+                // bodies during ordinary wandering or night hordes.
+                ragdoll = gameObject.GetComponent<SectorZombieRagdoll>();
+                if (ragdoll == null)
+                    ragdoll = gameObject.AddComponent<SectorZombieRagdoll>();
+                ragdoll.Configure(animator, model);
             }
 
             CapsuleCollider bodyCollider = GetComponent<CapsuleCollider>();
@@ -357,6 +365,12 @@ namespace DeadSector
 
         public void TakeDamage(float damage)
         {
+            TakeDamage(damage, Vector3.zero, transform.position + Vector3.up);
+        }
+
+        public void TakeDamage(
+            float damage, Vector3 incomingDirection, Vector3 impactPoint)
+        {
             if (Dead || damage <= 0f)
                 return;
 
@@ -380,6 +394,12 @@ namespace DeadSector
             State = "Dead";
             pendingDamageAt = -1f;
 
+            // Preserve movement from the last AI frame so the corpse
+            // continues forward naturally when physics takes ownership.
+            Vector3 deathVelocity =
+                agent != null && agent.enabled && agent.isOnNavMesh
+                    ? agent.velocity : Vector3.zero;
+
             if (agent != null && agent.enabled)
             {
                 if (agent.isOnNavMesh)
@@ -394,10 +414,23 @@ namespace DeadSector
             if (animator != null)
                 animator.enabled = false;
 
-            if (reaction != null)
-                reaction.Die();
+            // Dynamic ragdoll owns the model if the FBX is a valid Humanoid.
+            // Fallback keeps the existing simple fall on primitive zombies.
+            bool physicsDeath = ragdoll != null &&
+                ragdoll.TryActivate(
+                    incomingDirection, impactPoint, deathVelocity);
 
-            // Temporary death-fall and static corpse; ragdoll later.
+            if (physicsDeath)
+            {
+                if (reaction != null)
+                    reaction.enabled = false;
+            }
+            else if (reaction != null)
+            {
+                reaction.Die();
+            }
+
+            // Corpses are retained briefly, then reclaimed for horde FPS.
             Destroy(gameObject, 25f);
         }
 
