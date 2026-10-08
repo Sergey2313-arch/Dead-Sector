@@ -25,12 +25,17 @@ Playable 8 x 8 km survival prototype with a full-body humanoid player, shoulder 
 - M toggles a larger tactical map view.
 - Live azimuth compass: 0-359 degree heading, N/NE/E/SE/S/SW/W/NW marks, 5-degree minor ticks, 15-degree labels, and direction-relative POI labels with distances.
 - The compass hides while the enlarged tactical map is open; debug panel moved to the lower left.
-- M opens a schematic full 8 x 8 km design atlas with road corridors, planned POIs and the player's real world coordinates; this is explicitly not the fully built physical map.
+- M opens a schematic full 8 x 8 km design atlas with road corridors, planned POIs and the player's real world coordinates; this is explicitly not the finished physical map.
+- First physical world-map pass: carved northwest mountain lake, southern reservoir, river, dam outlet, and quarry into streamed terrain height data.
+- Tile-owned road ribbons with mesh colliders and water surface meshes on the approved road and water coordinates.
+- New streamable procedural blockouts at the approved coordinates for village, town, ruined city, factory, warehouse, clinic, gas station, checkpoint, garages, radio tower, forest camp, quarry, construction site, dam and airfield.
+- Added Play Mode editor window to teleport to each canonical location for inspection: Dead Sector > Debug > Visit World Locations.
+- Important: blockout props are not final art; global NavMesh/zombies, bridge supports, swimming and terrain/URP profiling still require local Unity verification.
 - One-click prototype preparation menu.
 
 ## Next work
-0. Validate approved tactical world atlas in Unity/URP and verify blueprint coordinates.
-1. Begin terrain/water/road implementation to match the approved map.
+0. Validate current game map, water, roads and world blockouts in Unity 6 / URP; fix compile or rendering issues first.
+1. Improve road-to-terrain slope smoothing, bridge transitions, and shore edge meshes; current blockouts are first-pass geometry.
 2. Verify player idle/walk/run/jump retargeting in Unity and remove any remaining bad pose.
 2. Verify minimap/tactical-map rendering in URP and tune scale/viewport.
 3. Finish polished shoulder-camera behaviour and FPP head/body visibility.
@@ -47,3 +52,5 @@ Playable 8 x 8 km survival prototype with a full-body humanoid player, shoulder 
 - Player: Dead Sector > Character > Mixamo > 00 - BUILD EVERYTHING
 - Zombies: Dead Sector > Character > Zombies > 00 - BUILD ZOMBIES
 - Whole prototype: Dead Sector > Setup > 00 - PREPARE PLAYABLE PROTOTYPE
+- Inspect full world in Play Mode: Dead Sector > Debug > Visit World Locations; select a POI and teleport
+- M: approved 8km planning atlas; V: first-person / third-person toggle
