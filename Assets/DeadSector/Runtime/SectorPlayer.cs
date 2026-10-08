@@ -436,10 +436,16 @@ namespace DeadSector
                 return;
 
             float surface = GroundHeightAt(transform.position);
-            float lift = Mathf.Clamp(surface - bounds.min.y + .02f, 0f, 1.5f);
+            float lift = VisualLiftForGround(bounds.min.y, surface);
 
             if (lift > .06f)
                 visual.position += Vector3.up * lift;
+        }
+
+        public static float VisualLiftForGround(
+            float footBottom, float groundHeight)
+        {
+            return Mathf.Clamp(groundHeight - footBottom + .02f, 0f, 1.5f);
         }
 
         public static float BodyScaleForHeight(float meshHeight)
