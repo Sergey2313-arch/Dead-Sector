@@ -31,6 +31,7 @@ namespace DeadSector
         public float Speed { get; private set; }
         public bool IsSprinting { get; private set; }
         public bool IsGrounded => body != null && body.isGrounded;
+        public float TerrainUnderPlayer => GroundHeightAt(transform.position);
         public string AnimationState { get; private set; } = "None";
 
         CharacterController body;
