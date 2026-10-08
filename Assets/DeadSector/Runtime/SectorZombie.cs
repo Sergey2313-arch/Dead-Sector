@@ -77,8 +77,14 @@ namespace DeadSector
                 pendingDamageAt = -1f;
 
                 if (target.Health > 0 &&
-                    Vector3.Distance(transform.position, target.transform.position) <= attackRange + .35f)
+                    Vector3.Distance(transform.position, target.transform.position) <= attackRange + .35f &&
+                    !SectorCombatVisibility.HasBlockingGeometry(
+                        transform.position + Vector3.up,
+                        target.transform.position + Vector3.up,
+                        transform, target.transform))
                 {
+                    // Doors and walls prevent melee damage even when their
+                    // positions happen to be within the attack radius.
                     target.Damage(AttackDamage);
                 }
             }
