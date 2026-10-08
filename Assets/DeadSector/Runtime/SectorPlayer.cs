@@ -182,6 +182,16 @@ namespace DeadSector
                 body.enabled = true;
             }
 
+            // A restored scene or streamed tile may have slightly higher
+            // terrain than the original spawn. Lift a player embedded under
+            // the surface instead of keeping the camera inside the ground.
+            if (p.y < GroundHeightAt(p) - .35f)
+            {
+                TeleportTo(new Vector3(
+                    p.x, GroundHeightAt(p) + .16f, p.z));
+                p = transform.position;
+            }
+
             if (p.y < -30f)
             {
                 Respawn();
@@ -406,20 +416,22 @@ namespace DeadSector
 
         void ApplyViewVisibility()
         {
-            if (visibleInThirdPerson == thirdPerson)
+            if (visibleInThirdPerson == thirdPerson || view == null)
                 return;
 
-            // In first person, the avatar's face/clothes/attached weapons
-            // would occupy the near plane. Keep a clear view until a proper
-            // isolated first-person arm+weapon rig is authored.
-            if (visual != null)
-            {
-                foreach (Renderer item in
-                    visual.GetComponentsInChildren<Renderer>(true))
-                    if (item != null)
-                        item.enabled = thirdPerson;
-            }
+            // Every player mesh/weapon is assigned layer 2 (Ignore Raycast).
+            // Hiding that layer from the FPP camera prevents skin, helmet
+            // and weapon meshes from cutting across the near plane without
+            // disabling renderers seen by the tactical minimap.
+            const int playerLayerMask = 1 << 2;
+            if (thirdPerson)
+                view.cullingMask |= playerLayerMask;
+            else
+                view.cullingMask &= ~playerLayerMask;
 
+            // The tactical arrow has its own layer (31), never render it
+            // in the main gameplay camera.
+            view.cullingMask &= ~(1 << 31);
             visibleInThirdPerson = thirdPerson;
         }
 
