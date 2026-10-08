@@ -60,6 +60,18 @@ Playable 8 x 8 km survival prototype with a full-body humanoid player, shoulder 
 - New editor tests for light/heavy punch tuning, stamina behavior, crafting, item catalog and journal JSON-compatible progress. They have **not been executed in Unity**.
 - Current crafted torch is a placeholder held item, **not yet a working flashlight/light source**. Damage and hand animation parameters await playtesting.
 
+## New primitive-survival and horde milestone (8 October 2026)
+
+- **Stone Age progression:** loose ground stones; dry bushes for sticks/fiber; fiber bushes; cotton plants; scrap and timber caches. Initial player has **no weapon**; light/heavy fist attacks work immediately.
+- **Crafting hierarchy:** cord → stone knife/stone axe/wood club/spear/torch → wooden head/chest/leg protection → cotton fabric, hood/shirt/pants/footwraps and cotton backpack. See [Primitive Crafting + Horde + UI](Primitive_Crafting_Horde_UI.md).
+- **Functional character inventory:** 5 real equipment slots, selectable item grid, equip/unequip, armor mitigation, backpack slot capacity of 22→30, first-pass worn armor meshes.
+- **Always-visible character HUD:** HP, stamina, hunger, thirst, survived day, world time, equipment damage reduction.
+- **Night hordes:** warning at 20:30 and attack at 21:00 every default game day, initially 6 zombies and +3 per night up to 30 (subject to 45 nearby NPC cap). Nightly intervals are configurable.
+- **Persistence:** survived day count, armor and backpack, horde trigger history, crafting inventory, resource depletion in local JSON save.
+- **Developer test tool:** `Dead Sector > Debug > Prepare Night Horde` during Play Mode, plus `Add One Survived Day`.
+- **Validation required:** dynamic local NavMesh, armor appearance on imported X Bot, full inventory GUI, item recipes, scripted horde day progression, save/load. New Edit Mode tests committed but not executed.
+- **Not complete:** co-op network authority, production 3D clothing, full persistence of living zombie state, ragdolls, advanced crafting stations and polished UI.
+
 ## Next work
 0. Validate current game map, water, roads and world blockouts in Unity 6 / URP; fix compile or rendering issues first.
 1. Improve road-to-terrain slope smoothing, bridge transitions, and shore edge meshes; current blockouts are first-pass geometry.
