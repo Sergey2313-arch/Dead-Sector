@@ -410,7 +410,9 @@ namespace DeadSector
         public void Damage(float amount)
         {
             if (amount <= 0f) return;
-            Health = Mathf.Max(0, Health - amount);
+            SectorEquipment armor = GetComponent<SectorEquipment>();
+            float applied = amount * (armor != null ? armor.DamageMultiplier : 1f);
+            Health = Mathf.Max(0, Health - applied);
 
             if (Health <= 0)
                 SetCursor(false);
