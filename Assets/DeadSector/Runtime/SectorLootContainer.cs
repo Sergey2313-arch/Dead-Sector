@@ -55,6 +55,49 @@ namespace DeadSector
                 return;
             }
 
+            // Site-specific supply caches give exploration a purpose:
+            // medical items at the clinic, wilderness supplies at camp,
+            // tools and salvage at industrial landmarks. Existing saved
+            // cache contents remain authoritative on future loads.
+            switch (containerId)
+            {
+                case "poi_clinic":
+                    AddInitial(new SectorItemStack("bandage", 3));
+                    AddInitial(new SectorItemStack("cloth", 4));
+                    AddInitial(new SectorItemStack("medkit", 1));
+                    return;
+
+                case "poi_forest_camp":
+                    AddInitial(new SectorItemStack("stick", 6));
+                    AddInitial(new SectorItemStack("wood", 3));
+                    AddInitial(new SectorItemStack("water", 2));
+                    return;
+
+                case "poi_radio_station":
+                    AddInitial(new SectorItemStack("scrap", 3));
+                    AddInitial(new SectorItemStack("food", 2));
+                    AddInitial(new SectorItemStack("water", 1));
+                    return;
+
+                case "poi_quarry":
+                    AddInitial(new SectorItemStack("stone", 7));
+                    AddInitial(new SectorItemStack("scrap", 2));
+                    AddInitial(new SectorItemStack("water", 1));
+                    return;
+
+                case "poi_construction":
+                    AddInitial(new SectorItemStack("wood", 4));
+                    AddInitial(new SectorItemStack("scrap", 3));
+                    AddInitial(new SectorItemStack("cord", 2));
+                    return;
+
+                case "poi_airfield":
+                    AddInitial(new SectorItemStack("scrap", 4));
+                    AddInitial(new SectorItemStack("bandage", 1));
+                    AddInitial(new SectorItemStack("food", 2));
+                    return;
+            }
+
             // A stable seeded selection across Unity/editor sessions.
             unchecked
             {
