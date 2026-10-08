@@ -69,7 +69,8 @@ namespace DeadSector
                 { "cotton_hood", new SectorItemDefinition("cotton_hood", "Cotton Hood", SectorItemKind.Armor, .35f, 1) },
                 { "cotton_shirt", new SectorItemDefinition("cotton_shirt", "Cotton Shirt", SectorItemKind.Armor, .7f, 1) },
                 { "cotton_pants", new SectorItemDefinition("cotton_pants", "Cotton Trousers", SectorItemKind.Armor, .65f, 1) },
-                { "cotton_boots", new SectorItemDefinition("cotton_boots", "Cotton Footwraps", SectorItemKind.Armor, .4f, 1) }
+                { "cotton_boots", new SectorItemDefinition("cotton_boots", "Cotton Footwraps", SectorItemKind.Armor, .4f, 1) },
+                { "cotton_bag", new SectorItemDefinition("cotton_bag", "Cotton Backpack", SectorItemKind.Armor, 1.25f, 1) }
             };
 
         public static bool TryGet(string id, out SectorItemDefinition item) =>
@@ -109,7 +110,7 @@ namespace DeadSector
         readonly List<SectorItemStack> stacks = new List<SectorItemStack>();
 
         public IReadOnlyList<SectorItemStack> Stacks => stacks;
-        public int SlotLimit { get; }
+        public int SlotLimit { get; private set; }
         public float MaxWeight { get; }
         public int UsedSlots => stacks.Count;
 
@@ -133,6 +134,12 @@ namespace DeadSector
         {
             SlotLimit = Mathf.Max(1, slotLimit);
             MaxWeight = Mathf.Max(.1f, maxWeight);
+        }
+
+        public void SetSlotLimit(int slots)
+        {
+            // Reducing carrying capacity never destroys items.
+            SlotLimit = Mathf.Max(Mathf.Max(1, slots), UsedSlots);
         }
 
         public int Count(string id)
