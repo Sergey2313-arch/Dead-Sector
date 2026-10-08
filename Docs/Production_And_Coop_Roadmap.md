@@ -16,6 +16,14 @@ Main development branch: `prototype/world-8km`. Target game: cooperative post-ap
 - Basic point-target melee/shooting/damage with ammo, zombie health and temporary corpse.
 - JSON local saves, manual F5/F9 and periodic autosave.
 
+## New mechanics staged for the evening Unity check
+
+- Immediate click-to-hit hand combat: LMB fast/weak punch; RMB heavy/strong punch; no hold, charge, or delayed damage. Temporary additive arm-swing feedback is attached to X Bot upper-arm bones.
+- Five transactional crafting recipes and deterministic gatherable wood/scrap/fabric resource nodes. Resource depletion must persist across reloading tiles and JSON saves.
+- Journal on J, crafting on C, additional 8x8 km roadside clutter and weather on the world clock.
+- These are source-code implementations **pending compilation and live playtest**. No quality, release or networking status has changed.
+- Validate in order: input & arm motion; loot and resource harvest; crafting outcomes; saved resource depletion; journal progress; road props/particle performance; then multiplayer only after single-player stability.
+
 ## Phase A — Required stabilization (BLOCKER)
 
 1. Open Unity `6000.6.4f1` with the URP project.
