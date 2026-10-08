@@ -144,8 +144,19 @@ namespace DeadSector
                 reaction.Configure(model);
             }
 
+            CapsuleCollider bodyCollider = GetComponent<CapsuleCollider>();
+            if (bodyCollider != null)
+            {
+                bodyCollider.height = 1.8f * profile.ModelScale;
+                bodyCollider.radius = .30f * profile.ModelScale;
+                bodyCollider.center =
+                    Vector3.up * bodyCollider.height * .5f;
+            }
+
             if (agent != null && agent.enabled)
             {
+                agent.height = 1.8f * profile.ModelScale;
+                agent.radius = .30f * profile.ModelScale;
                 agent.speed = wanderSpeed;
                 if (agent.isOnNavMesh)
                     agent.stoppingDistance = attackRange * .82f;
