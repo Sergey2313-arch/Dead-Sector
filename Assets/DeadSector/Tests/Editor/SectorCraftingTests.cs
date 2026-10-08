@@ -30,14 +30,44 @@ namespace DeadSector.Tests
         public void CraftedSpearUsesNewMeleeRules()
         {
             var inventory = new SectorInventory();
-            inventory.Add("wood", 2);
-            inventory.Add("scrap", 1);
+            inventory.Add("stick", 3);
+            inventory.Add("stone", 1);
+            inventory.Add("cord", 1);
 
             Assert.IsTrue(SectorCrafting.Craft(inventory, "spear"));
             Assert.AreEqual(1, inventory.Count("spear"));
             Assert.Greater(
                 SectorCombatRules.ForAttack("spear", true).Damage,
                 SectorCombatRules.ForAttack("spear", false).Damage);
+        }
+
+        [Test]
+        public void GroundResourcesProduceStoneAgeKnifeAndAxe()
+        {
+            var inventory = new SectorInventory();
+            inventory.Add("stone", 7);
+            inventory.Add("stick", 5);
+            inventory.Add("plant_fiber", 5);
+
+            Assert.IsTrue(SectorCrafting.Craft(inventory, "stone_knife"));
+            Assert.IsTrue(SectorCrafting.Craft(inventory, "cord"));
+            Assert.IsTrue(SectorCrafting.Craft(inventory, "stone_axe"));
+
+            Assert.AreEqual(1, inventory.Count("stone_knife"));
+            Assert.AreEqual(1, inventory.Count("stone_axe"));
+        }
+
+        [Test]
+        public void CottonProgressionRequiresFabricBeforeClothes()
+        {
+            var inventory = new SectorInventory();
+            inventory.Add("cotton", 8);
+            inventory.Add("cord", 2);
+
+            Assert.IsFalse(SectorCrafting.Craft(inventory, "cotton_hood"));
+            Assert.IsTrue(SectorCrafting.Craft(inventory, "cloth_cotton"));
+            Assert.IsTrue(SectorCrafting.Craft(inventory, "cotton_hood"));
+            Assert.AreEqual(1, inventory.Count("cotton_hood"));
         }
 
         [Test]
