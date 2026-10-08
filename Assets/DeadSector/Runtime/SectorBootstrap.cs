@@ -129,12 +129,16 @@ namespace DeadSector
             navigation = new GameObject("StartZone_AI").AddComponent<SectorNavigation>();
             navigation.world = world;
             navigation.player = player;
+
+            var minimapObject = new GameObject("Minimap_System");
+            var minimap = minimapObject.AddComponent<SectorMinimap>();
+            minimap.Configure(player, world);
         }
 
         void OnGUI()
         {
             GUI.Box(new Rect(12, 12, 350, 176), "DEAD SECTOR / 8 x 8 km prototype");
-            GUI.Label(new Rect(24, 42, 325, 24), "WASD move | Shift run | Space jump | V camera");
+            GUI.Label(new Rect(24, 42, 325, 24), "WASD move | Shift run | Space jump | V camera | M map");
             GUI.Label(new Rect(24, 65, 325, 24), "Esc cursor | Click resume | R respawn");
             GUI.Label(new Rect(24, 88, 325, 24), "HP " + player.Health.ToString("0") + " | Terrain: " + world.LoadedTiles + "/64 | Zombies: " + navigation.ZombieCount);
             GUI.Label(new Rect(24, 111, 325, 24), "World: " + world.Status + " | AI: " + navigation.Status);
