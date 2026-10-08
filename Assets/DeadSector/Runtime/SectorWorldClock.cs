@@ -18,6 +18,8 @@ namespace DeadSector
         public float dayLengthMinutes = 60f;
 
         public bool progressTime = true;
+        public int DaysSurvived { get; private set; }
+        public int DayNumber => DaysSurvived + 1;
 
         readonly Color dayFog = new Color(.48f, .55f, .60f);
         readonly Color nightFog = new Color(.045f, .075f, .105f);
@@ -28,17 +30,22 @@ namespace DeadSector
         {
             if (progressTime)
             {
-                hourOfDay = Mathf.Repeat(
-                    hourOfDay + Time.deltaTime * 24f /
-                    (dayLengthMinutes * 60f), 24f);
+                float hourAdvance = Time.deltaTime * 24f /
+                    (Mathf.Max(10f, dayLengthMinutes) * 60f);
+                float progressed = hourOfDay + hourAdvance;
+                if (progressed >= 24f)
+                    DaysSurvived += Mathf.FloorToInt(progressed / 24f);
+
+                hourOfDay = Mathf.Repeat(progressed, 24f);
             }
 
             ApplyLighting();
         }
 
-        public void RestoreTime(float savedHour)
+        public void RestoreTime(float savedHour, int daysSurvived = 0)
         {
             hourOfDay = Mathf.Repeat(savedHour, 24f);
+            DaysSurvived = Mathf.Max(0, daysSurvived);
             ApplyLighting();
         }
 
