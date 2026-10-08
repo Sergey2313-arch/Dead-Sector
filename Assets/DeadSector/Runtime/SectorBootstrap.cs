@@ -219,14 +219,20 @@ namespace DeadSector
                 return;
 
             // Keep the top of the screen free for the azimuth compass.
-            float hudY = Mathf.Max(12f, Screen.height - 188f);
-            GUI.Box(new Rect(12, hudY, 350, 176), "DEAD SECTOR / 8 x 8 km prototype");
+            float hudY = Mathf.Max(12f, Screen.height - 211f);
+            GUI.Box(new Rect(12, hudY, 370, 198), "DEAD SECTOR / 8 x 8 km prototype");
             GUI.Label(new Rect(24, hudY + 30f, 325, 24), "WASD | Shift | Space | V view | M map | I inventory");
             GUI.Label(new Rect(24, hudY + 53f, 325, 24), "E gather | LMB weak/RMB strong | C craft | J journal");
             GUI.Label(new Rect(24, hudY + 76f, 325, 24), "HP " + player.Health.ToString("0") + " | Terrain: " + world.LoadedTiles + "/64 | Zombies: " + navigation.ZombieCount);
             GUI.Label(new Rect(24, hudY + 99f, 325, 24), "World: " + world.Status + " | AI: " + navigation.Status);
             GUI.Label(new Rect(24, hudY + 122f, 325, 24), "Position: " + player.transform.position.ToString("F0"));
-            GUI.Label(new Rect(24, hudY + 145f, 325, 24), "Anim: " + player.AnimationState + " | Grounded: " + player.IsGrounded);
+            GUI.Label(new Rect(24, hudY + 145f, 325, 24),
+                "Anim: " + player.AnimationState +
+                " | Grounded: " + player.IsGrounded);
+            GUI.Label(new Rect(24, hudY + 167f, 345, 24),
+                "Feet Y: " + player.transform.position.y.ToString("F2") +
+                " | Terrain Y: " + player.TerrainUnderPlayer.ToString("F2") +
+                " | Sprint: " + (player.IsSprinting ? "ON" : "OFF"));
 
         }
 
