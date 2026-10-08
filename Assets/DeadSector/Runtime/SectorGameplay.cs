@@ -464,7 +464,7 @@ namespace DeadSector
             }
             else
             {
-                PunchVisual?.Play(strong);
+                PunchVisual?.Play(strong, !string.IsNullOrEmpty(id));
                 player.ApplyCombatRecoil(strong ? .32f : .12f);
             }
 
