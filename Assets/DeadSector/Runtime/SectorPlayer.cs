@@ -26,6 +26,7 @@ namespace DeadSector
         public float firstPersonFov = 75f;
 
         public bool Ready { get; set; }
+        public bool InputBlockedByUI { get; set; }
         public float Health { get; private set; } = 100f;
         public float Speed { get; private set; }
         public bool IsSprinting { get; private set; }
@@ -85,13 +86,14 @@ namespace DeadSector
             if (SectorInput.Pressed(KeyCode.Escape))
                 SetCursor(false);
 
-            if (SectorInput.Click && Health > 0)
+            if (SectorInput.Click && Health > 0 && !InputBlockedByUI)
                 SetCursor(true);
 
             if (SectorInput.Pressed(KeyCode.R))
                 Respawn();
 
-            if (!Ready || Health <= 0 || Cursor.lockState != CursorLockMode.Locked)
+            if (!Ready || Health <= 0 || InputBlockedByUI ||
+                Cursor.lockState != CursorLockMode.Locked)
             {
                 Speed = 0;
                 IsSprinting = false;
