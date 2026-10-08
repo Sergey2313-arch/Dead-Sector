@@ -401,7 +401,7 @@ namespace DeadSector
 
                 panel.transform.localRotation =
                     // Slopes must rise inward to the ridge; the former sign made a V-shaped roof.
-                    Quaternion.Euler(0, 0, -sideSign * pitch);
+                    Quaternion.Euler(0, 0, SectorRoofGeometry.PanelRotationZ(sideSign, pitch));
             }
 
             art.Box(root, "Front_Window_Left",
