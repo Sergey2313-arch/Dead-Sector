@@ -35,6 +35,7 @@ namespace DeadSector
 
         public SectorInventory Inventory { get; private set; } = new SectorInventory();
         public SectorSurvival Needs { get; private set; }
+        public SectorEquipmentVisuals EquipmentVisuals { get; private set; }
 
         readonly Dictionary<string, SectorLootContainer> active =
             new Dictionary<string, SectorLootContainer>(StringComparer.Ordinal);
@@ -71,11 +72,19 @@ namespace DeadSector
             if (Needs == null)
                 Needs = target.gameObject.AddComponent<SectorSurvival>();
 
+            EquipmentVisuals = target.GetComponent<SectorEquipmentVisuals>();
+            if (EquipmentVisuals == null)
+                EquipmentVisuals = target.gameObject.AddComponent<SectorEquipmentVisuals>();
+
+            EquipmentVisuals.Configure(target);
+
             Inventory.Add("knife", 1);
             Inventory.Add("water", 1);
             Inventory.Add("bandage", 2);
             equipment[2] = "knife";
             selectedSlot = 2;
+            EquipmentVisuals.UpdateLoadout(
+                equipment[0], equipment[1], equipment[2], selectedSlot);
             autoSaveAt = Time.time + 90f;
         }
 
@@ -124,6 +133,9 @@ namespace DeadSector
                 autoSaveAt = Time.time + 90f;
                 SaveGame(true);
             }
+
+            EquipmentVisuals?.UpdateLoadout(
+                equipment[0], equipment[1], equipment[2], selectedSlot);
         }
 
         void ToggleInventory()
