@@ -99,26 +99,9 @@ namespace DeadSector
 
         static bool IsConceptWater(float x, float z)
         {
-            float mountainLake =
-                Mathf.Pow((x + 2650f) / 470f, 2f) +
-                Mathf.Pow((z - 2850f) / 380f, 2f);
-
-            if (mountainLake < 1f)
-                return true;
-
-            float southernLake =
-                Mathf.Pow((x + 250f) / 990f, 2f) +
-                Mathf.Pow((z + 2900f) / 580f, 2f);
-
-            if (southernLake < 1f)
-                return true;
-
-            // Only a suggested river trace in the concept atlas.
-            float riverCenterX =
-                1100f + 250f * Mathf.Sin(z / 620f);
-
-            return z > -2350f && z < 3400f &&
-                   Mathf.Abs(x - riverCenterX) < 48f;
+            // Atlas water comes from exactly the same world-space
+            // geography query that builds playable streamed water meshes.
+            return SectorGeography.TryGetWaterLevel(x, z, out _);
         }
 
         void EnsureStyles()
@@ -214,7 +197,7 @@ namespace DeadSector
             {
                 Vector2 pos = ToMap(map, location.MapPosition);
                 bool categoryPrototyped =
-                    location.Status == SectorMapPlan.BuildStatus.Prototype;
+                    location.Status != SectorMapPlan.BuildStatus.Planned;
 
                 DrawRect(new Rect(pos.x - 3f, pos.y - 3f, 7f, 7f),
                     categoryPrototyped ? ExistingColor : PlannedColor);
@@ -247,7 +230,7 @@ namespace DeadSector
                 Mathf.Min(Screen.width - outer.x, side), 24f);
 
             GUI.Label(footer,
-                "ORANGE: PLANNED   ·   TURQUOISE: PROTOTYPE CATEGORY (NOT BUILT HERE)   ·   BLUE: PLAYER",
+                "ORANGE: PLANNED   |   TURQUOISE: WORLD BLOCKOUT (NOT FINAL ART)   |   BLUE: PLAYER",
                 smallStyle);
         }
 
