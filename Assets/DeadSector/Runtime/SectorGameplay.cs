@@ -9,6 +9,7 @@ namespace DeadSector
     public sealed class SectorGameSave
     {
         public int version = 1;
+        public float hourOfDay = 12f;
         public Vector3 position;
         public float health;
         public float hunger;
@@ -36,6 +37,7 @@ namespace DeadSector
         public SectorInventory Inventory { get; private set; } = new SectorInventory();
         public SectorSurvival Needs { get; private set; }
         public SectorEquipmentVisuals EquipmentVisuals { get; private set; }
+        public SectorWorldClock WorldClock { get; private set; }
 
         readonly Dictionary<string, SectorLootContainer> active =
             new Dictionary<string, SectorLootContainer>(StringComparer.Ordinal);
@@ -77,6 +79,7 @@ namespace DeadSector
                 EquipmentVisuals = target.gameObject.AddComponent<SectorEquipmentVisuals>();
 
             EquipmentVisuals.Configure(target);
+            WorldClock = FindFirstObjectByType<SectorWorldClock>();
 
             Inventory.Add("knife", 1);
             Inventory.Add("water", 1);
@@ -452,6 +455,7 @@ namespace DeadSector
 
             var data = new SectorGameSave
             {
+                hourOfDay = WorldClock != null ? WorldClock.hourOfDay : 12f,
                 position = player.transform.position,
                 health = player.Health,
                 hunger = Needs != null ? Needs.hunger : 100f,
@@ -526,6 +530,7 @@ namespace DeadSector
 
                 Needs?.ApplySaved(data.hunger, data.thirst, data.stamina);
                 player.RestoreHealth(data.health);
+                WorldClock?.RestoreTime(data.hourOfDay);
 
                 foreach (SectorLootContainer container in active.Values)
                     Destroy(container.gameObject);
