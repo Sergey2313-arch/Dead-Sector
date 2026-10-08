@@ -113,7 +113,10 @@ namespace DeadSector
                 (held ? "Held_" : "Stowed_") + id);
             root.transform.SetParent(parent, false);
 
-            float length = rifle ? .85f : pistol ? .25f : axe ? .48f : .27f;
+            float length = rifle ? .85f : pistol ? .25f :
+                id == "spear" ? 1.05f :
+                id == "torch" ? .46f :
+                axe ? .48f : .27f;
 
             root.transform.localPosition = held
                 ? new Vector3(.02f, -.07f, .08f)
