@@ -33,6 +33,28 @@ namespace DeadSector
                 return;
             }
 
+            // Guaranteed equipment discoveries to exercise each weapon slot.
+            if (containerId == "poi_factory")
+            {
+                AddInitial(new SectorItemStack("pistol", 1));
+                AddInitial(new SectorItemStack("9mm", 24));
+                return;
+            }
+
+            if (containerId == "poi_military_checkpoint")
+            {
+                AddInitial(new SectorItemStack("rifle", 1));
+                AddInitial(new SectorItemStack("556", 45));
+                return;
+            }
+
+            if (containerId == "poi_garages")
+            {
+                AddInitial(new SectorItemStack("axe", 1));
+                AddInitial(new SectorItemStack("bandage", 2));
+                return;
+            }
+
             // A stable seeded selection across Unity/editor sessions.
             unchecked
             {
