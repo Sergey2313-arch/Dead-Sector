@@ -133,17 +133,25 @@ namespace DeadSector
             var minimapObject = new GameObject("Minimap_System");
             var minimap = minimapObject.AddComponent<SectorMinimap>();
             minimap.Configure(player, world);
+
+            var compassObject = new GameObject("Compass_System");
+            var compass = compassObject.AddComponent<SectorCompass>();
+            compass.player = player;
+            compass.world = world;
+            compass.minimap = minimap;
         }
 
         void OnGUI()
         {
-            GUI.Box(new Rect(12, 12, 350, 176), "DEAD SECTOR / 8 x 8 km prototype");
-            GUI.Label(new Rect(24, 42, 325, 24), "WASD move | Shift run | Space jump | V camera | M map");
-            GUI.Label(new Rect(24, 65, 325, 24), "Esc cursor | Click resume | R respawn");
-            GUI.Label(new Rect(24, 88, 325, 24), "HP " + player.Health.ToString("0") + " | Terrain: " + world.LoadedTiles + "/64 | Zombies: " + navigation.ZombieCount);
-            GUI.Label(new Rect(24, 111, 325, 24), "World: " + world.Status + " | AI: " + navigation.Status);
-            GUI.Label(new Rect(24, 134, 325, 24), "Position: " + player.transform.position.ToString("F0"));
-            GUI.Label(new Rect(24, 157, 325, 24), "Anim: " + player.AnimationState + " | Grounded: " + player.IsGrounded);
+            // Keep the top of the screen free for the azimuth compass.
+            float hudY = Mathf.Max(12f, Screen.height - 188f);
+            GUI.Box(new Rect(12, hudY, 350, 176), "DEAD SECTOR / 8 x 8 km prototype");
+            GUI.Label(new Rect(24, hudY + 30f, 325, 24), "WASD move | Shift run | Space jump | V camera | M map");
+            GUI.Label(new Rect(24, hudY + 53f, 325, 24), "Esc cursor | Click resume | R respawn");
+            GUI.Label(new Rect(24, hudY + 76f, 325, 24), "HP " + player.Health.ToString("0") + " | Terrain: " + world.LoadedTiles + "/64 | Zombies: " + navigation.ZombieCount);
+            GUI.Label(new Rect(24, hudY + 99f, 325, 24), "World: " + world.Status + " | AI: " + navigation.Status);
+            GUI.Label(new Rect(24, hudY + 122f, 325, 24), "Position: " + player.transform.position.ToString("F0"));
+            GUI.Label(new Rect(24, hudY + 145f, 325, 24), "Anim: " + player.AnimationState + " | Grounded: " + player.IsGrounded);
             if (!world.Ready) GUI.Box(new Rect(Screen.width / 2 - 140, Screen.height / 2 - 25, 280, 50), "Preparing map, please wait...");
             if (player.Health <= 0) GUI.Box(new Rect(Screen.width / 2 - 140, Screen.height / 2 - 25, 280, 50), "You died. Press R to respawn.");
         }
