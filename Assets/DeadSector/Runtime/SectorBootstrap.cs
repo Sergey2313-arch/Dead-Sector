@@ -117,6 +117,31 @@ namespace DeadSector
             camera.farClipPlane = 1600;
             camera.clearFlags = CameraClearFlags.SolidColor;
             camera.backgroundColor = RenderSettings.fogColor;
+            camera.enabled = true;
+            camera.gameObject.tag = "MainCamera";
+
+            // Only the playable player camera can be active on startup.
+            // A leftover prototype camera/listener caused duplicate views
+            // and "multiple AudioListeners" warnings in the test scene.
+            foreach (Camera other in
+                FindObjectsByType<Camera>(FindObjectsSortMode.None))
+            {
+                if (other == camera) continue;
+                other.enabled = false;
+
+                if (other.CompareTag("MainCamera"))
+                    other.gameObject.tag = "Untagged";
+            }
+
+            if (camera.GetComponent<AudioListener>() == null)
+                camera.gameObject.AddComponent<AudioListener>();
+
+            foreach (AudioListener listener in
+                FindObjectsByType<AudioListener>(FindObjectsSortMode.None))
+            {
+                if (listener.gameObject != camera.gameObject)
+                    listener.enabled = false;
+            }
 
             player = actor.GetComponent<SectorPlayer>();
             if (player == null)
