@@ -64,6 +64,13 @@ namespace DeadSector
             backpack = CreatePart(back, "Backpack", packMaterial,
                 new Vector3(0f, .05f, -.28f),
                 new Vector3(.45f, .59f, .25f));
+            backpack.SetActive(false);
+        }
+
+        public void SetBackpackVisible(bool equipped)
+        {
+            if (backpack != null && backpack.activeSelf != equipped)
+                backpack.SetActive(equipped);
         }
 
         public void UpdateLoadout(string primary, string sidearm, string melee, int slot)
