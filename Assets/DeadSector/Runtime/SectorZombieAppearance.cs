@@ -46,7 +46,9 @@ namespace DeadSector
                     ? new Color(.15f, .21f, .16f)
                     : new Color(.22f, .25f, .19f);
 
-            model.localScale = Vector3.one * profile.ModelScale;
+            // Preserve Mixamo FBX import-scale (frequently 0.01).
+            // Never overwrite the imported model's authored transform.
+            model.localScale *= profile.ModelScale;
 
             Transform chest = model;
             Transform head = null;
