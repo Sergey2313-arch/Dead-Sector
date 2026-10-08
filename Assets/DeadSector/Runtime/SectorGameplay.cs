@@ -515,7 +515,19 @@ namespace DeadSector
 
             if (target != null)
             {
-                target.TakeDamage(damage);
+                // Apply impulse from the actual attack direction.
+                // Ragdoll activation and damage are both synchronous with
+                // the user's click (no charge-up delay).
+                Vector3 hitDirection = firearm
+                    ? forward
+                    : (target.transform.position -
+                        player.transform.position).normalized;
+
+                Vector3 impactPoint = target.transform.position +
+                    Vector3.up * 1.15f;
+
+                target.TakeDamage(damage, hitDirection, impactPoint);
+
                 if (target.Dead)
                     Journal?.RecordKill();
                 Notify((strong ? "Strong" : "Quick") +
