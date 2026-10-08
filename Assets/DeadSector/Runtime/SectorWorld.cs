@@ -379,6 +379,53 @@ namespace DeadSector
                     new Vector3(2, .4f + i * .24f, 2),
                     rust);
             }
+
+            // The legacy test-zone buildings remain for compatibility,
+            // but the public minimap and compass now point at the physical
+            // sites generated at canonical world coordinates.
+            pointsOfInterest.Clear();
+            foreach (SectorMapPlan.Location location in SectorMapPlan.Locations)
+            {
+                if (location.Status == SectorMapPlan.BuildStatus.Planned)
+                    continue;
+
+                Color markerColor;
+                switch (location.Kind)
+                {
+                    case SectorMapPlan.LocationKind.Medical:
+                        markerColor = new Color(.88f, .24f, .26f);
+                        break;
+                    case SectorMapPlan.LocationKind.Military:
+                        markerColor = new Color(.86f, .70f, .35f);
+                        break;
+                    case SectorMapPlan.LocationKind.Transport:
+                        markerColor = new Color(.21f, .70f, .94f);
+                        break;
+                    case SectorMapPlan.LocationKind.Wilderness:
+                        markerColor = new Color(.27f, .77f, .39f);
+                        break;
+                    case SectorMapPlan.LocationKind.Hazard:
+                        markerColor = new Color(.90f, .37f, .25f);
+                        break;
+                    default:
+                        markerColor = new Color(.94f, .78f, .28f);
+                        break;
+                }
+
+                RegisterPOI(
+                    location.Name,
+                    location.AtHeight(SectorLayout.Height(
+                        location.MapPosition.x,
+                        location.MapPosition.y)),
+                    markerColor,
+                    2.6f);
+            }
+
+            RegisterPOI(
+                "Spawn",
+                SectorLayout.Spawn,
+                new Color(.20f, .88f, 1f),
+                1.8f);
         }
 
         void House(
