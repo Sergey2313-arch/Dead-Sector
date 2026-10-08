@@ -47,6 +47,19 @@ Playable 8 x 8 km survival prototype with a full-body humanoid player, shoulder 
 - Test suite for inventory atomicity, stack/weight limits, save JSON, loot transfer, geography and compass. **Tests have been committed but NOT executed in Unity.**
 - [Full production and co-op plan](Production_And_Coop_Roadmap.md) records validation, future real art, networking and release gates.
 
+## Pre-validation content expansion (8 October 2026)
+
+- Two instant bare-hand attacks: **LMB quick weak punch (12 base damage, 0.27s repeat cooldown)** and **RMB heavy punch (27 base damage, 0.74s repeat cooldown)**. No charging, hold-to-attack or pre-hit delay. Heavier attacks use more stamina.
+- Lightweight visible arm punch overlay (alternating quick jabs; right-arm heavy punch). Needs X Bot retargeting verification in Unity.
+- Start bare-handed with the knife available to equip through the inventory. Melee-equipped players keep light/heavy clicks; firearm primary fire remains LMB.
+- **C**: crafting panel with bandages, medkits, hatchets, improvised spears and hand torches. Ingredients are deducted transactionally with slot/weight checks.
+- **E**: gather nearby timber, scrap metal or cloth from deterministic resource nodes. Harvested nodes are persisted in JSON and do not respawn on tile revisit.
+- **J**: field objective journal, including village/clinic/factory/radio exploration, loot pickup, gathering, crafting and zombie eliminations. Saves progress.
+- Atmosphere/weather prototype: clear, overcast, rain and mist, based on the saved world clock. Local rain particles and fog settings added.
+- Additional road dressing per streamed 1km sector: collision-enabled primitive car wrecks, concrete barricades and roadside signs, deterministically aligned with road corridors.
+- New editor tests for light/heavy punch tuning, stamina behavior, crafting, item catalog and journal JSON-compatible progress. They have **not been executed in Unity**.
+- Current crafted torch is a placeholder held item, **not yet a working flashlight/light source**. Damage and hand animation parameters await playtesting.
+
 ## Next work
 0. Validate current game map, water, roads and world blockouts in Unity 6 / URP; fix compile or rendering issues first.
 1. Improve road-to-terrain slope smoothing, bridge transitions, and shore edge meshes; current blockouts are first-pass geometry.
@@ -68,6 +81,9 @@ Playable 8 x 8 km survival prototype with a full-body humanoid player, shoulder 
 - Whole prototype: Dead Sector > Setup > 00 - PREPARE PLAYABLE PROTOTYPE
 - Inspect full world in Play Mode: Dead Sector > Debug > Visit World Locations; select a POI and teleport
 - M: approved 8km planning atlas; V: first-person / third-person toggle
+- LMB: immediate light punch/primary fire; RMB: immediate strong bare-hand or heavy melee attack
+- C: crafting recipes; J: field objective journal; E: harvest resources, use doors or take loot
+- I: inventory; F5/F9: save/load. These bindings are prototype defaults, subject to Unity test.
 
 ## Tracked GitHub work items
 
