@@ -20,6 +20,7 @@ Three archetypes share the existing zombie AI, Mixamo FBX or fallback procedural
 - `SectorZombieAppearance` adds visual class tint, chest/shoulder details, scaled models and red hit flash without replacing Mixamo mesh assets.
 - `SectorZombieReaction` adds a small stagger on hit and a temporary death fall when Animator stops. Not a physically simulated ragdoll.
 - Capsule / NavMesh agent dimensions scale with the silhouette. Live zombie count is refreshed instead of counting destroyed zombies as alive.
+- Gunshots notify nearby infected to investigate (rifle ~145 m, pistol ~95 m); sound/audio playback assets are not yet imported.
 - Horde size and cap remain governed by `SectorHordeDirector`. Server-authoritative hordes are **not** implemented.
 
 ## More detailed temporary equipment models
