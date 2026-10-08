@@ -241,9 +241,45 @@ namespace DeadSector
             return closest;
         }
 
+        SectorDoor NearbyDoor()
+        {
+            Vector3 center = player.transform.position + Vector3.up;
+            Collider[] hits = Physics.OverlapSphere(
+                center, 3f, ~(1 << 2),
+                QueryTriggerInteraction.Ignore);
+
+            SectorDoor closest = null;
+            float best = 3f * 3f;
+
+            foreach (Collider hit in hits)
+            {
+                SectorDoor door = hit.GetComponentInParent<SectorDoor>();
+                if (door == null) continue;
+
+                float distance = (door.transform.position - player.transform.position)
+                    .sqrMagnitude;
+
+                if (distance >= best) continue;
+                closest = door;
+                best = distance;
+            }
+
+            return closest;
+        }
+
         void Interact()
         {
             SectorLootContainer container = NearbyContainer();
+            SectorDoor door = NearbyDoor();
+
+            if (door != null && (container == null ||
+                Vector3.Distance(door.transform.position, player.transform.position) <
+                Vector3.Distance(container.transform.position, player.transform.position)))
+            {
+                door.Toggle();
+                Notify(door.IsOpen ? "Door opened" : "Door closed");
+                return;
+            }
 
             if (container == null)
             {
@@ -561,8 +597,17 @@ namespace DeadSector
                 Cursor.lockState == CursorLockMode.Locked)
             {
                 SectorLootContainer nearby = NearbyContainer();
+                SectorDoor door = NearbyDoor();
 
-                if (nearby != null)
+                if (door != null && (nearby == null ||
+                    Vector3.Distance(door.transform.position, player.transform.position) <
+                    Vector3.Distance(nearby.transform.position, player.transform.position)))
+                {
+                    GUI.Box(new Rect(Screen.width * .5f - 142f,
+                        Screen.height * .61f, 284f, 50f),
+                        "[E] " + (door.IsOpen ? "CLOSE DOOR" : "OPEN DOOR"));
+                }
+                else if (nearby != null)
                 {
                     GUI.Box(new Rect(Screen.width * .5f - 142f,
                         Screen.height * .61f, 284f, 50f),
