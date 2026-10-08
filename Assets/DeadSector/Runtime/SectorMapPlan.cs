@@ -21,7 +21,8 @@ namespace DeadSector
         public enum BuildStatus
         {
             Planned,
-            Prototype
+            Prototype,
+            WorldBlockout
         }
 
         public enum LocationKind
@@ -67,28 +68,28 @@ namespace DeadSector
         }
 
         // Visual placement follows the approved illustration.
-        // Prototype status means some gameplay geometry of this CATEGORY
-        // exists near the central spawn; NOT that this exact map position
-        // is already constructed.
+        // WorldBlockout = simple procedural object or water surface is now
+        // generated at this location in the streamed Unity world.
+        // It does NOT mean final art, loot or mission content is complete.
         static readonly Location[] ApprovedLocations =
         {
-            new Location("mountain_lake", "Горное озеро", new Vector2(-2650, 2850), LocationKind.Wilderness),
-            new Location("forest_camp", "Лесной лагерь", new Vector2(-750, 3100), LocationKind.Wilderness),
-            new Location("radio_station", "Радиовышка", new Vector2(720, 3050), LocationKind.Landmark, BuildStatus.Prototype),
-            new Location("quarry", "Карьер", new Vector2(3050, 3150), LocationKind.Hazard),
-            new Location("abandoned_city", "Заброшенный город", new Vector2(3500, 2100), LocationKind.Settlement),
-            new Location("village", "Деревня", new Vector2(-2700, 1450), LocationKind.Settlement, BuildStatus.Prototype),
-            new Location("town", "Городок", new Vector2(-700, 1500), LocationKind.Settlement),
-            new Location("clinic", "Клиника", new Vector2(550, 1500), LocationKind.Medical, BuildStatus.Prototype),
-            new Location("gas_station", "АЗС", new Vector2(1900, 850), LocationKind.Transport, BuildStatus.Prototype),
-            new Location("military_checkpoint", "Военный КПП", new Vector2(3700, 750), LocationKind.Military, BuildStatus.Prototype),
-            new Location("garages", "Гаражи", new Vector2(-2100, 300), LocationKind.Industry, BuildStatus.Prototype),
-            new Location("factory", "Завод (промзона)", new Vector2(-350, 100), LocationKind.Industry, BuildStatus.Prototype),
-            new Location("warehouse", "Складской комплекс", new Vector2(2350, -250), LocationKind.Industry, BuildStatus.Prototype),
-            new Location("construction", "Стройка", new Vector2(-250, -1350), LocationKind.Industry),
-            new Location("dam", "Дамба", new Vector2(-2250, -2450), LocationKind.Landmark),
-            new Location("reservoir", "Большое озеро", new Vector2(-250, -2900), LocationKind.Wilderness),
-            new Location("airfield", "Аэродром", new Vector2(3050, -2850), LocationKind.Transport)
+            new Location("mountain_lake", "Горное озеро", new Vector2(-2650, 2850), LocationKind.Wilderness, BuildStatus.WorldBlockout),
+            new Location("forest_camp", "Лесной лагерь", new Vector2(-750, 3100), LocationKind.Wilderness, BuildStatus.WorldBlockout),
+            new Location("radio_station", "Радиовышка", new Vector2(720, 3050), LocationKind.Landmark, BuildStatus.WorldBlockout),
+            new Location("quarry", "Карьер", new Vector2(3050, 3150), LocationKind.Hazard, BuildStatus.WorldBlockout),
+            new Location("abandoned_city", "Заброшенный город", new Vector2(3500, 2100), LocationKind.Settlement, BuildStatus.WorldBlockout),
+            new Location("village", "Деревня", new Vector2(-2700, 1450), LocationKind.Settlement, BuildStatus.WorldBlockout),
+            new Location("town", "Городок", new Vector2(-700, 1500), LocationKind.Settlement, BuildStatus.WorldBlockout),
+            new Location("clinic", "Клиника", new Vector2(550, 1500), LocationKind.Medical, BuildStatus.WorldBlockout),
+            new Location("gas_station", "АЗС", new Vector2(1900, 850), LocationKind.Transport, BuildStatus.WorldBlockout),
+            new Location("military_checkpoint", "Военный КПП", new Vector2(3700, 750), LocationKind.Military, BuildStatus.WorldBlockout),
+            new Location("garages", "Гаражи", new Vector2(-2100, 300), LocationKind.Industry, BuildStatus.WorldBlockout),
+            new Location("factory", "Завод (промзона)", new Vector2(-350, 100), LocationKind.Industry, BuildStatus.WorldBlockout),
+            new Location("warehouse", "Складской комплекс", new Vector2(2350, -250), LocationKind.Industry, BuildStatus.WorldBlockout),
+            new Location("construction", "Стройка", new Vector2(-250, -1350), LocationKind.Industry, BuildStatus.WorldBlockout),
+            new Location("dam", "Дамба", new Vector2(-2250, -2450), LocationKind.Landmark, BuildStatus.WorldBlockout),
+            new Location("reservoir", "Большое озеро", new Vector2(-250, -2900), LocationKind.Wilderness, BuildStatus.WorldBlockout),
+            new Location("airfield", "Аэродром", new Vector2(3050, -2850), LocationKind.Transport, BuildStatus.WorldBlockout)
         };
 
         public static IReadOnlyList<Location> Locations => ApprovedLocations;
