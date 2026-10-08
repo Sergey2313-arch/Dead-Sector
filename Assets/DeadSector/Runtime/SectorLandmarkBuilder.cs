@@ -400,7 +400,8 @@ namespace DeadSector
                     new Vector3(panelWidth + .4f, .26f, depth + .6f), Dark);
 
                 panel.transform.localRotation =
-                    Quaternion.Euler(0, 0, sideSign * pitch);
+                    // Slopes must rise inward to the ridge; the former sign made a V-shaped roof.
+                    Quaternion.Euler(0, 0, -sideSign * pitch);
             }
 
             art.Box(root, "Front_Window_Left",
