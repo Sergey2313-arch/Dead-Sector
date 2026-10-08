@@ -106,30 +106,30 @@ namespace DeadSector
             if (inventory == null || Empty)
                 return false;
 
-            SectorItemStack first = contents[0];
-
-            // Take what fits: a too-heavy whole stack should not block
-            // picking up a single item.
-            int taken = 0;
-            for (int n = first.count; n >= 1; n--)
+            // A full inventory may fit a bandage but not a rifle or a
+            // stack of scrap. Search the other stacks rather than blocking
+            // the entire cache behind the first oversized item.
+            for (int index = 0; index < contents.Count; index++)
             {
-                if (!inventory.Add(first.id, n))
-                    continue;
+                SectorItemStack candidate = contents[index];
 
-                taken = n;
-                break;
+                for (int amount = candidate.count; amount >= 1; amount--)
+                {
+                    if (!inventory.Add(candidate.id, amount))
+                        continue;
+
+                    itemLabel = SectorItems.Get(candidate.id).Label +
+                        " x" + amount;
+                    candidate.count -= amount;
+
+                    if (candidate.count == 0)
+                        contents.RemoveAt(index);
+
+                    return true;
+                }
             }
 
-            if (taken == 0)
-                return false;
-
-            itemLabel = SectorItems.Get(first.id).Label + " x" + taken;
-            first.count -= taken;
-
-            if (first.count == 0)
-                contents.RemoveAt(0);
-
-            return true;
+            return false;
         }
 
         public List<SectorItemStack> Export()
