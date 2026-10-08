@@ -153,13 +153,11 @@ namespace DeadSector
             if (mapCamera == null)
                 return;
 
-            mapCamera.rect = tacticalOpen
-                ? TacticalRect
-                : MinimapRect;
-
-            mapCamera.orthographicSize = tacticalOpen
-                ? tacticalMapSize
-                : minimapSize;
+            // Tactical M view is the canonical full-world blueprint atlas.
+            // The top-down live camera remains exclusive to the local minimap.
+            mapCamera.enabled = !tacticalOpen;
+            mapCamera.rect = MinimapRect;
+            mapCamera.orthographicSize = minimapSize;
         }
 
         void BuildPlayerMarker()
@@ -262,17 +260,7 @@ namespace DeadSector
             if (mapCamera == null)
                 return;
 
-            if (tacticalOpen)
-            {
-                GUI.Box(
-                    new Rect(16, 16, 270, 56),
-                    "TACTICAL MAP  |  M - close");
-
-                GUI.Label(
-                    new Rect(28, 44, 240, 22),
-                    "N ↑   Loaded sector around player");
-            }
-            else
+            if (!tacticalOpen)
             {
                 float w = Screen.width;
                 float h = Screen.height;
