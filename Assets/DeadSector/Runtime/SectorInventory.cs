@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace DeadSector
 {
-    public enum SectorItemKind { Food, Drink, Medical, Material, Melee, Firearm, Ammunition }
+    public enum SectorItemKind { Food, Drink, Medical, Material, Melee, Firearm, Ammunition, Armor }
 
     // Game items have no RPG quality tiers: condition/durability can be
     // implemented later as individual-instance state, not colored rarity.
@@ -47,14 +47,29 @@ namespace DeadSector
                 { "scrap", new SectorItemDefinition("scrap", "Metal Scrap", SectorItemKind.Material, 1.4f, 12) },
                 { "wood", new SectorItemDefinition("wood", "Timber", SectorItemKind.Material, 1.0f, 10) },
                 { "cloth", new SectorItemDefinition("cloth", "Fabric", SectorItemKind.Material, .18f, 12) },
+                { "stone", new SectorItemDefinition("stone", "Loose Stone", SectorItemKind.Material, .38f, 24) },
+                { "stick", new SectorItemDefinition("stick", "Dry Stick", SectorItemKind.Material, .28f, 24) },
+                { "plant_fiber", new SectorItemDefinition("plant_fiber", "Plant Fiber", SectorItemKind.Material, .05f, 30) },
+                { "cotton", new SectorItemDefinition("cotton", "Raw Cotton", SectorItemKind.Material, .08f, 30) },
+                { "cord", new SectorItemDefinition("cord", "Twisted Cord", SectorItemKind.Material, .12f, 18) },
                 { "knife", new SectorItemDefinition("knife", "Field Knife", SectorItemKind.Melee, .45f, 1, damage: 25f) },
+                { "stone_knife", new SectorItemDefinition("stone_knife", "Stone Knife", SectorItemKind.Melee, .6f, 1, damage: 19f) },
+                { "stone_axe", new SectorItemDefinition("stone_axe", "Stone Axe", SectorItemKind.Melee, 1.4f, 1, damage: 29f) },
+                { "wood_club", new SectorItemDefinition("wood_club", "Wooden Club", SectorItemKind.Melee, 1.25f, 1, damage: 23f) },
                 { "axe", new SectorItemDefinition("axe", "Hatchet", SectorItemKind.Melee, 1.3f, 1, damage: 38f) },
                 { "spear", new SectorItemDefinition("spear", "Improvised Spear", SectorItemKind.Melee, 1.15f, 1, damage: 31f) },
                 { "torch", new SectorItemDefinition("torch", "Hand Torch", SectorItemKind.Melee, .35f, 1, damage: 15f) },
                 { "pistol", new SectorItemDefinition("pistol", "Pistol", SectorItemKind.Firearm, 1.15f, 1, damage: 31f) },
                 { "rifle", new SectorItemDefinition("rifle", "Rifle", SectorItemKind.Firearm, 3.6f, 1, damage: 44f) },
                 { "9mm", new SectorItemDefinition("9mm", "9mm Ammunition", SectorItemKind.Ammunition, .012f, 60) },
-                { "556", new SectorItemDefinition("556", "5.56 Ammunition", SectorItemKind.Ammunition, .014f, 60) }
+                { "556", new SectorItemDefinition("556", "5.56 Ammunition", SectorItemKind.Ammunition, .014f, 60) },
+                { "wood_helmet", new SectorItemDefinition("wood_helmet", "Wooden Head Guard", SectorItemKind.Armor, .95f, 1) },
+                { "wood_vest", new SectorItemDefinition("wood_vest", "Wooden Chest Guard", SectorItemKind.Armor, 2.6f, 1) },
+                { "wood_leggings", new SectorItemDefinition("wood_leggings", "Wooden Leg Guards", SectorItemKind.Armor, 1.8f, 1) },
+                { "cotton_hood", new SectorItemDefinition("cotton_hood", "Cotton Hood", SectorItemKind.Armor, .35f, 1) },
+                { "cotton_shirt", new SectorItemDefinition("cotton_shirt", "Cotton Shirt", SectorItemKind.Armor, .7f, 1) },
+                { "cotton_pants", new SectorItemDefinition("cotton_pants", "Cotton Trousers", SectorItemKind.Armor, .65f, 1) },
+                { "cotton_boots", new SectorItemDefinition("cotton_boots", "Cotton Footwraps", SectorItemKind.Armor, .4f, 1) }
             };
 
         public static bool TryGet(string id, out SectorItemDefinition item) =>
