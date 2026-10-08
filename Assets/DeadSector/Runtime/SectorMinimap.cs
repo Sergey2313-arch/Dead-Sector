@@ -28,6 +28,7 @@ namespace DeadSector
         readonly List<Material> materials = new List<Material>();
         Mesh arrowMesh;
         bool tacticalOpen;
+        public bool TacticalOpen => tacticalOpen;
         bool poiBuilt;
 
         Rect MinimapRect => new Rect(.76f, .72f, .225f, .255f);
