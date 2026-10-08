@@ -56,6 +56,8 @@ namespace DeadSector
                 case KeyCode.R: return k.rKey.wasPressedThisFrame;
                 case KeyCode.M: return k.mKey.wasPressedThisFrame;
                 case KeyCode.I: return k.iKey.wasPressedThisFrame;
+                case KeyCode.C: return k.cKey.wasPressedThisFrame;
+                case KeyCode.J: return k.jKey.wasPressedThisFrame;
                 case KeyCode.E: return k.eKey.wasPressedThisFrame;
                 case KeyCode.Alpha1: return k.digit1Key.wasPressedThisFrame;
                 case KeyCode.Alpha2: return k.digit2Key.wasPressedThisFrame;
