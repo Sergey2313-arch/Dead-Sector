@@ -21,10 +21,36 @@ namespace DeadSector
         public float staminaRecovery = 10f;
         public float exhaustionDamageInterval = 12f;
 
+        [Header("Sprint exhaustion hysteresis")]
+        [Range(0f, 100f)] public float sprintStopStamina = 5f;
+        [Range(0f, 100f)] public float sprintResumeStamina = 30f;
+
         SectorPlayer player;
         float exhaustionTimer;
+        bool sprintExhausted;
 
-        public bool CanSprint => stamina > 2f && hunger > 0f && thirst > 0f;
+        // Don't toggle sprint every frame when stamina hovers near zero.
+        // After exhaustion the player must recover substantially before
+        // sprint can resume, even if Shift is held continuously.
+        public bool CanSprint
+        {
+            get
+            {
+                UpdateSprintLockout();
+                return !sprintExhausted && hunger > 0f && thirst > 0f;
+            }
+        }
+
+        void UpdateSprintLockout()
+        {
+            float resume = Mathf.Max(
+                sprintStopStamina + 1f, sprintResumeStamina);
+
+            if (stamina <= sprintStopStamina)
+                sprintExhausted = true;
+            else if (stamina >= resume)
+                sprintExhausted = false;
+        }
         public bool CanJump => stamina >= 8f;
 
         void Awake()
@@ -46,6 +72,7 @@ namespace DeadSector
             stamina = Mathf.Clamp(
                 stamina + (sprinting ? -sprintStaminaDrain : staminaRecovery) * seconds,
                 0f, 100f);
+            UpdateSprintLockout();
 
             if (hunger <= 0f || thirst <= 0f)
             {
@@ -89,6 +116,7 @@ namespace DeadSector
             hunger = Mathf.Clamp(savedFood, 0f, 100f);
             thirst = Mathf.Clamp(savedWater, 0f, 100f);
             stamina = Mathf.Clamp(savedStamina, 0f, 100f);
+            sprintExhausted = stamina <= sprintStopStamina;
             exhaustionTimer = 0f;
         }
     }
