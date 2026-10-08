@@ -108,8 +108,8 @@ namespace DeadSector
 
             Vector3 center = player.transform.position;
             var bounds = new Bounds(
-                new Vector3(center.x, center.y + 40f, center.z),
-                new Vector3(850f, 450f, 850f));
+                new Vector3(center.x, 245f, center.z),
+                new Vector3(850f, 600f, 850f));
             var sources = new List<NavMeshBuildSource>();
 
             NavMeshBuilder.CollectSources(
@@ -123,6 +123,24 @@ namespace DeadSector
             navigationCenter = center;
             rebuilding = false;
             Status = "Ready / streamed local NavMesh";
+
+            // Old region AI must not fill the global entity cap after
+            // travelling kilometres through streamed terrain.
+            foreach (SectorZombie zombie in
+                FindObjectsByType<SectorZombie>(FindObjectsSortMode.None))
+            {
+                if (zombie == null)
+                    continue;
+
+                Vector3 diff = zombie.transform.position - center;
+                diff.y = 0f;
+
+                if (diff.sqrMagnitude > 540f * 540f)
+                {
+                    Destroy(zombie.gameObject);
+                    ZombieCount = Mathf.Max(0, ZombieCount - 1);
+                }
+            }
         }
 
         /// <summary>
