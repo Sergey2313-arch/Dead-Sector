@@ -149,7 +149,7 @@ namespace DeadSector
                 ragdoll = gameObject.GetComponent<SectorZombieRagdoll>();
                 if (ragdoll == null)
                     ragdoll = gameObject.AddComponent<SectorZombieRagdoll>();
-                ragdoll.Configure(animator, model);
+                ragdoll.Configure(animator, model, rig);
             }
 
             CapsuleCollider bodyCollider = GetComponent<CapsuleCollider>();
@@ -413,6 +413,11 @@ namespace DeadSector
 
             if (animator != null)
                 animator.enabled = false;
+
+            // Procedural mannequin's LateUpdate must stop posing the
+            // limbs before the fallback ragdoll releases its joints.
+            if (rig != null)
+                rig.enabled = false;
 
             // Dynamic ragdoll owns the model if the FBX is a valid Humanoid.
             // Fallback keeps the existing simple fall on primitive zombies.
