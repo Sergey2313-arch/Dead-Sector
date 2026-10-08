@@ -116,7 +116,10 @@ namespace DeadSector
             hunger = Mathf.Clamp(savedFood, 0f, 100f);
             thirst = Mathf.Clamp(savedWater, 0f, 100f);
             stamina = Mathf.Clamp(savedStamina, 0f, 100f);
-            sprintExhausted = stamina <= sprintStopStamina;
+            // When restoring a low-stamina save, retain the recovery
+            // requirement instead of restarting a sprint immediately.
+            sprintExhausted = stamina < Mathf.Max(
+                sprintStopStamina + 1f, sprintResumeStamina);
             exhaustionTimer = 0f;
         }
     }
