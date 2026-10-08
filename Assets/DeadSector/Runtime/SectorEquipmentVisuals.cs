@@ -114,7 +114,7 @@ namespace DeadSector
         {
             bool rifle = id == "rifle";
             bool pistol = id == "pistol";
-            bool axe = id == "axe";
+            bool axe = id == "axe" || id == "stone_axe";
 
             GameObject root = new GameObject(
                 (held ? "Held_" : "Stowed_") + id);
