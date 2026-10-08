@@ -84,6 +84,17 @@ Playable 8 x 8 km survival prototype with a full-body humanoid player, shoulder 
 - A dedicated Editor test suite checks enemy stats and day-based wave types. Source linkage checks pass; neither Unity Editor compilation nor playtests have run.
 - Detailed QA checklist: [Visual_Combat_Zombie_Pass_0_3.md](Visual_Combat_Zombie_Pass_0_3.md).
 
+## Zombie ragdoll physics (source ready; Unity QA pending)
+
+- Added **on-death physical ragdoll** for Mixamo X Bot infected, using 11 Humanoid bones with rigidbodies, limited CharacterJoints, collider volumes, inherited velocity and attack-direction impulses.
+- Added **fallback articulated physics** for procedurally built zombies without a Mixamo skeleton (torso, limbs and optional head).
+- Stops NavMeshAgent/Animator/mannequin posing at death; does not animate death with a fixed rotation when a physics ragdoll is available.
+- Retains previous simple fall if the imported avatar lacks required Humanoid bones.
+- Corpses physically settle for 8s, freeze, then are reclaimed after 25s. No physics allocation on living zombies.
+- Test command in Unity Play Mode: `Dead Sector > Debug > Test Nearest Zombie Ragdoll`.
+- Edit Mode tests added for missing rig, procedural fallback and repeated death calls; **not yet executed in Unity**.
+- Implementation/QA: [Zombie_Ragdoll_Physics.md](Zombie_Ragdoll_Physics.md).
+
 ## Next work
 0. Validate current game map, water, roads and world blockouts in Unity 6 / URP; fix compile or rendering issues first.
 1. Improve road-to-terrain slope smoothing, bridge transitions, and shore edge meshes; current blockouts are first-pass geometry.
