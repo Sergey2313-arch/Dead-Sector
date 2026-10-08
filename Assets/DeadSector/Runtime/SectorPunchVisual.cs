@@ -20,6 +20,7 @@ namespace DeadSector
         float startedAt = -100f;
         float duration;
         bool heavy;
+        bool meleeSwing;
         bool useLeft;
         bool proceduralPoseApplied;
         int jabCounter;
@@ -51,7 +52,7 @@ namespace DeadSector
             if (rightArm != null) rightRest = rightArm.localRotation;
         }
 
-        public void Play(bool strong)
+        public void Play(bool strong, bool weaponEquipped = false)
         {
             if (player == null)
                 return;
@@ -60,9 +61,13 @@ namespace DeadSector
                 RestoreFallbackPose();
 
             heavy = strong;
-            useLeft = !strong && (++jabCounter % 2 == 0);
+            meleeSwing = weaponEquipped;
+            useLeft = !strong && !weaponEquipped &&
+                (++jabCounter % 2 == 0);
             startedAt = Time.time;
-            duration = strong ? .32f : .17f;
+            duration = meleeSwing
+                ? (strong ? .43f : .28f)
+                : (strong ? .32f : .17f);
 
             // Input already applied combat damage this frame.
             // This function only adds a quick animation on the avatar.
@@ -96,11 +101,19 @@ namespace DeadSector
                 ? arm.localRotation
                 : useLeft ? leftRest : rightRest;
 
-            arm.localRotation =
-                basePose * Quaternion.Euler(
+            // Weapon swings trace a sweeping arc; empty-hand attacks
+            // remain short straight jabs. Neither delays damage.
+            Quaternion arc = meleeSwing
+                ? Quaternion.Euler(
+                    -(heavy ? 93f : 58f) * extension,
+                    side * (heavy ? 73f : 46f) * extension,
+                    side * 22f * extension)
+                : Quaternion.Euler(
                     -magnitude * extension,
                     side * (heavy ? 14f : 9f) * extension,
                     side * 8f * extension);
+
+            arm.localRotation = basePose * arc;
         }
 
         void RestoreFallbackPose()
