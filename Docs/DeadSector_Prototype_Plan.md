@@ -17,12 +17,17 @@ Playable 8 x 8 km survival prototype with a full-body humanoid player, shoulder 
 - X Bot zombie prefab builder so zombies use the same mannequin body type as the player.
 - Mixamo zombie animation controller support for run, crawl, scream, bite, punch, kick, stand-up and optional walk/idle.
 - Expanded procedural settlement with houses, gabled roofs, doors, windows, porches, yards/fences, factory, warehouse, checkpoint and streetlights.
+- Extra central POIs: clinic, fuel station, garages and radio tower.
+- Runtime top-down minimap that follows the player and renders the actual streamed world.
+- Player direction marker and colored POI markers on the minimap.
+- M toggles a larger tactical map view.
 - One-click prototype preparation menu.
 
 ## Next work
 1. Verify player idle/walk/run/jump retargeting in Unity and remove any remaining bad pose.
-2. Finish polished shoulder-camera behaviour and FPP head/body visibility.
-3. Add Zombie Idle and Zombie Walk clips when available.
+2. Verify minimap/tactical-map rendering in URP and tune scale/viewport.
+3. Finish polished shoulder-camera behaviour and FPP head/body visibility.
+4. Add Zombie Idle and Zombie Walk clips when available.
 4. Add zombie health, hit reactions, death and corpse states.
 5. Add melee hitboxes and player damage/combat feedback.
 6. Replace prototype house materials/geometry with production modular assets while keeping current layout.
