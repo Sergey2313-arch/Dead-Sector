@@ -25,6 +25,7 @@ namespace DeadSector
         public string State { get; private set; } = "Idle";
         public float Health { get; private set; } = 100f;
         public bool Dead { get; private set; } = false;
+        public bool IsHorde { get; private set; } = false;
 
         NavMeshAgent agent;
         Vector3 home;
@@ -112,8 +113,27 @@ namespace DeadSector
             SetMotion(agent.velocity.magnitude, alerted);
         }
 
+        public void AssignHorde()
+        {
+            IsHorde = true;
+            AlertToPlayer();
+        }
+
+        public void AlertToPlayer()
+        {
+            if (target == null || Dead) return;
+            lastKnownPosition = target.transform.position;
+            lastContactAt = Time.time;
+            alerted = true;
+        }
+
         void Think(float distance)
         {
+            // Night hordes track the player; ordinary zombies keep their
+            // standard line-of-sight/hearing and memory-based behaviour.
+            if (IsHorde)
+                AlertToPlayer();
+
             bool sees = CanSeePlayer(distance);
             bool hears = CanHearPlayer(distance);
 
