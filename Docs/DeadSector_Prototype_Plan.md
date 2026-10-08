@@ -72,6 +72,18 @@ Playable 8 x 8 km survival prototype with a full-body humanoid player, shoulder 
 - **Validation required:** dynamic local NavMesh, armor appearance on imported X Bot, full inventory GUI, item recipes, scripted horde day progression, save/load. New Edit Mode tests committed but not executed.
 - **Not complete:** co-op network authority, production 3D clothing, full persistence of living zombie state, ragdolls, advanced crafting stations and polished UI.
 
+## Visual and combat pass 0.3 (source ready, Unity validation pending)
+
+- Three zombie classes: normal shambler (100 HP), fast runner (70 HP), heavy brute (210 HP); varied pursuit speed and attack damage. Mixed hordes grow from day 2 and day 4.
+- Imported zombie visual scale preserved, class color/detail blockouts, hit flash, stagger and a simple temporary falling corpse; collider and NavMeshAgent sizes match variant.
+- Gunshots now notify nearby infected to investigate, with higher hearing radius for rifles than pistols.
+- Weapon model blockouts upgraded: distinctive flint/steel tools, axe, club, spear, rifle, pistol, backpack and a luminous held torch.
+- Wooden/cotton armor replaced with segmented Humanoid bone attachments (still placeholders requiring retargeting/scale check).
+- Immediate click-to-hit light/heavy melee retained; melee equipment uses a swing rather than punch motion. Crosshair, hit markers, damage labels, recoil and muzzle flash added.
+- Compact three-slot quickbar and ammunition count. Prototype diagnostics hidden by default; use **F3** to display them.
+- A dedicated Editor test suite checks enemy stats and day-based wave types. Source linkage checks pass; neither Unity Editor compilation nor playtests have run.
+- Detailed QA checklist: [Visual_Combat_Zombie_Pass_0_3.md](Visual_Combat_Zombie_Pass_0_3.md).
+
 ## Next work
 0. Validate current game map, water, roads and world blockouts in Unity 6 / URP; fix compile or rendering issues first.
 1. Improve road-to-terrain slope smoothing, bridge transitions, and shore edge meshes; current blockouts are first-pass geometry.
