@@ -38,6 +38,7 @@ namespace DeadSector
         public SectorSurvival Needs { get; private set; }
         public SectorEquipmentVisuals EquipmentVisuals { get; private set; }
         public SectorWorldClock WorldClock { get; private set; }
+        public SectorPunchVisual PunchVisual { get; private set; }
 
         readonly Dictionary<string, SectorLootContainer> active =
             new Dictionary<string, SectorLootContainer>(StringComparer.Ordinal);
@@ -45,7 +46,7 @@ namespace DeadSector
         readonly Dictionary<string, List<SectorItemStack>> persistent =
             new Dictionary<string, List<SectorItemStack>>(StringComparer.Ordinal);
 
-        string[] equipment = { "", "", "knife" };
+        string[] equipment = { "", "", "" };
         int selectedSlot = 2;
         bool inventoryOpen;
         bool loadedOnce;
@@ -79,12 +80,20 @@ namespace DeadSector
                 EquipmentVisuals = target.gameObject.AddComponent<SectorEquipmentVisuals>();
 
             EquipmentVisuals.Configure(target);
+
+            PunchVisual = target.GetComponent<SectorPunchVisual>();
+            if (PunchVisual == null)
+                PunchVisual = target.gameObject.AddComponent<SectorPunchVisual>();
+
+            PunchVisual.Configure(target);
             WorldClock = FindFirstObjectByType<SectorWorldClock>();
 
             Inventory.Add("knife", 1);
             Inventory.Add("water", 1);
             Inventory.Add("bandage", 2);
-            equipment[2] = "knife";
+            // Start unarmed so left and right click have weak/strong punches.
+            // The starter knife stays in inventory until manually equipped.
+            equipment[2] = "";
             selectedSlot = 2;
             EquipmentVisuals.UpdateLoadout(
                 equipment[0], equipment[1], equipment[2], selectedSlot);
@@ -127,8 +136,15 @@ namespace DeadSector
                 if (SectorInput.Pressed(KeyCode.E))
                     Interact();
 
+                string selected = EquippedId();
+                bool gunEquipped = SectorItems.TryGet(
+                    selected, out SectorItemDefinition selectedItem) &&
+                    selectedItem.Kind == SectorItemKind.Firearm;
+
                 if (SectorInput.Click)
-                    Attack();
+                    Attack(false);
+                else if (SectorInput.RightClick && !gunEquipped)
+                    Attack(true);
             }
 
             if (Time.time >= autoSaveAt)
@@ -321,34 +337,38 @@ namespace DeadSector
             return Inventory.Count(id) > 0 ? id : string.Empty;
         }
 
-        void Attack()
+        void Attack(bool strong)
         {
+            // No charging or wind-up. One mouse press resolves a hit in this
+            // frame; the short arm animation is independent visual feedback.
             if (Time.time < nextAttack)
                 return;
 
             string id = EquippedId();
-            bool firearm = SectorItems.TryGet(id, out SectorItemDefinition weapon) &&
-                           weapon.Kind == SectorItemKind.Firearm;
+            SectorAttackProfile attack = SectorCombatRules.ForAttack(id, strong);
 
-            float range = firearm
-                ? id == "rifle" ? 95f : 55f
-                : 2.45f;
-
-            float damage = firearm ? weapon.Damage :
-                weapon.Damage > 0f ? weapon.Damage : 12f;
-
-            if (firearm)
+            if (attack.Kind == SectorAttackKind.Firearm)
             {
-                string ammo = id == "rifle" ? "556" : "9mm";
-
-                if (!Inventory.Remove(ammo, 1))
+                string ammunition = id == "rifle" ? "556" : "9mm";
+                if (!Inventory.Remove(ammunition, 1))
                 {
-                    Notify("No " + SectorItems.Get(ammo).Label);
+                    Notify("No " + SectorItems.Get(ammunition).Label);
                     return;
                 }
             }
 
-            nextAttack = Time.time + (firearm ? .28f : .65f);
+            // Consume stamina but never block a punch while exhausted.
+            float staminaFactor = Needs != null
+                ? Needs.SpendAttackStamina(attack.StaminaCost)
+                : 1f;
+
+            float damage = SectorCombatRules.FinalDamage(attack, staminaFactor);
+            nextAttack = Time.time + attack.Cooldown;
+
+            if (attack.Kind != SectorAttackKind.Firearm)
+                PunchVisual?.Play(strong);
+
+            bool firearm = attack.Kind == SectorAttackKind.Firearm;
 
             Vector3 origin = firearm && player.view != null
                 ? player.view.transform.position
@@ -359,7 +379,7 @@ namespace DeadSector
                 : player.transform.forward;
 
             SectorZombie target = null;
-            float closest = range;
+            float nearestDistance = attack.Range;
 
             foreach (SectorZombie zombie in
                 FindObjectsByType<SectorZombie>(FindObjectsSortMode.None))
@@ -367,32 +387,34 @@ namespace DeadSector
                 if (zombie == null || zombie.Dead)
                     continue;
 
-                Vector3 toEnemy = zombie.transform.position +
+                Vector3 delta = zombie.transform.position +
                     Vector3.up * 1.1f - origin;
-                float distance = toEnemy.magnitude;
 
-                if (distance > closest || distance < .05f)
+                float distance = delta.magnitude;
+                if (distance > nearestDistance || distance < .05f)
                     continue;
 
-                float facing = Vector3.Dot(forward, toEnemy / distance);
-                if (facing < (firearm ? .982f : .25f))
+                Vector3 towardsZombie = delta / distance;
+                if (Vector3.Dot(forward, towardsZombie) <
+                    attack.FacingThreshold)
                     continue;
 
-                // Static environment blocks hits; actor colliders use layer 2.
+                // Non-actor colliders (walls/terrain/props) block hits.
                 if (Physics.Raycast(
-                    origin, toEnemy / distance,
-                    distance - .15f, ~(1 << 2),
+                    origin, towardsZombie,
+                    Mathf.Max(0f, distance - .15f), ~(1 << 2),
                     QueryTriggerInteraction.Ignore))
                     continue;
 
+                nearestDistance = distance;
                 target = zombie;
-                closest = distance;
             }
 
             if (target != null)
             {
                 target.TakeDamage(damage);
-                Notify("Hit: " + Mathf.RoundToInt(damage) + " damage");
+                Notify((strong ? "Strong" : "Quick") +
+                    " hit: " + Mathf.RoundToInt(damage));
             }
         }
 
@@ -710,7 +732,7 @@ namespace DeadSector
             }
 
             GUI.Label(new Rect(14f, Mathf.Min(y + 12f, 515f), 480f, 24f),
-                "E pickup  |  LMB attack  |  F5 save  |  F9 load");
+                "LMB quick punch  |  RMB strong punch  |  F5/F9 save/load");
 
             if (GUI.Button(new Rect(14f, 7f, 70f, 20f), "Close"))
                 ToggleInventory();
