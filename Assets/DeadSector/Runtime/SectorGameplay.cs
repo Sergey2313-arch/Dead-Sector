@@ -735,17 +735,11 @@ namespace DeadSector
 
             GUI.depth = -110;
 
-            string weapon = EquippedId();
-            GUI.Box(new Rect(Screen.width * .5f - 140f, Screen.height - 47f,
-                280f, 37f),
-                "1 PRIMARY  |  2 SIDEARM  |  3 MELEE   " +
-                (string.IsNullOrEmpty(weapon)
-                    ? "FISTS"
-                    : SectorItems.Get(weapon).Label));
+            DrawHotbar();
 
             if (Time.time < messageUntil)
             {
-                GUI.Box(new Rect(Screen.width * .5f - 160f, Screen.height - 92f,
+                GUI.Box(new Rect(Screen.width * .5f - 160f, Screen.height - 123f,
                     320f, 35f), message);
             }
 
@@ -812,6 +806,59 @@ namespace DeadSector
                         (Screen.height - height) * .5f,
                         width, height),
                     DrawCraftingWindow, "DEAD SECTOR  /  CRAFTING [C]");
+            }
+        }
+
+        void DrawHotbar()
+        {
+            float slotWidth = Mathf.Clamp(
+                (Screen.width - 24f) / 3f, 95f, 135f);
+            float total = slotWidth * 3f + 12f;
+            float left = (Screen.width - total) * .5f;
+            float top = Screen.height - 73f;
+
+            for (int i = 0; i < 3; i++)
+            {
+                bool activeSlot = selectedSlot == i;
+                float x = left + i * (slotWidth + 6f);
+                Rect rect = new Rect(x, top, slotWidth, 58f);
+
+                Color tint = activeSlot
+                    ? new Color(.10f, .24f, .22f, .90f)
+                    : new Color(.035f, .045f, .05f, .82f);
+
+                Color previous = GUI.color;
+                GUI.color = tint;
+                GUI.DrawTexture(rect, Texture2D.whiteTexture);
+                GUI.color = previous;
+
+                if (activeSlot)
+                {
+                    GUI.color = new Color(.42f, .86f, .64f, 1f);
+                    GUI.DrawTexture(new Rect(x, top, slotWidth, 2f),
+                        Texture2D.whiteTexture);
+                    GUI.color = previous;
+                }
+
+                string id = equipment[i];
+                string label = SectorItems.TryGet(id, out SectorItemDefinition item) &&
+                    Inventory.Count(id) > 0
+                    ? item.Label
+                    : i == 2 ? "FISTS" : "EMPTY";
+
+                GUI.Label(new Rect(x + 7f, top + 6f, slotWidth - 12f, 20f),
+                    (i + 1) + "  /  " + (i == 0 ? "PRIMARY" :
+                    i == 1 ? "SIDEARM" : "MELEE"));
+
+                GUI.Label(new Rect(x + 7f, top + 29f, slotWidth - 12f, 21f), label);
+            }
+
+            string active = EquippedId();
+            if (active == "rifle" || active == "pistol")
+            {
+                string ammo = active == "rifle" ? "556" : "9mm";
+                GUI.Box(new Rect(left + total + 7f, top + 6f, 100f, 46f),
+                    ammo + "  " + Inventory.Count(ammo));
             }
         }
 
