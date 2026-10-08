@@ -394,6 +394,14 @@ namespace DeadSector
             Health = Mathf.Clamp(savedHealth, 0f, 100f);
         }
 
+        public void ApplyCombatRecoil(float degrees)
+        {
+            if (!Ready || degrees <= 0f)
+                return;
+
+            pitch = Mathf.Clamp(pitch - degrees, -75f, 75f);
+        }
+
         public void TeleportTo(Vector3 position)
         {
             if (body == null)
