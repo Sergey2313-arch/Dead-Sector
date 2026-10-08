@@ -21,6 +21,8 @@ Playable 8 x 8 km survival prototype with a full-body humanoid player, shoulder 
 - Runtime top-down minimap that follows the player and renders the actual streamed world.
 - Player direction marker and colored POI markers on the minimap.
 - M toggles a larger tactical map view.
+- Live azimuth compass: 0-359 degree heading, N/NE/E/SE/S/SW/W/NW marks, 5-degree minor ticks, 15-degree labels, and direction-relative POI labels with distances.
+- The compass hides while the enlarged tactical map is open; debug panel moved to the lower left.
 - One-click prototype preparation menu.
 
 ## Next work
