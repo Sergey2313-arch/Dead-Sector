@@ -142,6 +142,12 @@ namespace DeadSector
             SlotLimit = Mathf.Max(Mathf.Max(1, slots), UsedSlots);
         }
 
+        public void ResetForLoad(int slots)
+        {
+            stacks.Clear();
+            SlotLimit = Mathf.Max(1, slots);
+        }
+
         public int Count(string id)
         {
             int count = 0;
