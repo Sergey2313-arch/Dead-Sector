@@ -35,7 +35,7 @@ The existing prototype has a 8×8 km terrain generator, streaming tiles, central
 | H4 | Military checkpoint | +3700, +750 | Primitive checkpoint in test zone |
 | B4 | Garages | −2100, +300 | Primitive garages in test zone |
 | D4 | Factory | −350, +100 | Primitive factory in test zone |
-| F5 | Warehouse | +2350, −250 | Primitive warehouse in test zone |
+| G5 | Warehouse | +2350, −250 | Primitive warehouse in test zone |
 | D6 | Construction site | −250, −1350 | Planned |
 | B7 | Dam | −2250, −2450 | Planned |
 | D7 | Big lake | −250, −2900 | Water basin planned |
@@ -69,7 +69,7 @@ Additional planned geography:
 ## Roadmap ordered by impact
 
 1. **Canonical blueprint and status tracking** — approved, versioned code + documentation.
-2. **Full-world tactical atlas** showing the blueprint, correct player coordinates and build states.
+2. **Full-world tactical atlas** showing the blueprint, correct player coordinates and build states — first version added in `SectorWorldAtlas.cs`; Unity Editor/URP verification pending.
 3. **Terrain and watersheds:** carve southern basin, mountain lake, river and dam corridor; stream water with terrain.
 4. **Roads and crossings** with terrain-conforming geometry, navigation and settlement links.
 5. **Place real structures at final blueprint POI coordinates**; retire the temporary spawn-zone equivalents selectively.
