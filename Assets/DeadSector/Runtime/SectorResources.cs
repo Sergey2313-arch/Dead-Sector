@@ -4,36 +4,52 @@ using UnityEngine;
 
 namespace DeadSector
 {
+    public enum SectorResourceType
+    {
+        GroundStone,
+        DryBush,
+        FiberBush,
+        CottonPlant,
+        ScrapPile,
+        TimberPile
+    }
+
     public sealed class SectorResourceNode : MonoBehaviour
     {
         public string Id { get; private set; }
         public string ItemId { get; private set; }
         public int Count { get; private set; }
+        public string SecondaryId { get; private set; }
+        public int SecondaryCount { get; private set; }
+        public SectorResourceType Type { get; private set; }
 
-        public void Configure(string id, string itemId, int count)
+        public void Configure(
+            string id, SectorResourceType type, string item, int count,
+            string secondary = null, int secondaryCount = 0)
         {
             Id = id;
-            ItemId = itemId;
+            Type = type;
+            ItemId = item;
             Count = Mathf.Clamp(count, 1, 6);
+            SecondaryId = secondary ?? string.Empty;
+            SecondaryCount = Mathf.Max(0, secondaryCount);
         }
     }
 
     /// <summary>
-    /// Deterministic nearby harvest nodes: timber, metal scrap and cloth.
-    /// Node IDs persist independently of streamed scenery and their harvested
-    /// state is exported to JSON saves.
+    /// Stones are collected from the ground; dry bushes yield sticks and fiber;
+    /// cotton plants yield cotton. Gathering uses stable world cell IDs and
+    /// persists across tile unloading and JSON saves.
     /// </summary>
     public sealed class SectorResources : MonoBehaviour
     {
-        const int CellSize = 180;
-        const float SpawnRange = 190f;
+        const int CellSize = 65;
+        const float SpawnRange = 160f;
         const float InteractRange = 3.5f;
-
         public SectorPlayer player;
 
         readonly Dictionary<string, SectorResourceNode> active =
             new Dictionary<string, SectorResourceNode>(StringComparer.Ordinal);
-
         readonly HashSet<string> harvested =
             new HashSet<string>(StringComparer.Ordinal);
 
@@ -45,16 +61,19 @@ namespace DeadSector
             player = target;
             Shader shader = Shader.Find("Universal Render Pipeline/Lit");
             if (shader == null) shader = Shader.Find("Standard");
-            materials = new Material[3];
 
             Color[] colors =
             {
-                new Color(.30f, .18f, .09f),
-                new Color(.31f, .34f, .34f),
-                new Color(.28f, .35f, .18f)
+                new Color(.44f, .43f, .40f), // ground stone
+                new Color(.35f, .25f, .13f), // dry branches
+                new Color(.25f, .41f, .16f), // live fiber shrub
+                new Color(.92f, .87f, .76f), // cotton
+                new Color(.32f, .33f, .34f), // scrap
+                new Color(.36f, .21f, .11f)  // timber
             };
 
-            for (int i = 0; i < materials.Length; i++)
+            materials = new Material[colors.Length];
+            for (int i = 0; i < colors.Length; i++)
                 materials[i] = new Material(shader) { color = colors[i] };
         }
 
@@ -63,7 +82,7 @@ namespace DeadSector
             if (player == null || !player.Ready || Time.time < nextRefresh)
                 return;
 
-            nextRefresh = Time.time + .85f;
+            nextRefresh = Time.time + 1.1f;
             Refresh();
         }
 
@@ -73,8 +92,7 @@ namespace DeadSector
             {
                 uint h = 2166136261;
                 h = (h ^ (uint)x) * 16777619;
-                h = (h ^ (uint)z) * 16777619;
-                return h;
+                return (h ^ (uint)z) * 16777619;
             }
         }
 
@@ -83,12 +101,11 @@ namespace DeadSector
             Vector3 playerPos = player.transform.position;
             int cellX = Mathf.FloorToInt((playerPos.x + 4000f) / CellSize);
             int cellZ = Mathf.FloorToInt((playerPos.z + 4000f) / CellSize);
+            var expected = new HashSet<string>(StringComparer.Ordinal);
 
-            HashSet<string> expected = new HashSet<string>(StringComparer.Ordinal);
-
-            for (int dx = -2; dx <= 2; dx++)
+            for (int dx = -3; dx <= 3; dx++)
             {
-                for (int dz = -2; dz <= 2; dz++)
+                for (int dz = -3; dz <= 3; dz++)
                 {
                     int x = cellX + dx;
                     int z = cellZ + dz;
@@ -99,139 +116,154 @@ namespace DeadSector
                         continue;
 
                     float px = -4000f + (x + .5f) * CellSize +
-                        ((hash >> 8) % 70) - 35f;
+                        (int)((hash >> 8) % 28) - 14f;
                     float pz = -4000f + (z + .5f) * CellSize +
-                        ((hash >> 16) % 70) - 35f;
+                        (int)((hash >> 16) % 28) - 14f;
 
                     if (px < -3950f || px > 3950f ||
                         pz < -3950f || pz > 3950f)
                         continue;
 
-                    Vector2 position = new Vector2(px, pz);
+                    float dX = px - playerPos.x;
+                    float dZ = pz - playerPos.z;
 
-                    if (Vector2.Distance(position,
-                        new Vector2(playerPos.x, playerPos.z)) > SpawnRange ||
+                    if (dX * dX + dZ * dZ > SpawnRange * SpawnRange ||
                         SectorGeography.TryGetWaterLevel(px, pz, out _) ||
-                        SectorGeography.DistanceToRoad(px, pz) < 17f)
+                        SectorGeography.DistanceToRoad(px, pz) < 9f)
                         continue;
 
                     expected.Add(id);
-
                     if (!active.ContainsKey(id))
-                        SpawnNode(id, position, hash);
+                        SpawnNode(id, new Vector2(px, pz), hash);
                 }
             }
 
-            var retire = new List<string>();
+            var unload = new List<string>();
             foreach (var pair in active)
                 if (!expected.Contains(pair.Key))
-                    retire.Add(pair.Key);
+                    unload.Add(pair.Key);
 
-            foreach (string id in retire)
+            foreach (string id in unload)
             {
                 if (active[id] != null)
                     Destroy(active[id].gameObject);
-
                 active.Remove(id);
             }
         }
 
         void SpawnNode(string id, Vector2 pos, uint hash)
         {
-            int index = (int)(hash % 3);
-            string resource = index == 0
-                ? "wood" : index == 1 ? "scrap" : "cloth";
-            int amount = 1 + (int)((hash >> 4) % 3);
+            // More stones and dry bushes than rare scrap: the first tools
+            // should be craftable by exploring the starting 160m area.
+            int roll = (int)(hash % 12);
+            SectorResourceType type = roll < 3 ? SectorResourceType.GroundStone :
+                roll < 6 ? SectorResourceType.DryBush :
+                roll < 8 ? SectorResourceType.FiberBush :
+                roll < 10 ? SectorResourceType.CottonPlant :
+                roll == 10 ? SectorResourceType.ScrapPile :
+                SectorResourceType.TimberPile;
 
-            GameObject node = GameObject.CreatePrimitive(index == 2
-                ? PrimitiveType.Capsule : PrimitiveType.Cube);
+            string item = type == SectorResourceType.GroundStone ? "stone" :
+                type == SectorResourceType.DryBush ? "stick" :
+                type == SectorResourceType.FiberBush ? "plant_fiber" :
+                type == SectorResourceType.CottonPlant ? "cotton" :
+                type == SectorResourceType.ScrapPile ? "scrap" : "wood";
 
-            node.name = "Harvest_" + id;
+            string extra = type == SectorResourceType.DryBush
+                ? "plant_fiber" : string.Empty;
+
+            int count = 1 + (int)((hash >> 4) % 3);
+            float height = SectorLayout.Height(pos.x, pos.y);
+            GameObject node = GameObject.CreatePrimitive(
+                type == SectorResourceType.GroundStone ||
+                type == SectorResourceType.ScrapPile
+                    ? PrimitiveType.Cube : PrimitiveType.Capsule);
+
+            node.name = "Gather_" + type + "_" + id;
             node.transform.SetParent(transform, true);
-            node.transform.position = new Vector3(
-                pos.x, SectorLayout.Height(pos.x, pos.y) + .55f, pos.y);
+            node.transform.position = new Vector3(pos.x, height + .36f, pos.y);
+            node.transform.localScale =
+                type == SectorResourceType.GroundStone
+                    ? new Vector3(.65f, .45f, .55f)
+                    : type == SectorResourceType.CottonPlant
+                        ? new Vector3(.65f, 1.15f, .65f)
+                        : type == SectorResourceType.DryBush
+                            ? new Vector3(1f, .72f, 1f)
+                            : new Vector3(.8f, .75f, .8f);
 
-            node.transform.localScale = index == 0
-                ? new Vector3(.55f, 1.1f, .60f)
-                : index == 1
-                    ? new Vector3(1.4f, .65f, .95f)
-                    : new Vector3(.8f, 1.3f, .8f);
+            node.GetComponent<Renderer>().sharedMaterial =
+                materials[(int)type];
 
-            if (materials != null && materials.Length > index)
-                node.GetComponent<Renderer>().sharedMaterial = materials[index];
-
-            SectorResourceNode component = node.AddComponent<SectorResourceNode>();
-            component.Configure(id, resource, amount);
-            active.Add(id, component);
+            var resource = node.AddComponent<SectorResourceNode>();
+            resource.Configure(id, type, item, count, extra,
+                string.IsNullOrEmpty(extra) ? 0 : 1);
+            active.Add(id, resource);
         }
 
         public SectorResourceNode Nearby()
         {
-            if (player == null)
-                return null;
-
+            if (player == null) return null;
             SectorResourceNode nearest = null;
             float closest = InteractRange * InteractRange;
 
             foreach (SectorResourceNode node in active.Values)
             {
-                if (node == null)
-                    continue;
-
-                float sqr = (player.transform.position -
+                if (node == null) continue;
+                float d = (player.transform.position -
                     node.transform.position).sqrMagnitude;
-
-                if (sqr >= closest)
-                    continue;
+                if (d >= closest) continue;
 
                 nearest = node;
-                closest = sqr;
+                closest = d;
             }
 
             return nearest;
         }
 
         public bool Harvest(
-            SectorResourceNode node, SectorInventory inventory,
-            out string label)
+            SectorResourceNode node, SectorInventory inventory, out string label)
         {
             label = string.Empty;
-
             if (node == null || inventory == null ||
-                !active.ContainsKey(node.Id) ||
-                harvested.Contains(node.Id))
+                !active.ContainsKey(node.Id) || harvested.Contains(node.Id))
                 return false;
 
-            if (!inventory.Add(node.ItemId, node.Count))
+            // Validate BOTH outputs before changing inventory.
+            var trial = new SectorInventory(
+                inventory.SlotLimit, inventory.MaxWeight);
+            trial.Import(inventory.Export());
+            if (!trial.Add(node.ItemId, node.Count) ||
+                (!string.IsNullOrEmpty(node.SecondaryId) &&
+                 !trial.Add(node.SecondaryId, node.SecondaryCount)))
                 return false;
 
-            label = SectorItems.Get(node.ItemId).Label +
-                " ×" + node.Count;
+            inventory.Add(node.ItemId, node.Count);
+            if (!string.IsNullOrEmpty(node.SecondaryId))
+                inventory.Add(node.SecondaryId, node.SecondaryCount);
+
+            label = SectorItems.Get(node.ItemId).Label + " ×" + node.Count;
+            if (!string.IsNullOrEmpty(node.SecondaryId))
+                label += " + " + SectorItems.Get(node.SecondaryId).Label;
+
             harvested.Add(node.Id);
             active.Remove(node.Id);
             Destroy(node.gameObject);
             return true;
         }
 
-        public List<string> Export()
-        {
-            return new List<string>(harvested);
-        }
+        public List<string> Export() => new List<string>(harvested);
 
         public void Import(IEnumerable<string> ids)
         {
             harvested.Clear();
             if (ids != null)
-            {
                 foreach (string id in ids)
                     if (!string.IsNullOrEmpty(id))
                         harvested.Add(id);
-            }
 
             foreach (SectorResourceNode node in active.Values)
                 if (node != null)
                     Destroy(node.gameObject);
-
             active.Clear();
             nextRefresh = 0f;
         }
