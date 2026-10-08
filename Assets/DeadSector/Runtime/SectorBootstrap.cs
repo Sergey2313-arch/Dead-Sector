@@ -178,9 +178,19 @@ namespace DeadSector
             var weather = weatherObject.AddComponent<SectorWeather>();
             weather.Configure(player, clock);
 
+            var hordeObject = new GameObject("Night_Horde_Director");
+            var horde = hordeObject.AddComponent<SectorHordeDirector>();
+            horde.Configure(player, clock, navigation);
+
             var gameplayObject = new GameObject("Survival_Gameplay");
             var gameplay = gameplayObject.AddComponent<SectorGameplay>();
             gameplay.Configure(player, world);
+            gameplay.AttachHorde(horde);
+
+            var hudObject = new GameObject("Character_HUD");
+            var hud = hudObject.AddComponent<SectorHUD>();
+            hud.Configure(player, gameplay.Needs, clock,
+                gameplay.Armor, gameplay.Inventory);
         }
 
         void OnGUI()
@@ -189,7 +199,7 @@ namespace DeadSector
             float hudY = Mathf.Max(12f, Screen.height - 188f);
             GUI.Box(new Rect(12, hudY, 350, 176), "DEAD SECTOR / 8 x 8 km prototype");
             GUI.Label(new Rect(24, hudY + 30f, 325, 24), "WASD | Shift | Space | V view | M map | I inventory");
-            GUI.Label(new Rect(24, hudY + 53f, 325, 24), "E loot | LMB weak/RMB strong | C craft | J journal");
+            GUI.Label(new Rect(24, hudY + 53f, 325, 24), "E gather | LMB weak/RMB strong | C craft | J journal");
             GUI.Label(new Rect(24, hudY + 76f, 325, 24), "HP " + player.Health.ToString("0") + " | Terrain: " + world.LoadedTiles + "/64 | Zombies: " + navigation.ZombieCount);
             GUI.Label(new Rect(24, hudY + 99f, 325, 24), "World: " + world.Status + " | AI: " + navigation.Status);
             GUI.Label(new Rect(24, hudY + 122f, 325, 24), "Position: " + player.transform.position.ToString("F0"));
