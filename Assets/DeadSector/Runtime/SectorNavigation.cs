@@ -148,7 +148,7 @@ namespace DeadSector
         /// Returns actual spawned count; callers must not record success
         /// if missing NavMesh or missing loaded terrain prevented spawns.
         /// </summary>
-        public int SpawnHordeZombies(int requested, float minimumDistance = 48f)
+        public int SpawnHordeZombies(int requested, float minimumDistance = 48f, int day = 1)
         {
             if (!Ready || rebuilding || player == null ||
                 player.Health <= 0f || requested <= 0)
@@ -235,6 +235,10 @@ namespace DeadSector
                 ai.chaseSpeed = 3.3f + Random.Range(0f, .6f);
                 ai.sightRange = 70f;
                 ai.hearingRange = 70f;
+                ai.ConfigureArchetype(
+                    SectorZombieProfiles.ForHordeIndex(day, i),
+                    animator != null ? animator.transform :
+                    rig != null ? rig.transform : null);
                 ai.AssignHorde();
 
                 made++;
@@ -331,6 +335,10 @@ namespace DeadSector
                 ai.wanderSpeed = .85f + (i % 2) * .18f;
                 ai.hearingRange = 18f + (i % 4) * 2f;
                 ai.sightRange = 34f + (i % 3) * 3f;
+                ai.ConfigureArchetype(
+                    SectorZombieProfiles.ForAmbientIndex(i),
+                    animator != null ? animator.transform :
+                    rig != null ? rig.transform : null);
 
                 ZombieCount++;
             }
