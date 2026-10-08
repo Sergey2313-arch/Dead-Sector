@@ -485,6 +485,11 @@ namespace DeadSector
                 if (zombie == null || zombie.Dead)
                     continue;
 
+                if (firearm)
+                    zombie.HearNoise(
+                        player.transform.position,
+                        id == "rifle" ? 145f : 95f);
+
                 Vector3 delta = zombie.transform.position +
                     Vector3.up * 1.1f - origin;
 
