@@ -9,6 +9,7 @@ namespace DeadSector
         SectorPlayer player;
         SectorNavigation navigation;
         SectorArt actorArt;
+        bool debugOverlay;
 
         void Awake()
         {
@@ -193,8 +194,30 @@ namespace DeadSector
                 gameplay.Armor, gameplay.Inventory);
         }
 
+        void Update()
+        {
+            if (SectorInput.Pressed(KeyCode.F3))
+                debugOverlay = !debugOverlay;
+        }
+
         void OnGUI()
         {
+            if (player == null || world == null || navigation == null)
+                return;
+
+            if (!world.Ready)
+                GUI.Box(new Rect(Screen.width / 2 - 140,
+                    Screen.height / 2 - 25, 280, 50),
+                    "Preparing map, please wait...");
+
+            if (player.Health <= 0)
+                GUI.Box(new Rect(Screen.width / 2 - 140,
+                    Screen.height / 2 - 25, 280, 50),
+                    "You died. Press R to respawn.");
+
+            if (!debugOverlay)
+                return;
+
             // Keep the top of the screen free for the azimuth compass.
             float hudY = Mathf.Max(12f, Screen.height - 188f);
             GUI.Box(new Rect(12, hudY, 350, 176), "DEAD SECTOR / 8 x 8 km prototype");
@@ -204,8 +227,7 @@ namespace DeadSector
             GUI.Label(new Rect(24, hudY + 99f, 325, 24), "World: " + world.Status + " | AI: " + navigation.Status);
             GUI.Label(new Rect(24, hudY + 122f, 325, 24), "Position: " + player.transform.position.ToString("F0"));
             GUI.Label(new Rect(24, hudY + 145f, 325, 24), "Anim: " + player.AnimationState + " | Grounded: " + player.IsGrounded);
-            if (!world.Ready) GUI.Box(new Rect(Screen.width / 2 - 140, Screen.height / 2 - 25, 280, 50), "Preparing map, please wait...");
-            if (player.Health <= 0) GUI.Box(new Rect(Screen.width / 2 - 140, Screen.height / 2 - 25, 280, 50), "You died. Press R to respawn.");
+
         }
 
         void OnDestroy() => actorArt?.Dispose();
