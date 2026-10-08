@@ -68,7 +68,8 @@ namespace DeadSector
                         strong ? SectorAttackKind.HeavyMelee :
                             SectorAttackKind.KnifeSlash,
                         item.Damage * (strong ? 1.50f : 1f),
-                        itemId == "axe" ? 2.6f : 2.35f,
+                        itemId == "spear" ? 2.85f :
+                            itemId == "axe" ? 2.6f : 2.35f,
                         strong ? .95f : .54f,
                         strong ? 20f : 7f,
                         .22f);
