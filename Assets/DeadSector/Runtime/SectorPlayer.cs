@@ -28,6 +28,7 @@ namespace DeadSector
         public bool Ready { get; set; }
         public float Health { get; private set; } = 100f;
         public float Speed { get; private set; }
+        public bool IsSprinting { get; private set; }
         public bool IsGrounded => body != null && body.isGrounded;
         public string AnimationState { get; private set; } = "None";
 
@@ -53,22 +54,29 @@ namespace DeadSector
         void Awake()
         {
             body = GetComponent<CharacterController>();
-
-            if (visual != null)
-            {
-                rig = visual.GetComponent<SectorMannequin>();
-                animator = visual.GetComponentInChildren<Animator>(true);
-                renderers = visual.GetComponentsInChildren<Renderer>(true);
-            }
-            else
-            {
-                renderers = new Renderer[0];
-            }
-
-            if (animator != null && animator.isHuman)
-                headBone = animator.GetBoneTransform(HumanBodyBones.Head);
-
+            BindVisual(visual);
             SetCursor(true);
+        }
+
+        /// <summary>
+        /// Bootstrap injects the selected model after AddComponent. Rebind
+        /// here as well so an inactive prefab and a runtime fallback both work.
+        /// </summary>
+        public void BindVisual(Transform bodyVisual)
+        {
+            visual = bodyVisual;
+            rig = visual != null ? visual.GetComponent<SectorMannequin>() : null;
+            animator = visual != null
+                ? visual.GetComponentInChildren<Animator>(true)
+                : null;
+            renderers = visual != null
+                ? visual.GetComponentsInChildren<Renderer>(true)
+                : new Renderer[0];
+
+            headBone = animator != null && animator.isHuman
+                ? animator.GetBoneTransform(HumanBodyBones.Head)
+                : null;
+
             PrimeAnimation();
         }
 
@@ -86,6 +94,7 @@ namespace DeadSector
             if (!Ready || Health <= 0 || Cursor.lockState != CursorLockMode.Locked)
             {
                 Speed = 0;
+                IsSprinting = false;
                 SetMotion(0, true, -2f, false);
                 UpdateAnimationStateName();
                 return;
@@ -113,15 +122,21 @@ namespace DeadSector
             if (SectorInput.Pressed(KeyCode.Space))
                 jumpAt = Time.time;
 
-            if (Time.time - groundedAt < .12f && Time.time - jumpAt < .12f)
+            SectorSurvival needs = GetComponent<SectorSurvival>();
+            if (Time.time - groundedAt < .12f && Time.time - jumpAt < .12f &&
+                (needs == null || needs.CanJump))
             {
+                needs?.ConsumeJumpStamina();
                 vertical = Mathf.Sqrt(jumpHeight * 2f * gravity);
                 groundedAt = jumpAt = -10f;
             }
 
             Vector2 input = SectorInput.Move;
             Vector3 move = transform.right * input.x + transform.forward * input.y;
-            bool sprinting = SectorInput.Sprint && input.sqrMagnitude > .01f;
+            bool sprinting = SectorInput.Sprint &&
+                input.sqrMagnitude > .01f &&
+                (needs == null || needs.CanSprint);
+            IsSprinting = sprinting;
 
             vertical = Mathf.Max(vertical - gravity * Time.deltaTime, -45f);
             float impactVelocity = vertical;
@@ -277,6 +292,7 @@ namespace DeadSector
             jumpAt = -10f;
             previousGrounded = true;
             Speed = 0;
+            IsSprinting = false;
             Health = 100f;
             cameraInitialized = false;
 
@@ -364,8 +380,33 @@ namespace DeadSector
             return "Other";
         }
 
+        public void Heal(float amount)
+        {
+            if (amount > 0f && Health > 0f)
+                Health = Mathf.Clamp(Health + amount, 0f, 100f);
+        }
+
+        public void RestoreHealth(float savedHealth)
+        {
+            Health = Mathf.Clamp(savedHealth, 0f, 100f);
+        }
+
+        public void TeleportTo(Vector3 position)
+        {
+            if (body == null)
+                body = GetComponent<CharacterController>();
+
+            body.enabled = false;
+            transform.position = position;
+            body.enabled = true;
+            vertical = -2f;
+            cameraInitialized = false;
+            Physics.SyncTransforms();
+        }
+
         public void Damage(float amount)
         {
+            if (amount <= 0f) return;
             Health = Mathf.Max(0, Health - amount);
 
             if (Health <= 0)
