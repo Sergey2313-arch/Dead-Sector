@@ -10,6 +10,7 @@ namespace DeadSector
     {
         public int version = 1;
         public float hourOfDay = 12f;
+        public int daysSurvived;
         public Vector3 position;
         public float health;
         public float hunger;
@@ -24,6 +25,8 @@ namespace DeadSector
             new List<SectorContainerSnapshot>();
         public List<string> harvestedResourceIds = new List<string>();
         public SectorJournalSnapshot journal = new SectorJournalSnapshot();
+        public SectorHordeSnapshot horde = new SectorHordeSnapshot();
+        public string[] armor = new string[5];
     }
 
     /// <summary>
@@ -43,6 +46,8 @@ namespace DeadSector
         public SectorPunchVisual PunchVisual { get; private set; }
         public SectorResources Resources { get; private set; }
         public SectorJournal Journal { get; private set; }
+        public SectorEquipment Armor { get; private set; }
+        public SectorHordeDirector Horde { get; private set; }
 
         readonly Dictionary<string, SectorLootContainer> active =
             new Dictionary<string, SectorLootContainer>(StringComparer.Ordinal);
@@ -55,6 +60,9 @@ namespace DeadSector
         bool inventoryOpen;
         bool craftingOpen;
         bool loadedOnce;
+        Vector2 inventoryScroll;
+        Vector2 craftingScroll;
+        string selectedInventoryItem = "";
         float refreshAt;
         float autoSaveAt;
         float nextAttack;
@@ -85,6 +93,10 @@ namespace DeadSector
                 EquipmentVisuals = target.gameObject.AddComponent<SectorEquipmentVisuals>();
 
             EquipmentVisuals.Configure(target);
+
+            Armor = target.GetComponent<SectorEquipment>();
+            if (Armor == null)
+                Armor = target.gameObject.AddComponent<SectorEquipment>();
 
             PunchVisual = target.GetComponent<SectorPunchVisual>();
             if (PunchVisual == null)
@@ -172,8 +184,15 @@ namespace DeadSector
                 SaveGame(true);
             }
 
+            Armor?.Refresh(Inventory);
+
             EquipmentVisuals?.UpdateLoadout(
                 equipment[0], equipment[1], equipment[2], selectedSlot);
+        }
+
+        public void AttachHorde(SectorHordeDirector director)
+        {
+            Horde = director;
         }
 
         void ToggleInventory()
@@ -504,6 +523,13 @@ namespace DeadSector
             SectorItemDefinition item = SectorItems.Get(id);
             int slot;
 
+            if (item.Kind == SectorItemKind.Armor)
+            {
+                if (Armor != null && Armor.Equip(id, Inventory))
+                    Notify("Equipped " + item.Label);
+                return;
+            }
+
             switch (item.Kind)
             {
                 case SectorItemKind.Melee: slot = 2; break;
@@ -535,6 +561,9 @@ namespace DeadSector
             var data = new SectorGameSave
             {
                 hourOfDay = WorldClock != null ? WorldClock.hourOfDay : 12f,
+                daysSurvived = WorldClock != null ? WorldClock.DaysSurvived : 0,
+                horde = Horde != null ? Horde.Export() : new SectorHordeSnapshot(),
+                armor = Armor != null ? Armor.Export() : new string[5],
                 position = player.transform.position,
                 health = player.Health,
                 hunger = Needs != null ? Needs.hunger : 100f,
@@ -613,7 +642,9 @@ namespace DeadSector
 
                 Needs?.ApplySaved(data.hunger, data.thirst, data.stamina);
                 player.RestoreHealth(data.health);
-                WorldClock?.RestoreTime(data.hourOfDay);
+                WorldClock?.RestoreTime(data.hourOfDay, data.daysSurvived);
+                Armor?.Import(data.armor, Inventory);
+                Horde?.Import(data.horde);
                 Resources?.Import(data.harvestedResourceIds);
                 Journal?.Import(data.journal);
 
@@ -668,19 +699,6 @@ namespace DeadSector
 
             GUI.depth = -110;
 
-            float x = 14f;
-            DrawBar(new Rect(x, 104f, 180f, 18f),
-                "HUNGER", Needs != null ? Needs.hunger : 100f,
-                new Color(.68f, .59f, .25f));
-
-            DrawBar(new Rect(x, 127f, 180f, 18f),
-                "THIRST", Needs != null ? Needs.thirst : 100f,
-                new Color(.28f, .62f, .89f));
-
-            DrawBar(new Rect(x, 150f, 180f, 18f),
-                "STAMINA", Needs != null ? Needs.stamina : 100f,
-                new Color(.38f, .76f, .47f));
-
             string weapon = EquippedId();
             GUI.Box(new Rect(Screen.width * .5f - 140f, Screen.height - 47f,
                 280f, 37f),
@@ -734,8 +752,8 @@ namespace DeadSector
 
             if (inventoryOpen)
             {
-                float width = Mathf.Min(540f, Screen.width - 18f);
-                float height = Mathf.Min(600f, Screen.height - 22f);
+                float width = Mathf.Min(850f, Screen.width - 18f);
+                float height = Mathf.Min(620f, Screen.height - 22f);
 
                 GUI.Window(
                     1736,
@@ -748,8 +766,8 @@ namespace DeadSector
 
             if (craftingOpen)
             {
-                float width = Mathf.Min(570f, Screen.width - 18f);
-                float height = Mathf.Min(405f, Screen.height - 22f);
+                float width = Mathf.Min(685f, Screen.width - 18f);
+                float height = Mathf.Min(550f, Screen.height - 22f);
 
                 GUI.Window(
                     1737,
