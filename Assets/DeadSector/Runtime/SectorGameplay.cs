@@ -47,6 +47,7 @@ namespace DeadSector
         public SectorResources Resources { get; private set; }
         public SectorJournal Journal { get; private set; }
         public SectorEquipment Armor { get; private set; }
+        public SectorArmorVisuals ArmorVisuals { get; private set; }
         public SectorHordeDirector Horde { get; private set; }
 
         readonly Dictionary<string, SectorLootContainer> active =
@@ -97,6 +98,11 @@ namespace DeadSector
             Armor = target.GetComponent<SectorEquipment>();
             if (Armor == null)
                 Armor = target.gameObject.AddComponent<SectorEquipment>();
+
+            ArmorVisuals = target.GetComponent<SectorArmorVisuals>();
+            if (ArmorVisuals == null)
+                ArmorVisuals = target.gameObject.AddComponent<SectorArmorVisuals>();
+            ArmorVisuals.Configure(target, Armor);
 
             PunchVisual = target.GetComponent<SectorPunchVisual>();
             if (PunchVisual == null)
@@ -185,7 +191,10 @@ namespace DeadSector
             }
 
             Armor?.Refresh(Inventory);
-
+            ArmorVisuals?.Refresh();
+            EquipmentVisuals?.SetBackpackVisible(
+                Armor != null &&
+                Armor.Equipped(SectorEquipment.GearSlot.Backpack) != "");
             EquipmentVisuals?.UpdateLoadout(
                 equipment[0], equipment[1], equipment[2], selectedSlot);
         }
