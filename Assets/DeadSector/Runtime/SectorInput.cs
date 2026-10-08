@@ -54,6 +54,7 @@ namespace DeadSector
                 case KeyCode.V: return k.vKey.wasPressedThisFrame;
                 case KeyCode.Escape: return k.escapeKey.wasPressedThisFrame;
                 case KeyCode.R: return k.rKey.wasPressedThisFrame;
+                case KeyCode.M: return k.mKey.wasPressedThisFrame;
                 default: return false;
             }
 #else
