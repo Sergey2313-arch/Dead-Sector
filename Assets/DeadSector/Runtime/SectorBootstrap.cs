@@ -27,6 +27,10 @@ namespace DeadSector
             RenderSettings.fogColor = new Color(.48f, .55f, .6f);
             RenderSettings.fogDensity = .0009f;
 
+            var clockObject = new GameObject("World_Clock");
+            var clock = clockObject.AddComponent<SectorWorldClock>();
+            clock.sun = sun;
+
             GameObject actor;
             Transform rig;
             Camera camera;
