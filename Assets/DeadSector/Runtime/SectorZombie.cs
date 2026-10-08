@@ -26,6 +26,10 @@ namespace DeadSector
         public float Health { get; private set; } = 100f;
         public bool Dead { get; private set; } = false;
         public bool IsHorde { get; private set; } = false;
+        public SectorZombieKind Kind { get; private set; } = SectorZombieKind.Shambler;
+        public float AttackDamage { get; private set; } = 10f;
+        public float AttackCooldown { get; private set; } = 1.2f;
+        SectorZombieAppearance appearance;
 
         NavMeshAgent agent;
         Vector3 home;
@@ -73,7 +77,7 @@ namespace DeadSector
                 if (target.Health > 0 &&
                     Vector3.Distance(transform.position, target.transform.position) <= attackRange + .35f)
                 {
-                    target.Damage(10f);
+                    target.Damage(AttackDamage);
                 }
             }
 
@@ -111,6 +115,35 @@ namespace DeadSector
             }
 
             SetMotion(agent.velocity.magnitude, alerted);
+        }
+
+        public void ConfigureArchetype(SectorZombieKind kind, Transform model)
+        {
+            SectorZombieProfile profile = SectorZombieProfiles.For(kind);
+            Kind = profile.Kind;
+            Health = profile.Health;
+            wanderSpeed = profile.WalkSpeed;
+            chaseSpeed = profile.ChaseSpeed;
+            AttackDamage = profile.AttackDamage;
+            AttackCooldown = profile.AttackCooldown;
+            sightRange = profile.SightRange;
+            hearingRange = profile.HearingRange;
+
+            if (model != null)
+            {
+                appearance = gameObject.GetComponent<SectorZombieAppearance>();
+                if (appearance == null)
+                    appearance = gameObject.AddComponent<SectorZombieAppearance>();
+
+                appearance.Configure(kind, model, profile);
+            }
+
+            if (agent != null && agent.enabled)
+            {
+                agent.speed = wanderSpeed;
+                if (agent.isOnNavMesh)
+                    agent.stoppingDistance = attackRange * .82f;
+            }
         }
 
         public void AssignHorde()
@@ -277,7 +310,7 @@ namespace DeadSector
                 return;
             }
 
-            nextAttack = Time.time + Random.Range(1.05f, 1.35f);
+            nextAttack = Time.time + AttackCooldown + Random.Range(-.08f, .08f);
             pendingDamageAt = Time.time + .32f;
 
             int variant = Random.Range(0, 3);
@@ -291,6 +324,8 @@ namespace DeadSector
                 return;
 
             Health = Mathf.Max(0f, Health - damage);
+            if (appearance != null)
+                appearance.FlashOnHit();
 
             if (target != null)
             {
