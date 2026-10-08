@@ -22,6 +22,8 @@ namespace DeadSector
         public List<SectorItemStack> inventory = new List<SectorItemStack>();
         public List<SectorContainerSnapshot> containers =
             new List<SectorContainerSnapshot>();
+        public List<string> harvestedResourceIds = new List<string>();
+        public SectorJournalSnapshot journal = new SectorJournalSnapshot();
     }
 
     /// <summary>
@@ -39,6 +41,8 @@ namespace DeadSector
         public SectorEquipmentVisuals EquipmentVisuals { get; private set; }
         public SectorWorldClock WorldClock { get; private set; }
         public SectorPunchVisual PunchVisual { get; private set; }
+        public SectorResources Resources { get; private set; }
+        public SectorJournal Journal { get; private set; }
 
         readonly Dictionary<string, SectorLootContainer> active =
             new Dictionary<string, SectorLootContainer>(StringComparer.Ordinal);
@@ -49,6 +53,7 @@ namespace DeadSector
         string[] equipment = { "", "", "" };
         int selectedSlot = 2;
         bool inventoryOpen;
+        bool craftingOpen;
         bool loadedOnce;
         float refreshAt;
         float autoSaveAt;
@@ -86,6 +91,17 @@ namespace DeadSector
                 PunchVisual = target.gameObject.AddComponent<SectorPunchVisual>();
 
             PunchVisual.Configure(target);
+
+            Resources = GetComponent<SectorResources>();
+            if (Resources == null)
+                Resources = gameObject.AddComponent<SectorResources>();
+            Resources.Configure(target);
+
+            Journal = GetComponent<SectorJournal>();
+            if (Journal == null)
+                Journal = gameObject.AddComponent<SectorJournal>();
+            Journal.Configure(target);
+
             WorldClock = FindFirstObjectByType<SectorWorldClock>();
 
             Inventory.Add("knife", 1);
@@ -120,6 +136,9 @@ namespace DeadSector
             if (SectorInput.Pressed(KeyCode.I))
                 ToggleInventory();
 
+            if (SectorInput.Pressed(KeyCode.C))
+                ToggleCrafting();
+
             if (SectorInput.Pressed(KeyCode.Alpha1)) selectedSlot = 0;
             if (SectorInput.Pressed(KeyCode.Alpha2)) selectedSlot = 1;
             if (SectorInput.Pressed(KeyCode.Alpha3)) selectedSlot = 2;
@@ -130,7 +149,7 @@ namespace DeadSector
                 RefreshContainers();
             }
 
-            if (!inventoryOpen && player.Health > 0f &&
+            if (!inventoryOpen && !craftingOpen && player.Health > 0f &&
                 Cursor.lockState == CursorLockMode.Locked)
             {
                 if (SectorInput.Pressed(KeyCode.E))
@@ -159,12 +178,27 @@ namespace DeadSector
 
         void ToggleInventory()
         {
-            inventoryOpen = !inventoryOpen;
-            player.InputBlockedByUI = inventoryOpen;
-            Cursor.lockState = inventoryOpen
-                ? CursorLockMode.None
-                : CursorLockMode.Locked;
-            Cursor.visible = inventoryOpen;
+            bool next = !inventoryOpen;
+            inventoryOpen = next;
+            craftingOpen = false;
+            UpdatePanelInput();
+        }
+
+        void ToggleCrafting()
+        {
+            bool next = !craftingOpen;
+            craftingOpen = next;
+            inventoryOpen = false;
+            UpdatePanelInput();
+        }
+
+        void UpdatePanelInput()
+        {
+            bool modalOpen = inventoryOpen || craftingOpen;
+            player.InputBlockedByUI = modalOpen;
+            Cursor.lockState = modalOpen
+                ? CursorLockMode.None : CursorLockMode.Locked;
+            Cursor.visible = modalOpen;
         }
 
         void RefreshContainers()
@@ -302,6 +336,26 @@ namespace DeadSector
         {
             SectorLootContainer container = NearbyContainer();
             SectorDoor door = NearbyDoor();
+            SectorResourceNode resource =
+                Resources != null ? Resources.Nearby() : null;
+
+            if (resource != null &&
+                (door == null || Vector3.Distance(
+                    resource.transform.position, player.transform.position) <
+                    Vector3.Distance(door.transform.position, player.transform.position)) &&
+                (container == null || Vector3.Distance(
+                    resource.transform.position, player.transform.position) <
+                    Vector3.Distance(container.transform.position, player.transform.position)))
+            {
+                if (Resources.Harvest(resource, Inventory, out string found))
+                {
+                    Journal?.RecordHarvest();
+                    Notify("Harvested: " + found);
+                }
+                else
+                    Notify("Not enough inventory space for resources");
+                return;
+            }
 
             if (door != null && (container == null ||
                 Vector3.Distance(door.transform.position, player.transform.position) <
@@ -321,6 +375,7 @@ namespace DeadSector
             if (container.TakeFirst(Inventory, out string description))
             {
                 persistent[container.containerId] = container.Export();
+                Journal?.RecordPickup();
                 Notify("Picked up: " + description);
             }
             else
@@ -413,6 +468,8 @@ namespace DeadSector
             if (target != null)
             {
                 target.TakeDamage(damage);
+                if (target.Dead)
+                    Journal?.RecordKill();
                 Notify((strong ? "Strong" : "Quick") +
                     " hit: " + Mathf.RoundToInt(damage));
             }
@@ -487,7 +544,11 @@ namespace DeadSector
                 secondary = equipment[1],
                 melee = equipment[2],
                 selectedSlot = selectedSlot,
-                inventory = Inventory.Export()
+                inventory = Inventory.Export(),
+                harvestedResourceIds = Resources != null
+                    ? Resources.Export() : new List<string>(),
+                journal = Journal != null
+                    ? Journal.Export() : new SectorJournalSnapshot()
             };
 
             foreach (var pair in active)
@@ -553,6 +614,8 @@ namespace DeadSector
                 Needs?.ApplySaved(data.hunger, data.thirst, data.stamina);
                 player.RestoreHealth(data.health);
                 WorldClock?.RestoreTime(data.hourOfDay);
+                Resources?.Import(data.harvestedResourceIds);
+                Journal?.Import(data.journal);
 
                 foreach (SectorLootContainer container in active.Values)
                     Destroy(container.gameObject);
@@ -632,13 +695,27 @@ namespace DeadSector
                     320f, 35f), message);
             }
 
-            if (!inventoryOpen &&
+            if (!inventoryOpen && !craftingOpen &&
                 Cursor.lockState == CursorLockMode.Locked)
             {
                 SectorLootContainer nearby = NearbyContainer();
                 SectorDoor door = NearbyDoor();
+                SectorResourceNode resource =
+                    Resources != null ? Resources.Nearby() : null;
 
-                if (door != null && (nearby == null ||
+                if (resource != null &&
+                    (door == null || Vector3.Distance(
+                        resource.transform.position, player.transform.position) <
+                        Vector3.Distance(door.transform.position, player.transform.position)) &&
+                    (nearby == null || Vector3.Distance(
+                        resource.transform.position, player.transform.position) <
+                        Vector3.Distance(nearby.transform.position, player.transform.position)))
+                {
+                    GUI.Box(new Rect(Screen.width * .5f - 142f,
+                        Screen.height * .61f, 284f, 50f),
+                        "[E] HARVEST " + SectorItems.Get(resource.ItemId).Label);
+                }
+                else if (door != null && (nearby == null ||
                     Vector3.Distance(door.transform.position, player.transform.position) <
                     Vector3.Distance(nearby.transform.position, player.transform.position)))
                 {
@@ -668,6 +745,62 @@ namespace DeadSector
                         width, height),
                     DrawInventoryWindow, "DEAD SECTOR  /  INVENTORY [I]");
             }
+
+            if (craftingOpen)
+            {
+                float width = Mathf.Min(570f, Screen.width - 18f);
+                float height = Mathf.Min(405f, Screen.height - 22f);
+
+                GUI.Window(
+                    1737,
+                    new Rect(
+                        (Screen.width - width) * .5f,
+                        (Screen.height - height) * .5f,
+                        width, height),
+                    DrawCraftingWindow, "DEAD SECTOR  /  CRAFTING [C]");
+            }
+        }
+
+        void DrawCraftingWindow(int windowId)
+        {
+            GUI.Label(new Rect(12f, 30f, 500f, 25f),
+                "Combine items instantly. No rarity or upgrade levels.");
+
+            int index = 0;
+            foreach (SectorRecipe recipe in SectorCrafting.Recipes)
+            {
+                float y = 62f + index * 51f;
+                string ingredients = "";
+
+                foreach (SectorIngredient ingredient in recipe.Ingredients)
+                {
+                    if (ingredients.Length > 0) ingredients += ", ";
+                    ingredients += SectorItems.Get(ingredient.ItemId).Label +
+                        " " + Inventory.Count(ingredient.ItemId) + "/" + ingredient.Count;
+                }
+
+                GUI.Label(new Rect(14f, y, 360f, 22f), recipe.Name);
+                GUI.Label(new Rect(14f, y + 20f, 385f, 18f), ingredients);
+
+                bool canCraft = SectorCrafting.CanCraft(Inventory, recipe);
+                bool previous = GUI.enabled;
+                GUI.enabled = canCraft;
+
+                if (GUI.Button(new Rect(395f, y + 6f, 92f, 28f), "CRAFT"))
+                {
+                    if (SectorCrafting.Craft(Inventory, recipe.Id))
+                    {
+                        Journal?.RecordCraft();
+                        Notify("Crafted " + SectorItems.Get(recipe.OutputId).Label);
+                    }
+                }
+
+                GUI.enabled = previous;
+                index++;
+            }
+
+            if (GUI.Button(new Rect(12f, 7f, 72f, 21f), "Close"))
+                ToggleCrafting();
         }
 
         static void DrawBar(Rect r, string label, float value, Color fill)
@@ -732,7 +865,7 @@ namespace DeadSector
             }
 
             GUI.Label(new Rect(14f, Mathf.Min(y + 12f, 515f), 480f, 24f),
-                "LMB quick punch  |  RMB strong punch  |  F5/F9 save/load");
+                "LMB quick / RMB strong | C craft | J journal | F5/F9");
 
             if (GUI.Button(new Rect(14f, 7f, 70f, 20f), "Close"))
                 ToggleInventory();
