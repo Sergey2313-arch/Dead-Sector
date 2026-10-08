@@ -12,6 +12,9 @@ namespace DeadSector
         public const float LowWaterLevel = 44f;
         public const float MountainWaterLevel = 112f;
 
+        static readonly Vector2 QuarryCenter =
+            SectorMapPlan.FindById("quarry").MapPosition;
+
         public static float Height(float x, float z)
         {
             float ground = BaseHeight(x, z);
@@ -34,12 +37,14 @@ namespace DeadSector
                 if (radius <= 0f)
                     continue;
 
-                float distance = Vector2.Distance(
-                    new Vector2(x, z), poi.MapPosition);
+                float dx = x - poi.MapPosition.x;
+                float dz = z - poi.MapPosition.y;
+                float outerRadius = radius * 1.4f;
 
-                if (distance >= radius * 1.4f)
+                if (dx * dx + dz * dz >= outerRadius * outerRadius)
                     continue;
 
+                float distance = Mathf.Sqrt(dx * dx + dz * dz);
                 float centerHeight = BaseHeight(
                     poi.MapPosition.x, poi.MapPosition.y);
 
@@ -50,9 +55,10 @@ namespace DeadSector
             }
 
             // Rough quarry excavation, with terraces reserved for later.
-            Vector2 quarryCenter = SectorMapPlan.FindById("quarry").MapPosition;
-            float quarryDistance = Vector2.Distance(
-                new Vector2(x, z), quarryCenter);
+            float quarryDx = x - QuarryCenter.x;
+            float quarryDz = z - QuarryCenter.y;
+            float quarryDistance = Mathf.Sqrt(
+                quarryDx * quarryDx + quarryDz * quarryDz);
 
             if (quarryDistance < 215f)
             {
