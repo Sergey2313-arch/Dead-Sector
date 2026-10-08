@@ -781,43 +781,76 @@ namespace DeadSector
 
         void DrawCraftingWindow(int windowId)
         {
-            GUI.Label(new Rect(12f, 30f, 500f, 25f),
-                "Combine items instantly. No rarity or upgrade levels.");
+            float w = Mathf.Min(685f, Screen.width - 18f);
+            float h = Mathf.Min(550f, Screen.height - 22f);
+            GUI.Label(new Rect(14f, 29f, w - 30f, 25f),
+                "STONE AGE → WOODEN GEAR → COTTON CLOTHING");
 
-            int index = 0;
-            foreach (SectorRecipe recipe in SectorCrafting.Recipes)
+            float viewWidth = w - 42f;
+            Rect scrollArea = new Rect(12f, 62f, w - 25f, h - 83f);
+            craftingScroll = GUI.BeginScrollView(
+                scrollArea, craftingScroll,
+                new Rect(0f, 0f, viewWidth, 1130f));
+
+            float y = 2f;
+            string[] tierNames = {
+                "TIER 0 / WILDERNESS: STONE, STICKS, PLANT FIBER",
+                "TIER 1 / PRIMITIVE: WOODEN PROTECTION",
+                "TIER 2 / TEXTILES: COTTON CLOTHING"
+            };
+
+            for (int tier = 0; tier <= 2; tier++)
             {
-                float y = 62f + index * 51f;
-                string ingredients = "";
+                GUI.Box(new Rect(2f, y, viewWidth - 15f, 28f),
+                    tierNames[tier]);
+                y += 33f;
 
-                foreach (SectorIngredient ingredient in recipe.Ingredients)
+                foreach (SectorRecipe recipe in SectorCrafting.Recipes)
                 {
-                    if (ingredients.Length > 0) ingredients += ", ";
-                    ingredients += SectorItems.Get(ingredient.ItemId).Label +
-                        " " + Inventory.Count(ingredient.ItemId) + "/" + ingredient.Count;
-                }
+                    if (recipe.Tier != tier) continue;
 
-                GUI.Label(new Rect(14f, y, 360f, 22f), recipe.Name);
-                GUI.Label(new Rect(14f, y + 20f, 385f, 18f), ingredients);
-
-                bool canCraft = SectorCrafting.CanCraft(Inventory, recipe);
-                bool previous = GUI.enabled;
-                GUI.enabled = canCraft;
-
-                if (GUI.Button(new Rect(395f, y + 6f, 92f, 28f), "CRAFT"))
-                {
-                    if (SectorCrafting.Craft(Inventory, recipe.Id))
+                    string ingredients = "";
+                    foreach (SectorIngredient ingredient in recipe.Ingredients)
                     {
-                        Journal?.RecordCraft();
-                        Notify("Crafted " + SectorItems.Get(recipe.OutputId).Label);
+                        if (ingredients.Length > 0) ingredients += "  +  ";
+                        ingredients += SectorItems.Get(ingredient.ItemId).Label +
+                            " " + Inventory.Count(ingredient.ItemId) + "/" +
+                            ingredient.Count;
                     }
+
+                    GUI.Label(new Rect(10f, y, viewWidth - 140f, 24f),
+                        recipe.Name + "  →  " +
+                        SectorItems.Get(recipe.OutputId).Label);
+
+                    GUI.Label(new Rect(10f, y + 23f, viewWidth - 140f, 18f),
+                        ingredients);
+
+                    bool canCraft =
+                        SectorCrafting.CanCraft(Inventory, recipe);
+                    bool previous = GUI.enabled;
+                    GUI.enabled = canCraft;
+
+                    if (GUI.Button(new Rect(viewWidth - 119f, y + 7f,
+                        105f, 32f), "CRAFT"))
+                    {
+                        if (SectorCrafting.Craft(Inventory, recipe.Id))
+                        {
+                            Journal?.RecordCraft();
+                            Notify("Crafted " +
+                                SectorItems.Get(recipe.OutputId).Label);
+                        }
+                    }
+
+                    GUI.enabled = previous;
+                    y += 54f;
                 }
 
-                GUI.enabled = previous;
-                index++;
+                y += 8f;
             }
 
-            if (GUI.Button(new Rect(12f, 7f, 72f, 21f), "Close"))
+            GUI.EndScrollView();
+
+            if (GUI.Button(new Rect(w - 84f, 5f, 71f, 22f), "Close"))
                 ToggleCrafting();
         }
 
@@ -839,54 +872,157 @@ namespace DeadSector
 
         void DrawInventoryWindow(int id)
         {
-            GUI.Label(new Rect(14, 29, 400, 22),
-                "Capacity: " + Inventory.UsedSlots + " / " + Inventory.SlotLimit +
-                " slots   |   Weight: " + Inventory.Weight.ToString("0.0") +
-                " / " + Inventory.MaxWeight.ToString("0.0") + " kg");
+            float w = Mathf.Min(850f, Screen.width - 18f);
+            float h = Mathf.Min(620f, Screen.height - 22f);
+            float leftWidth = Mathf.Min(258f, w * .34f);
+            float rightX = leftWidth + 13f;
+            float rightWidth = w - rightX - 15f;
+            float gridBottom = h - 131f;
 
-            GUI.Label(new Rect(14, 53, 440, 22),
-                "1: " + SlotName(0) + "   2: " + SlotName(1) +
-                "   3: " + SlotName(2));
+            GUI.Box(new Rect(10f, 31f, leftWidth - 2f, h - 43f),
+                "CHARACTER  /  EQUIPMENT");
 
-            float y = 82f;
-            int count = Mathf.Min(Inventory.Stacks.Count, 16);
+            DrawCharacterSilhouette(
+                12f + leftWidth * .5f,
+                Mathf.Min(h - 218f, 356f));
 
-            for (int i = 0; i < count; i++)
+            for (int i = 0; i < 5; i++)
             {
-                SectorItemStack stack = Inventory.Stacks[i];
+                SectorEquipment.GearSlot gearSlot =
+                    (SectorEquipment.GearSlot)i;
+                string equipped = Armor != null
+                    ? Armor.Equipped(gearSlot) : "";
+                string display = SectorItems.TryGet(
+                    equipped, out SectorItemDefinition item)
+                        ? item.Label : "EMPTY";
 
-                if (!SectorItems.TryGet(stack.id, out SectorItemDefinition item))
-                    continue;
+                float y = 56f + i * 51f;
+                GUI.Label(new Rect(17f, y, leftWidth - 13f, 18f),
+                    gearSlot.ToString().ToUpperInvariant());
 
-                GUI.Label(new Rect(14f, y, 280f, 23f),
-                    item.Label + " ×" + stack.count);
-
-                bool consumable = item.IsConsumable;
-                bool equip = item.Kind == SectorItemKind.Firearm ||
-                             item.Kind == SectorItemKind.Melee;
-
-                if (consumable &&
-                    GUI.Button(new Rect(295f, y, 88f, 23f), "Use"))
-                {
-                    UseItem(stack.id);
-                    break;
-                }
-
-                if (equip &&
-                    GUI.Button(new Rect(295f, y, 88f, 23f), "Equip"))
-                {
-                    EquipItem(stack.id);
-                    break;
-                }
-
-                y += 26f;
+                if (GUI.Button(new Rect(17f, y + 19f,
+                    leftWidth - 25f, 27f), display +
+                    (string.IsNullOrEmpty(equipped) ? "" : "   [REMOVE]")))
+                    Armor?.Unequip(gearSlot, Inventory);
             }
 
-            GUI.Label(new Rect(14f, Mathf.Min(y + 12f, 515f), 480f, 24f),
-                "LMB quick / RMB strong | C craft | J journal | F5/F9");
+            float defenses = Armor != null
+                ? (1f - Armor.DamageMultiplier) * 100f : 0f;
+            GUI.Label(new Rect(17f, h - 116f, leftWidth - 26f, 22f),
+                "ARMOR  " + defenses.ToString("0") + "% REDUCTION");
+            GUI.Label(new Rect(17f, h - 93f, leftWidth - 26f, 22f),
+                "HP " + player.Health.ToString("0") +
+                "   STAMINA " + (Needs != null
+                    ? Needs.stamina.ToString("0") : "100"));
+            GUI.Label(new Rect(17f, h - 69f, leftWidth - 26f, 22f),
+                "FOOD " + (Needs != null ? Needs.hunger.ToString("0") : "100") +
+                "   WATER " + (Needs != null
+                    ? Needs.thirst.ToString("0") : "100"));
 
-            if (GUI.Button(new Rect(14f, 7f, 70f, 20f), "Close"))
+            GUI.Label(new Rect(rightX, 33f, rightWidth, 21f),
+                "BACKPACK  " + Inventory.UsedSlots + "/" +
+                Inventory.SlotLimit + " SLOTS   " +
+                Inventory.Weight.ToString("0.0") + "/" +
+                Inventory.MaxWeight.ToString("0.0") + " KG");
+
+            GUI.Box(new Rect(rightX - 4f, 57f,
+                rightWidth + 7f, gridBottom - 51f), "");
+
+            int columns = Mathf.Max(2,
+                Mathf.FloorToInt((rightWidth - 22f) / 105f));
+            float cellWidth = (rightWidth - 24f) / columns - 5f;
+            const float cellHeight = 75f;
+            int rows = Mathf.CeilToInt(
+                Mathf.Max(1, Inventory.Stacks.Count) / (float)columns);
+            float contentHeight = Mathf.Max(gridBottom - 72f,
+                rows * (cellHeight + 5f) + 8f);
+
+            inventoryScroll = GUI.BeginScrollView(
+                new Rect(rightX, 64f, rightWidth, gridBottom - 64f),
+                inventoryScroll,
+                new Rect(0f, 0f, rightWidth - 22f, contentHeight));
+
+            GUIStyle itemStyle = new GUIStyle(GUI.skin.button);
+            itemStyle.wordWrap = true;
+            itemStyle.alignment = TextAnchor.MiddleCenter;
+            itemStyle.fontSize = 11;
+
+            for (int i = 0; i < Inventory.Stacks.Count; i++)
+            {
+                SectorItemStack stack = Inventory.Stacks[i];
+                if (!SectorItems.TryGet(stack.id,
+                    out SectorItemDefinition item)) continue;
+
+                int row = i / columns;
+                int col = i % columns;
+                float x = 4f + col * (cellWidth + 5f);
+                float y = 4f + row * (cellHeight + 5f);
+                bool selected = selectedInventoryItem == stack.id;
+
+                Color old = GUI.color;
+                if (selected) GUI.color =
+                    new Color(.75f, .95f, .84f);
+
+                if (GUI.Button(
+                    new Rect(x, y, cellWidth, cellHeight),
+                    item.Label + "\n×" + stack.count,
+                    itemStyle))
+                    selectedInventoryItem = stack.id;
+                GUI.color = old;
+            }
+
+            GUI.EndScrollView();
+
+            float footer = h - 118f;
+            GUI.Box(new Rect(rightX - 4f, footer, rightWidth + 7f, 95f),
+                "SELECTED ITEM");
+
+            if (Inventory.Count(selectedInventoryItem) <= 0)
+                selectedInventoryItem = Inventory.Stacks.Count > 0
+                    ? Inventory.Stacks[0].id : "";
+
+            if (SectorItems.TryGet(selectedInventoryItem,
+                out SectorItemDefinition selected))
+            {
+                GUI.Label(new Rect(rightX + 8f, footer + 25f,
+                    rightWidth - 24f, 20f), selected.Label + "  /  " +
+                    selected.Kind + "  /  " +
+                    selected.Weight.ToString("0.00") + " KG");
+
+                if (selected.IsConsumable &&
+                    GUI.Button(new Rect(rightX + 8f,
+                        footer + 53f, 105f, 28f), "USE"))
+                    UseItem(selected.Id);
+
+                if ((selected.Kind == SectorItemKind.Armor ||
+                    selected.Kind == SectorItemKind.Melee ||
+                    selected.Kind == SectorItemKind.Firearm) &&
+                    GUI.Button(new Rect(rightX + 119f,
+                        footer + 53f, 115f, 28f), "EQUIP"))
+                    EquipItem(selected.Id);
+            }
+
+            if (GUI.Button(new Rect(w - 84f, 5f, 70f, 22f), "Close"))
                 ToggleInventory();
+        }
+
+        static void DrawCharacterSilhouette(float cx, float cy)
+        {
+            Color old = GUI.color;
+            GUI.color = new Color(.26f, .37f, .37f, .62f);
+            GUI.DrawTexture(new Rect(cx - 17f, cy - 25f, 34f, 34f),
+                Texture2D.whiteTexture);
+            GUI.DrawTexture(new Rect(cx - 26f, cy + 12f, 52f, 76f),
+                Texture2D.whiteTexture);
+            GUI.DrawTexture(new Rect(cx - 42f, cy + 15f, 14f, 70f),
+                Texture2D.whiteTexture);
+            GUI.DrawTexture(new Rect(cx + 28f, cy + 15f, 14f, 70f),
+                Texture2D.whiteTexture);
+            GUI.DrawTexture(new Rect(cx - 23f, cy + 91f, 18f, 78f),
+                Texture2D.whiteTexture);
+            GUI.DrawTexture(new Rect(cx + 5f, cy + 91f, 18f, 78f),
+                Texture2D.whiteTexture);
+            GUI.color = old;
         }
 
         string SlotName(int index)
