@@ -17,8 +17,8 @@ namespace DeadSector
         public Camera view;
         public Transform visual;
         public bool thirdPerson = true;
-        public float thirdPersonDistance = 3.35f;
-        public float thirdPersonShoulder = .58f;
+        public float thirdPersonDistance = 2.65f;
+        public float thirdPersonShoulder = .40f;
         public float cameraHeight = 1.62f;
         public float cameraCollisionRadius = .18f;
         public float cameraSmooth = 18f;
@@ -43,6 +43,8 @@ namespace DeadSector
         float jumpAt = -10f;
         bool previousGrounded = true;
         Renderer[] renderers;
+        bool? visibleInThirdPerson;
+        bool visualCalibrated;
         Vector3 smoothedCameraPosition;
         bool cameraInitialized;
 
@@ -77,6 +79,9 @@ namespace DeadSector
             headBone = animator != null && animator.isHuman
                 ? animator.GetBoneTransform(HumanBodyBones.Head)
                 : null;
+
+            visibleInThirdPerson = null;
+            visualCalibrated = false;
 
             if (animator != null && animator.isActiveAndEnabled)
                 PrimeAnimation();
@@ -201,16 +206,19 @@ namespace DeadSector
                 transform.eulerAngles.y,
                 0);
 
-            Vector3 pivot =
-                transform.position + Vector3.up * cameraHeight;
+            // Mixamo FBX head bones can be offset or scaled differently
+            // from the CharacterController. Never mount the gameplay camera
+            // inside the actual head mesh: it can intersect skin or terrain.
+            float eyeHeight = body != null
+                ? Mathf.Clamp(
+                    body.center.y + body.height * .40f,
+                    1.35f, 1.82f)
+                : cameraHeight;
+            Vector3 pivot = transform.position +
+                Vector3.up * eyeHeight;
 
-            if (!thirdPerson && headBone != null)
-            {
-                pivot =
-                    headBone.position +
-                    transform.forward * .11f +
-                    transform.up * .025f;
-            }
+            if (!thirdPerson)
+                pivot += transform.forward * .10f;
 
             Vector3 desiredPosition = pivot;
 
@@ -272,11 +280,7 @@ namespace DeadSector
                     targetFov,
                     1f - Mathf.Exp(-10f * Time.deltaTime));
 
-            foreach (Renderer renderer in renderers)
-            {
-                if (renderer != null && !renderer.enabled)
-                    renderer.enabled = true;
-            }
+            ApplyViewVisibility();
         }
 
         public void ActivateAtSpawn()
@@ -285,7 +289,9 @@ namespace DeadSector
                 body = GetComponent<CharacterController>();
 
             body.enabled = false;
-            transform.position = SectorLayout.Spawn;
+            Vector3 spawn = SectorLayout.Spawn;
+            spawn.y = GroundHeightAt(spawn) + .16f;
+            transform.position = spawn;
             body.enabled = true;
 
             Physics.SyncTransforms();
@@ -300,7 +306,121 @@ namespace DeadSector
             cameraInitialized = false;
 
             PrimeAnimation();
+            CalibrateBodyMesh();
+            ApplyViewVisibility();
             Ready = true;
+        }
+
+        // Resolve against the terrain actually generated/loaded in the
+        // scene. This avoids placing the controller under an altered terrain
+        // tile even when the static design height differs slightly.
+        static float GroundHeightAt(Vector3 position)
+        {
+            float height = SectorLayout.Height(position.x, position.z);
+
+            foreach (Terrain terrain in Terrain.activeTerrains)
+            {
+                if (terrain == null || terrain.terrainData == null)
+                    continue;
+
+                Vector3 origin = terrain.transform.position;
+                Vector3 size = terrain.terrainData.size;
+                if (position.x < origin.x || position.x > origin.x + size.x ||
+                    position.z < origin.z || position.z > origin.z + size.z)
+                    continue;
+
+                height = Mathf.Max(height,
+                    terrain.SampleHeight(position) + origin.y);
+            }
+
+            return height;
+        }
+
+        // Normalize imported Mixamo mesh size to the 1.8-m controller and
+        // move the skinned feet to the controller's base. Runs once per model,
+        // never changes the FBX asset and leaves the procedural rig intact.
+        void CalibrateBodyMesh()
+        {
+            if (visualCalibrated || visual == null)
+                return;
+
+            SkinnedMeshRenderer[] skins =
+                visual.GetComponentsInChildren<SkinnedMeshRenderer>(true);
+            if (skins.Length == 0)
+                return;
+
+            if (!TryBodyBounds(skins, out Bounds bounds))
+                return;
+
+            float scaleFactor = BodyScaleForHeight(bounds.size.y);
+
+            if (Mathf.Abs(scaleFactor - 1f) > .02f)
+            {
+                visual.localScale *= scaleFactor;
+                if (animator != null && animator.isActiveAndEnabled)
+                    animator.Update(0f);
+
+                if (!TryBodyBounds(skins, out bounds))
+                    return;
+            }
+
+            float deltaY = transform.position.y + .045f - bounds.min.y;
+            if (Mathf.Abs(deltaY) > .02f && Mathf.Abs(deltaY) < 4f)
+                visual.position += Vector3.up * deltaY;
+
+            visualCalibrated = true;
+        }
+
+        public static float BodyScaleForHeight(float meshHeight)
+        {
+            // Reject corrupt/empty bounds instead of magnifying an FBX
+            // to infinity. The body target is a plausible human height.
+            if (meshHeight < .05f || meshHeight > 100f)
+                return 1f;
+
+            return Mathf.Clamp(1.76f / meshHeight, .2f, 8f);
+        }
+
+        static bool TryBodyBounds(
+            SkinnedMeshRenderer[] skins, out Bounds bounds)
+        {
+            bounds = default;
+            bool found = false;
+
+            foreach (SkinnedMeshRenderer skin in skins)
+            {
+                if (skin == null || skin.sharedMesh == null)
+                    continue;
+
+                if (!found)
+                {
+                    bounds = skin.bounds;
+                    found = true;
+                }
+                else
+                    bounds.Encapsulate(skin.bounds);
+            }
+
+            return found && bounds.size.y > .05f;
+        }
+
+        void ApplyViewVisibility()
+        {
+            if (visibleInThirdPerson == thirdPerson)
+                return;
+
+            // In first person, the avatar's face/clothes/attached weapons
+            // would occupy the near plane. Keep a clear view until a proper
+            // isolated first-person arm+weapon rig is authored.
+            if (visual != null)
+            {
+                foreach (Renderer item in
+                    visual.GetComponentsInChildren<Renderer>(true))
+                    if (item != null)
+                        item.enabled = thirdPerson;
+            }
+
+            visibleInThirdPerson = thirdPerson;
         }
 
         void PrimeAnimation()
