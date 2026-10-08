@@ -1,3 +1,28 @@
+## Unity live QA — jump/terrain clipping and stamina sprint flicker (8 October 2026)
+
+User Play Mode screenshots reproduced these symptoms:
+- During jumps the X Bot body / gameplay camera sometimes enters the apparent terrain surface.
+- Holding Shift with almost empty stamina makes the run/walk animation oscillate repeatedly.
+
+Source fixes in `prototype/world-8km` (not yet verified in Unity):
+- `SectorSurvival.CanSprint` now has exhaustion hysteresis: sprint turns OFF when stamina reaches **5** and cannot reactivate until it reaches **30**. Low-stamina save files start under the same lockout. Regular walking and stamina recovery still work.
+- `SectorPlayer` uses the **actual sampled Terrain** height where a tile is loaded (instead of taking the maximum of analytic and sampled heights), reduces incorrect terrain reconciliation, rescues a physically buried controller, and ensures the FPP and TPP cameras cannot be positioned below a conservative terrain clearance.
+- Imported Mixamo skinned mesh feet receive a bounded post-animation correction when a jump clip visually pushes them through ground; the CharacterController itself remains the authoritative collision shape.
+- Animator's walking/running speed float is damped for smoother transitions.
+- `F3` diagnostics now show root feet Y, sampled ground Y and sprint active state. Useful to distinguish true physics penetration from imported animation offsets.
+- `SectorMovementRegressionTests` covers stamina lockout, low stamina save recovery, FPP/TPP camera clearance and skinned jump visual correction.
+
+### Verification
+1. Stop Play and preserve local Unity scene/Mixamo files. Apply the updated runtime scripts from the branch without resetting the local scene.
+2. Confirm zero red errors in Unity Console; run EditMode `SectorMovementRegressionTests` (new test suite).
+3. Run/jump repeatedly across terrain and porch in FPP/TPP. If a clip occurs, press **F3** and inspect `Feet Y` and `Terrain Y`.
+4. Hold Shift until stamina is below 5. Expected: stable walking until stamina reaches 30, not rapid animation flicker.
+5. Reload with F9 while stamina is low and check the exhaustion recovery threshold remains enforced.
+6. Verify normal sprint/jump resumes and camera never sinks into Terrain.
+
+**Limitations:** no direct access to the user's running Unity Editor. All changes are staged as GitHub source commits; actual Play Mode validation is required. Visual correction is a defensive prototype fix pending scrutiny of the imported Mixamo Jump animation root tracks.
+
+
 ## Unity first-play visual bugfixes — 8 October 2026
 
 Observed in the user's live Unity Game view:
