@@ -30,6 +30,7 @@ namespace DeadSector
         public float AttackDamage { get; private set; } = 10f;
         public float AttackCooldown { get; private set; } = 1.2f;
         SectorZombieAppearance appearance;
+        SectorZombieReaction reaction;
 
         NavMeshAgent agent;
         Vector3 home;
@@ -136,6 +137,11 @@ namespace DeadSector
                     appearance = gameObject.AddComponent<SectorZombieAppearance>();
 
                 appearance.Configure(kind, model, profile);
+
+                reaction = gameObject.GetComponent<SectorZombieReaction>();
+                if (reaction == null)
+                    reaction = gameObject.AddComponent<SectorZombieReaction>();
+                reaction.Configure(model);
             }
 
             if (agent != null && agent.enabled)
@@ -326,6 +332,8 @@ namespace DeadSector
             Health = Mathf.Max(0f, Health - damage);
             if (appearance != null)
                 appearance.FlashOnHit();
+            if (reaction != null)
+                reaction.Hit();
 
             if (target != null)
             {
@@ -355,7 +363,10 @@ namespace DeadSector
             if (animator != null)
                 animator.enabled = false;
 
-            // Temporary static corpse; real death animations / ragdoll later.
+            if (reaction != null)
+                reaction.Die();
+
+            // Temporary death-fall and static corpse; ragdoll later.
             Destroy(gameObject, 25f);
         }
 
