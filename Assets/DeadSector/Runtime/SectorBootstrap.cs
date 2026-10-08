@@ -119,7 +119,7 @@ namespace DeadSector
                 player = actor.AddComponent<SectorPlayer>();
 
             player.view = camera;
-            player.visual = rig;
+            player.BindVisual(rig);
 
             actor.SetActive(true);
 
