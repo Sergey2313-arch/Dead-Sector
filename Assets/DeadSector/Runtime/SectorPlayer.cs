@@ -45,6 +45,8 @@ namespace DeadSector
         Renderer[] renderers;
         bool? visibleInThirdPerson;
         bool visualCalibrated;
+        Vector3 calibratedVisualLocalPosition;
+        SkinnedMeshRenderer[] calibratedSkins;
         Vector3 smoothedCameraPosition;
         bool cameraInitialized;
 
@@ -82,6 +84,7 @@ namespace DeadSector
 
             visibleInThirdPerson = null;
             visualCalibrated = false;
+            calibratedSkins = null;
 
             if (animator != null && animator.isActiveAndEnabled)
                 PrimeAnimation();
@@ -185,11 +188,16 @@ namespace DeadSector
             // A restored scene or streamed tile may have slightly higher
             // terrain than the original spawn. Lift a player embedded under
             // the surface instead of keeping the camera inside the ground.
-            if (p.y < GroundHeightAt(p) - .35f)
+            float terrainSurface = GroundHeightAt(p);
+            if (p.y < terrainSurface - .18f)
             {
+                // Only rescue if the controller actually penetrated the
+                // terrain. Jumping above the surface never resets velocity.
                 TeleportTo(new Vector3(
-                    p.x, GroundHeightAt(p) + .16f, p.z));
+                    p.x, terrainSurface + .18f, p.z));
                 p = transform.position;
+                groundedAfterMove = true;
+                vertical = -2f;
             }
 
             if (p.y < -30f)
@@ -211,6 +219,8 @@ namespace DeadSector
             if (view == null)
                 return;
 
+            StabilizeVisualAboveTerrain();
+
             Quaternion rotation = Quaternion.Euler(
                 pitch,
                 transform.eulerAngles.y,
@@ -229,6 +239,11 @@ namespace DeadSector
 
             if (!thirdPerson)
                 pivot += transform.forward * .10f;
+
+            // Even an imported animation with a displaced pelvis must not
+            // put the view inside a terrain heightfield while jumping.
+            pivot.y = CameraAboveSurface(
+                pivot.y, GroundHeightAt(pivot), false);
 
             Vector3 desiredPosition = pivot;
 
@@ -260,6 +275,10 @@ namespace DeadSector
                 desiredPosition = pivot + desiredOffset;
             }
 
+            desiredPosition.y = CameraAboveSurface(
+                desiredPosition.y, GroundHeightAt(desiredPosition),
+                thirdPerson);
+
             if (!cameraInitialized)
             {
                 smoothedCameraPosition = desiredPosition;
@@ -276,6 +295,12 @@ namespace DeadSector
                         desiredPosition,
                         blend);
             }
+
+            // Smoothing can temporarily drag the camera through a hill
+            // after a steep movement or mode switch; guard the final view.
+            smoothedCameraPosition.y = CameraAboveSurface(
+                smoothedCameraPosition.y,
+                GroundHeightAt(smoothedCameraPosition), thirdPerson);
 
             view.transform.SetPositionAndRotation(
                 smoothedCameraPosition,
@@ -326,8 +351,10 @@ namespace DeadSector
         // tile even when the static design height differs slightly.
         static float GroundHeightAt(Vector3 position)
         {
-            float height = SectorLayout.Height(position.x, position.z);
-
+            // Prefer the *rendered* heightmap. The analytic function may
+            // differ by a fraction of a metre between sampled vertices.
+            // Taking max(analytic, sampled) made the controller float and
+            // encouraged repeated jump/grounding corrections.
             foreach (Terrain terrain in Terrain.activeTerrains)
             {
                 if (terrain == null || terrain.terrainData == null)
@@ -339,11 +366,19 @@ namespace DeadSector
                     position.z < origin.z || position.z > origin.z + size.z)
                     continue;
 
-                height = Mathf.Max(height,
-                    terrain.SampleHeight(position) + origin.y);
+                return terrain.SampleHeight(position) + origin.y;
             }
 
-            return height;
+            return SectorLayout.Height(position.x, position.z);
+        }
+
+        public static float CameraAboveSurface(
+            float desiredY, float groundY, bool thirdPersonView)
+        {
+            // Third person may fly low during camera pitches, whereas
+            // first person needs at least a waist-high clearance.
+            float clearance = thirdPersonView ? .32f : 1.20f;
+            return Mathf.Max(desiredY, groundY + clearance);
         }
 
         // Normalize imported Mixamo mesh size to the 1.8-m controller and
@@ -378,7 +413,33 @@ namespace DeadSector
             if (Mathf.Abs(deltaY) > .02f && Mathf.Abs(deltaY) < 4f)
                 visual.position += Vector3.up * deltaY;
 
+            calibratedSkins = skins;
+            calibratedVisualLocalPosition = visual.localPosition;
             visualCalibrated = true;
+        }
+
+        // Some Mixamo jump clips keep their imported pelvis translation,
+        // making the visible model cross the ground even while its
+        // CharacterController remains above the surface. Keep the feet
+        // above the real heightfield, without changing the physics capsule.
+        void StabilizeVisualAboveTerrain()
+        {
+            if (!visualCalibrated || visual == null ||
+                calibratedSkins == null || calibratedSkins.Length == 0)
+                return;
+
+            // Re-evaluate relative to the original calibrated offset;
+            // otherwise a correction accumulates every animation frame.
+            visual.localPosition = calibratedVisualLocalPosition;
+
+            if (!TryBodyBounds(calibratedSkins, out Bounds bounds))
+                return;
+
+            float surface = GroundHeightAt(transform.position);
+            float lift = Mathf.Clamp(surface - bounds.min.y + .02f, 0f, 1.5f);
+
+            if (lift > .06f)
+                visual.position += Vector3.up * lift;
         }
 
         public static float BodyScaleForHeight(float meshHeight)
@@ -468,7 +529,9 @@ namespace DeadSector
             if (animator == null)
                 return;
 
-            animator.SetFloat(SpeedHash, speed);
+            // Damp locomotion parameter around sprint exit so the
+            // animation blend does not repeatedly restart at low stamina.
+            animator.SetFloat(SpeedHash, speed, .10f, Time.deltaTime);
             animator.SetBool(GroundedHash, grounded);
             animator.SetBool(RunningHash, sprinting && speed > .1f);
             animator.SetFloat(VerticalHash, verticalSpeed);
