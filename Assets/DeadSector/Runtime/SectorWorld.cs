@@ -4,14 +4,37 @@ using UnityEngine;
 
 namespace DeadSector
 {
+    public readonly struct SectorPointOfInterest
+    {
+        public readonly string Name;
+        public readonly Vector3 Position;
+        public readonly Color MapColor;
+        public readonly float MapScale;
+
+        public SectorPointOfInterest(
+            string name,
+            Vector3 position,
+            Color mapColor,
+            float mapScale = 2.2f)
+        {
+            Name = name;
+            Position = position;
+            MapColor = mapColor;
+            MapScale = mapScale;
+        }
+    }
+
     public sealed class SectorWorld : MonoBehaviour
     {
         public SectorPlayer player;
         public bool Ready { get; private set; }
+        public IReadOnlyList<SectorPointOfInterest> PointsOfInterest => pointsOfInterest;
         public int LoadedTiles => tiles.Count;
         public string Status { get; private set; } = "Generating terrain...";
         public SectorArt Art { get; private set; }
         readonly Dictionary<Vector2Int, Terrain> tiles = new Dictionary<Vector2Int, Terrain>();
+        readonly List<SectorPointOfInterest> pointsOfInterest =
+            new List<SectorPointOfInterest>();
         TerrainLayer[] layers;
         Material terrainMaterial;
         Vector2Int last = new Vector2Int(-99, -99);
@@ -128,10 +151,11 @@ namespace DeadSector
             texture.Apply(); return new TerrainLayer { diffuseTexture = texture, tileSize = Vector2.one * 12 };
         }
         public Transform Settlement { get; private set; }
-        public Transform Settlement { get; private set; }
 
         void BuildSettlement()
         {
+            pointsOfInterest.Clear();
+
             Settlement = new GameObject("Settlement_Prototype").transform;
             Settlement.SetParent(transform, false);
 
@@ -195,6 +219,13 @@ namespace DeadSector
             }
 
             BuildYards(northHouses, southHouses, wood);
+
+            RegisterPOI(
+                "Village",
+                new Vector3(-80, 60, 0),
+                new Color(.95f, .86f, .34f),
+                2.8f);
+
             IndustrialBuilding(
                 new Vector3(220, 60, 150),
                 new Vector3(36, 9, 46),
@@ -203,6 +234,12 @@ namespace DeadSector
                 glass,
                 "Factory");
 
+            RegisterPOI(
+                "Factory",
+                new Vector3(220, 60, 150),
+                new Color(.92f, .38f, .20f),
+                2.7f);
+
             IndustrialBuilding(
                 new Vector3(222, 60, 235),
                 new Vector3(30, 7, 38),
@@ -210,6 +247,34 @@ namespace DeadSector
                 roof,
                 glass,
                 "Warehouse");
+
+            RegisterPOI(
+                "Warehouse",
+                new Vector3(222, 60, 235),
+                new Color(.92f, .56f, .20f),
+                2.4f);
+
+            BuildClinic(
+                new Vector3(-72, 60, 190),
+                plaster,
+                roof,
+                glass);
+
+            BuildGasStation(
+                new Vector3(315, 60, 72),
+                concrete,
+                rust,
+                glass);
+
+            BuildGarageRow(
+                new Vector3(-302, 60, 205),
+                concrete,
+                roof);
+
+            BuildRadioTower(
+                new Vector3(355, 60, 270),
+                concrete,
+                rust);
 
             for (int i = 0; i < 10; i++)
             {
@@ -225,7 +290,20 @@ namespace DeadSector
             }
 
             BuildCheckpoint(concrete, rust);
+
+            RegisterPOI(
+                "Checkpoint",
+                new Vector3(320, 60, -220),
+                new Color(.82f, .82f, .82f),
+                2.2f);
+
             BuildStreetlights(concrete);
+
+            RegisterPOI(
+                "Spawn",
+                SectorLayout.Spawn,
+                new Color(.20f, .88f, 1f),
+                1.8f);
 
             // Small collision / jump course near the spawn.
             for (int i = 0; i < 5; i++)
@@ -661,6 +739,245 @@ namespace DeadSector
                     new Vector3(.55f, .22f, .45f),
                     new Color(.72f, .69f, .52f));
             }
+        }
+
+        void RegisterPOI(
+            string name,
+            Vector3 position,
+            Color mapColor,
+            float mapScale)
+        {
+            pointsOfInterest.Add(
+                new SectorPointOfInterest(
+                    name,
+                    position,
+                    mapColor,
+                    mapScale));
+        }
+
+        void BuildClinic(
+            Vector3 position,
+            Color wallColor,
+            Color roofColor,
+            Color glassColor)
+        {
+            IndustrialBuilding(
+                position,
+                new Vector3(18, 5.8f, 20),
+                wallColor,
+                roofColor,
+                glassColor,
+                "Clinic");
+
+            Art.Box(
+                Settlement,
+                "Clinic_Sign_Vertical",
+                position + new Vector3(0, 6.8f, -10.3f),
+                new Vector3(.6f, 3.6f, .25f),
+                new Color(.75f, .12f, .12f));
+
+            Art.Box(
+                Settlement,
+                "Clinic_Sign_Horizontal",
+                position + new Vector3(0, 6.8f, -10.3f),
+                new Vector3(2.6f, .6f, .25f),
+                new Color(.75f, .12f, .12f));
+
+            RegisterPOI(
+                "Clinic",
+                position,
+                new Color(.82f, .18f, .18f),
+                2.4f);
+        }
+
+        void BuildGasStation(
+            Vector3 position,
+            Color concrete,
+            Color rust,
+            Color glass)
+        {
+            var root = new GameObject("Gas_Station");
+            root.transform.SetParent(Settlement, false);
+            root.transform.localPosition = position;
+
+            Art.Box(
+                root.transform,
+                "Shop",
+                new Vector3(-8, 2.7f, 4),
+                new Vector3(12, 5.4f, 10),
+                concrete);
+
+            Window(
+                root.transform,
+                new Vector3(-8, 3.0f, -1.05f),
+                new Vector3(5.0f, 1.8f, .08f),
+                glass);
+
+            Art.Box(
+                root.transform,
+                "Canopy",
+                new Vector3(6, 4.8f, -2),
+                new Vector3(18, .45f, 10),
+                new Color(.30f, .31f, .31f));
+
+            for (int i = -1; i <= 1; i += 2)
+            {
+                Art.Shape(
+                    root.transform,
+                    "Canopy_Post",
+                    PrimitiveType.Cylinder,
+                    new Vector3(6 + i * 6, 2.3f, -2),
+                    new Vector3(.22f, 2.3f, .22f),
+                    concrete);
+
+                Art.Box(
+                    root.transform,
+                    "Fuel_Pump",
+                    new Vector3(6 + i * 3, 1.0f, -2),
+                    new Vector3(1.0f, 2.0f, .9f),
+                    rust);
+            }
+
+            Art.Shape(
+                root.transform,
+                "Fuel_Sign_Post",
+                PrimitiveType.Cylinder,
+                new Vector3(15, 3.5f, 4),
+                new Vector3(.18f, 3.5f, .18f),
+                concrete);
+
+            Art.Box(
+                root.transform,
+                "Fuel_Sign",
+                new Vector3(15, 7.0f, 4),
+                new Vector3(3.2f, 2.2f, .35f),
+                rust);
+
+            RegisterPOI(
+                "Fuel",
+                position,
+                new Color(.18f, .72f, .92f),
+                2.4f);
+        }
+
+        void BuildGarageRow(
+            Vector3 position,
+            Color wallColor,
+            Color roofColor)
+        {
+            var root = new GameObject("Garage_Row");
+            root.transform.SetParent(Settlement, false);
+            root.transform.localPosition = position;
+
+            for (int i = 0; i < 5; i++)
+            {
+                float x = (i - 2) * 7.2f;
+
+                Art.Box(
+                    root.transform,
+                    "Garage_" + i + "_Rear",
+                    new Vector3(x, 2.0f, 5),
+                    new Vector3(6.6f, 4.0f, .3f),
+                    wallColor);
+
+                Art.Box(
+                    root.transform,
+                    "Garage_" + i + "_Left",
+                    new Vector3(x - 3.3f, 2.0f, 0),
+                    new Vector3(.3f, 4.0f, 10),
+                    wallColor);
+
+                Art.Box(
+                    root.transform,
+                    "Garage_" + i + "_Right",
+                    new Vector3(x + 3.3f, 2.0f, 0),
+                    new Vector3(.3f, 4.0f, 10),
+                    wallColor);
+
+                Art.Box(
+                    root.transform,
+                    "Garage_" + i + "_Roof",
+                    new Vector3(x, 4.15f, 0),
+                    new Vector3(6.8f, .3f, 10.4f),
+                    roofColor);
+
+                if (i % 2 == 0)
+                {
+                    Art.Box(
+                        root.transform,
+                        "Garage_" + i + "_Door",
+                        new Vector3(x, 1.7f, -4.85f),
+                        new Vector3(5.6f, 3.4f, .18f),
+                        new Color(.25f, .26f, .25f));
+                }
+            }
+
+            RegisterPOI(
+                "Garages",
+                position,
+                new Color(.70f, .70f, .66f),
+                2.2f);
+        }
+
+        void BuildRadioTower(
+            Vector3 position,
+            Color steel,
+            Color rust)
+        {
+            var root = new GameObject("Radio_Tower");
+            root.transform.SetParent(Settlement, false);
+            root.transform.localPosition = position;
+
+            for (int i = -1; i <= 1; i += 2)
+            {
+                Art.Shape(
+                    root.transform,
+                    "Tower_Leg",
+                    PrimitiveType.Cylinder,
+                    new Vector3(i * 2.4f, 10f, i * 2.4f),
+                    new Vector3(.20f, 10f, .20f),
+                    steel);
+
+                Art.Shape(
+                    root.transform,
+                    "Tower_Leg",
+                    PrimitiveType.Cylinder,
+                    new Vector3(i * 2.4f, 10f, -i * 2.4f),
+                    new Vector3(.20f, 10f, .20f),
+                    steel);
+            }
+
+            for (int y = 3; y <= 18; y += 3)
+            {
+                Art.Box(
+                    root.transform,
+                    "Tower_Brace",
+                    new Vector3(0, y, 0),
+                    new Vector3(5.2f, .16f, .16f),
+                    y % 6 == 0 ? rust : steel);
+
+                Art.Box(
+                    root.transform,
+                    "Tower_Brace",
+                    new Vector3(0, y, 0),
+                    new Vector3(.16f, .16f, 5.2f),
+                    y % 6 == 0 ? rust : steel);
+            }
+
+            Art.Shape(
+                root.transform,
+                "Antenna",
+                PrimitiveType.Cylinder,
+                new Vector3(0, 22f, 0),
+                new Vector3(.10f, 4f, .10f),
+                rust,
+                false);
+
+            RegisterPOI(
+                "Radio Tower",
+                position,
+                new Color(.72f, .35f, .90f),
+                2.4f);
         }
 
         void OnDestroy()
