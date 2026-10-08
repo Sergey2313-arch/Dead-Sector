@@ -122,7 +122,7 @@ namespace DeadSector
                 return;
 
             int count = navigation.SpawnHordeZombies(
-                ZombiesForDay(today), 50f);
+                ZombiesForDay(today), 50f, today);
 
             if (count == 0)
             {
