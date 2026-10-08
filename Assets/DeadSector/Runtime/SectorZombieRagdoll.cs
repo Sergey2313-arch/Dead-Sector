@@ -15,9 +15,13 @@ namespace DeadSector
         [Min(1f)] public float impulse = 16f;
         [Min(.1f)] public float inheritedVelocity = .65f;
         [Min(1f)] public float bodyMass = 55f;
+        [Min(1f)] public float freezeAfterSeconds = 8f;
 
         Animator animator;
         Transform visual;
+        SectorMannequin mannequin;
+        float activatedAt;
+        bool frozen;
 
         readonly List<Rigidbody> bodies = new List<Rigidbody>(12);
         readonly List<Collider> colliders = new List<Collider>(12);
@@ -88,23 +92,36 @@ namespace DeadSector
                 HumanBodyBones.RightUpperLeg, .055f, .19f)
         };
 
-        public void Configure(Animator humanoid, Transform visualRoot)
+        public void Configure(
+            Animator humanoid, Transform visualRoot,
+            SectorMannequin fallback = null)
         {
             animator = humanoid;
             visual = visualRoot;
+            mannequin = fallback;
         }
 
         public bool CanActivate
         {
             get
             {
-                if (activated || animator == null || visual == null ||
-                    !animator.isHuman || animator.avatar == null ||
-                    !animator.avatar.isValid || !animator.avatar.isHuman)
+                if (activated || visual == null)
                     return false;
 
-                // Require the complete minimum rig before creating ANY
-                // physics objects, so broken imports use safe fallback.
+                if (animator == null || !animator.isHuman ||
+                    animator.avatar == null || !animator.avatar.isValid ||
+                    !animator.avatar.isHuman)
+                {
+                    return mannequin != null &&
+                        mannequin.torso != null &&
+                        mannequin.leftArm != null &&
+                        mannequin.rightArm != null &&
+                        mannequin.leftLeg != null &&
+                        mannequin.rightLeg != null;
+                }
+
+                // Require the complete minimum Humanoid rig before creating
+                // ANY physics objects, so broken imports use fallback.
                 for (int i = 0; i < Parts.Length; i++)
                 {
                     BonePart part = Parts[i];
@@ -123,6 +140,13 @@ namespace DeadSector
         {
             if (!CanActivate)
                 return false;
+
+            if (animator == null || !animator.isHuman ||
+                animator.avatar == null || !animator.avatar.isValid)
+            {
+                return TryActivateMannequin(
+                    hitDirection, hitPosition, startingVelocity);
+            }
 
             Dictionary<HumanBodyBones, Rigidbody> map =
                 new Dictionary<HumanBodyBones, Rigidbody>();
@@ -245,13 +269,145 @@ namespace DeadSector
                 for (int j = i + 1; j < colliders.Count; j++)
                     Physics.IgnoreCollision(colliders[i], colliders[j], true);
 
+            WakePhysics(hitDirection, hitPosition, startingVelocity);
+            return true;
+        }
+
+        bool TryActivateMannequin(
+            Vector3 direction, Vector3 hitPoint, Vector3 velocity)
+        {
+            if (mannequin == null)
+                return false;
+
+            // The procedural mannequin has simple hinged limbs rather than
+            // a Mecanim Avatar. Physics bodies on those visible Transform
+            // joints allow natural collapse without an imported FBX.
+            Rigidbody torso = CreateFallbackBody(
+                mannequin.torso, 22f,
+                new Vector3(0f, .22f, 0f),
+                .88f, .26f);
+            chestBody = torso;
+            hipsBody = torso;
+
+            Transform headBone = mannequin.torso.Find("Head");
+            if (headBone != null)
+            {
+                Rigidbody head = headBone.gameObject.AddComponent<Rigidbody>();
+                PrepareBody(head, 4f);
+
+                SphereCollider sphere = headBone.GetComponent<SphereCollider>();
+                if (sphere == null)
+                    sphere = headBone.gameObject.AddComponent<SphereCollider>();
+                sphere.radius = .5f;
+                colliders.Add(sphere);
+                bodies.Add(head);
+                Connect(head, torso, headBone.position, 35f);
+            }
+
+            Rigidbody leftArm = CreateFallbackBody(
+                mannequin.leftArm, 4f,
+                new Vector3(0f, -.28f, 0f), .65f, .14f);
+            Rigidbody rightArm = CreateFallbackBody(
+                mannequin.rightArm, 4f,
+                new Vector3(0f, -.28f, 0f), .65f, .14f);
+            Rigidbody leftLeg = CreateFallbackBody(
+                mannequin.leftLeg, 11f,
+                new Vector3(0f, -.43f, 0f), .87f, .18f);
+            Rigidbody rightLeg = CreateFallbackBody(
+                mannequin.rightLeg, 11f,
+                new Vector3(0f, -.43f, 0f), .87f, .18f);
+
+            Connect(leftArm, torso, mannequin.leftArm.position, 50f);
+            Connect(rightArm, torso, mannequin.rightArm.position, 50f);
+            Connect(leftLeg, torso, mannequin.leftLeg.position, 34f);
+            Connect(rightLeg, torso, mannequin.rightLeg.position, 34f);
+
+            IgnoreSelfCollisions();
+            WakePhysics(direction, hitPoint, velocity);
+            return true;
+        }
+
+        Rigidbody CreateFallbackBody(
+            Transform joint, float mass,
+            Vector3 center, float height, float radius)
+        {
+            Rigidbody body = joint.GetComponent<Rigidbody>();
+            if (body == null)
+                body = joint.gameObject.AddComponent<Rigidbody>();
+
+            PrepareBody(body, mass);
+            CapsuleCollider capsule =
+                joint.gameObject.AddComponent<CapsuleCollider>();
+            capsule.center = center;
+            capsule.direction = 1;
+            capsule.height = height;
+            capsule.radius = radius;
+
+            bodies.Add(body);
+            colliders.Add(capsule);
+            SectorArt.SetActorLayer(joint);
+            return body;
+        }
+
+        void PrepareBody(Rigidbody body, float mass)
+        {
+            body.mass = Mathf.Max(.2f, mass);
+            body.isKinematic = true;
+            body.useGravity = true;
+            body.linearDamping = .12f;
+            body.angularDamping = .55f;
+            body.interpolation = RigidbodyInterpolation.Interpolate;
+            body.collisionDetectionMode =
+                CollisionDetectionMode.Discrete;
+        }
+
+        static void Connect(
+            Rigidbody child, Rigidbody parent,
+            Vector3 worldAnchor, float swingLimit)
+        {
+            CharacterJoint joint =
+                child.gameObject.AddComponent<CharacterJoint>();
+            joint.connectedBody = parent;
+            joint.autoConfigureConnectedAnchor = false;
+            joint.anchor =
+                child.transform.InverseTransformPoint(worldAnchor);
+            joint.connectedAnchor =
+                parent.transform.InverseTransformPoint(worldAnchor);
+            joint.enableCollision = false;
+            joint.enablePreprocessing = false;
+
+            joint.lowTwistLimit =
+                new SoftJointLimit { limit = -28f };
+            joint.highTwistLimit =
+                new SoftJointLimit { limit = 28f };
+            joint.swing1Limit =
+                new SoftJointLimit { limit = swingLimit };
+            joint.swing2Limit =
+                new SoftJointLimit { limit = swingLimit };
+        }
+
+        void IgnoreSelfCollisions()
+        {
+            for (int i = 0; i < colliders.Count; i++)
+                for (int j = i + 1; j < colliders.Count; j++)
+                    Physics.IgnoreCollision(
+                        colliders[i], colliders[j], true);
+        }
+
+        void WakePhysics(
+            Vector3 hitDirection,
+            Vector3 hitPosition,
+            Vector3 startingVelocity)
+        {
             activated = true;
-            Vector3 velocity = Vector3.ClampMagnitude(startingVelocity, 7f) *
+            activatedAt = Time.time;
+
+            Vector3 velocity =
+                Vector3.ClampMagnitude(startingVelocity, 7f) *
                 Mathf.Max(0f, inheritedVelocity);
 
-            for (int i = 0; i < bodies.Count; i++)
+            foreach (Rigidbody body in bodies)
             {
-                Rigidbody body = bodies[i];
                 body.isKinematic = false;
                 body.linearVelocity = velocity;
             }
@@ -260,23 +416,39 @@ namespace DeadSector
                 ? hitDirection.normalized
                 : transform.forward;
 
-            Vector3 force = (direction + Vector3.up * .20f).normalized *
-                Mathf.Max(0f, impulse);
-
             Rigidbody receiver = chestBody != null
                 ? chestBody : hipsBody;
 
-            if (receiver != null)
-            {
-                Vector3 point = (hitPosition - receiver.worldCenterOfMass)
+            if (receiver == null)
+                return;
+
+            Vector3 point =
+                (hitPosition - receiver.worldCenterOfMass)
                     .sqrMagnitude < 1.25f
                     ? hitPosition : receiver.worldCenterOfMass;
 
-                receiver.AddForceAtPosition(
-                    force, point, ForceMode.Impulse);
-            }
+            Vector3 force =
+                (direction + Vector3.up * .20f).normalized *
+                Mathf.Max(0f, impulse);
 
-            return true;
+            receiver.AddForceAtPosition(
+                force, point, ForceMode.Impulse);
+        }
+
+        void Update()
+        {
+            // Corpses are deleted by SectorZombie after 25 s. Stop their
+            // simulation after settling to keep big hordes performant.
+            if (!activated || frozen ||
+                Time.time - activatedAt < freezeAfterSeconds)
+                return;
+
+            frozen = true;
+            foreach (Rigidbody body in bodies)
+            {
+                if (body != null)
+                    body.isKinematic = true;
+            }
         }
     }
 }
