@@ -502,11 +502,11 @@ namespace DeadSector
                     attack.FacingThreshold)
                     continue;
 
-                // Non-actor colliders (walls/terrain/props) block hits.
-                if (Physics.Raycast(
-                    origin, towardsZombie,
-                    Mathf.Max(0f, distance - .15f), ~(1 << 2),
-                    QueryTriggerInteraction.Ignore))
+                // Target's own collider is an expected impact, not a
+                // blocker. Buildings, ground and other zombies still stop it.
+                if (SectorCombatVisibility.IsObstructed(
+                    origin, zombie.transform.position + Vector3.up * 1.1f,
+                    zombie))
                     continue;
 
                 nearestDistance = distance;
@@ -643,12 +643,16 @@ namespace DeadSector
                 File.WriteAllText(temporary, JsonUtility.ToJson(data, true));
 
                 if (File.Exists(SavePath))
-                    File.Copy(SavePath, SavePath + ".bak", true);
-
-                if (File.Exists(SavePath))
-                    File.Delete(SavePath);
-
-                File.Move(temporary, SavePath);
+                {
+                    // Replace is atomic on the local file system: an
+                    // interrupted save retains either old or new data.
+                    // The previous save becomes .bak automatically.
+                    File.Replace(temporary, SavePath, SavePath + ".bak");
+                }
+                else
+                {
+                    File.Move(temporary, SavePath);
+                }
 
                 if (!silent)
                     Notify("Game saved");
