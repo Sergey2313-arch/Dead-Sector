@@ -194,7 +194,7 @@ namespace DeadSector
                     poiStyle);
                 GUI.color = Color.white;
 
-                if (displayed >= maxVisiblePOI)
+                if (displayed >= Mathf.Min(maxVisiblePOI, poiLabelPositions.Length))
                     break;
             }
         }
