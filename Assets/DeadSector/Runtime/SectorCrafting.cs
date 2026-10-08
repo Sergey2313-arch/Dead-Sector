@@ -19,6 +19,7 @@ namespace DeadSector
     {
         public readonly string Id;
         public readonly string Name;
+        public readonly int Tier;
         public readonly string OutputId;
         public readonly int OutputCount;
         public readonly SectorIngredient[] Ingredients;
@@ -29,6 +30,8 @@ namespace DeadSector
         {
             Id = id;
             Name = name;
+            Tier = id.StartsWith("cotton_") || id == "cloth_cotton" ? 2 :
+                id.StartsWith("wood_") || id == "hatchet" ? 1 : 0;
             OutputId = outputId;
             OutputCount = outputCount;
             Ingredients = ingredients;
@@ -37,27 +40,60 @@ namespace DeadSector
 
     public static class SectorCrafting
     {
+        // Survival progression: collect stones and dry sticks first, then
+        // spin fiber into bindings, then unlock wooden or cotton gear.
         static readonly SectorRecipe[] RecipesInternal =
         {
-            new SectorRecipe(
-                "bandage", "Make Bandage", "bandage", 1,
+            new SectorRecipe("cord", "Twist Plant Cord", "cord", 1,
+                new SectorIngredient("plant_fiber", 3)),
+            new SectorRecipe("stone_knife", "Stone Knife", "stone_knife", 1,
+                new SectorIngredient("stone", 2),
+                new SectorIngredient("stick", 1),
+                new SectorIngredient("plant_fiber", 2)),
+            new SectorRecipe("stone_axe", "Stone Axe", "stone_axe", 1,
+                new SectorIngredient("stone", 3),
+                new SectorIngredient("stick", 2),
+                new SectorIngredient("cord", 1)),
+            new SectorRecipe("wood_club", "Wooden Club", "wood_club", 1,
+                new SectorIngredient("stick", 3)),
+            new SectorRecipe("spear", "Wooden Spear", "spear", 1,
+                new SectorIngredient("stick", 3),
+                new SectorIngredient("stone", 1),
+                new SectorIngredient("cord", 1)),
+            new SectorRecipe("torch", "Hand Torch", "torch", 1,
+                new SectorIngredient("stick", 1),
+                new SectorIngredient("plant_fiber", 3)),
+            new SectorRecipe("wood_helmet", "Wooden Head Guard", "wood_helmet", 1,
+                new SectorIngredient("wood", 2),
+                new SectorIngredient("cord", 1)),
+            new SectorRecipe("wood_vest", "Wooden Chest Guard", "wood_vest", 1,
+                new SectorIngredient("wood", 4),
+                new SectorIngredient("cord", 2)),
+            new SectorRecipe("wood_leggings", "Wooden Leg Guards", "wood_leggings", 1,
+                new SectorIngredient("wood", 3),
+                new SectorIngredient("cord", 2)),
+            new SectorRecipe("cloth_cotton", "Weave Cotton Fabric", "cloth", 2,
+                new SectorIngredient("cotton", 4)),
+            new SectorRecipe("cotton_hood", "Cotton Hood", "cotton_hood", 1,
+                new SectorIngredient("cloth", 2),
+                new SectorIngredient("cord", 1)),
+            new SectorRecipe("cotton_shirt", "Cotton Shirt", "cotton_shirt", 1,
+                new SectorIngredient("cloth", 4),
+                new SectorIngredient("cord", 2)),
+            new SectorRecipe("cotton_pants", "Cotton Pants", "cotton_pants", 1,
+                new SectorIngredient("cloth", 3),
+                new SectorIngredient("cord", 2)),
+            new SectorRecipe("cotton_boots", "Cotton Footwraps", "cotton_boots", 1,
+                new SectorIngredient("cloth", 2),
+                new SectorIngredient("cord", 1)),
+            new SectorRecipe("bandage", "Make Bandage", "bandage", 1,
                 new SectorIngredient("cloth", 2)),
-            new SectorRecipe(
-                "medkit", "Assemble Medkit", "medkit", 1,
+            new SectorRecipe("medkit", "Assemble Medkit", "medkit", 1,
                 new SectorIngredient("bandage", 3),
                 new SectorIngredient("cloth", 2)),
-            new SectorRecipe(
-                "hatchet", "Build Hatchet", "axe", 1,
+            new SectorRecipe("hatchet", "Metal Hatchet", "axe", 1,
                 new SectorIngredient("scrap", 3),
-                new SectorIngredient("wood", 1)),
-            new SectorRecipe(
-                "spear", "Build Wooden Spear", "spear", 1,
-                new SectorIngredient("wood", 2),
-                new SectorIngredient("scrap", 1)),
-            new SectorRecipe(
-                "torch", "Make Hand Torch", "torch", 1,
-                new SectorIngredient("wood", 1),
-                new SectorIngredient("cloth", 1))
+                new SectorIngredient("wood", 1))
         };
 
         public static IReadOnlyList<SectorRecipe> Recipes => RecipesInternal;
