@@ -49,6 +49,19 @@ namespace DeadSector
                 ground = Mathf.Lerp(ground, centerHeight, flatten);
             }
 
+            // Rough quarry excavation, with terraces reserved for later.
+            Vector2 quarryCenter = SectorMapPlan.FindById("quarry").MapPosition;
+            float quarryDistance = Vector2.Distance(
+                new Vector2(x, z), quarryCenter);
+
+            if (quarryDistance < 215f)
+            {
+                float excavation = 1f - Mathf.SmoothStep(
+                    0f, 1f, Mathf.InverseLerp(85f, 215f, quarryDistance));
+
+                ground -= excavation * 28f;
+            }
+
             // Carve shorelines as actual terrain depressions, not painted
             // blue splats. Wet surfaces are generated separately per tile.
             ground = CarveLake(
@@ -60,6 +73,16 @@ namespace DeadSector
                 ground, x, z,
                 -250f, -2900f,
                 940f, 565f, LowWaterLevel);
+
+            // Outflow channel joins the dam near B7 to the southern lake.
+            float spill = DistanceToSegment(
+                new Vector2(x, z),
+                new Vector2(-2250f, -2450f),
+                new Vector2(-780f, -2780f));
+
+            float spillBank = 1f - Mathf.SmoothStep(
+                0f, 1f, Mathf.InverseLerp(70f, 175f, spill));
+            ground = Mathf.Lerp(ground, LowWaterLevel - 5f, spillBank);
 
             if (z >= -3400f && z <= 3570f)
             {
@@ -157,6 +180,15 @@ namespace DeadSector
                 return true;
             }
 
+            if (DistanceToSegment(
+                new Vector2(x, z),
+                new Vector2(-2250f, -2450f),
+                new Vector2(-780f, -2780f)) <= 58f)
+            {
+                level = LowWaterLevel;
+                return true;
+            }
+
             if (z >= -3160f && z <= 3350f &&
                 Mathf.Abs(x - RiverX(z)) <= 36f)
             {
@@ -166,6 +198,18 @@ namespace DeadSector
 
             level = 0f;
             return false;
+        }
+
+        public static float DistanceToSegment(Vector2 p, Vector2 a, Vector2 b)
+        {
+            Vector2 segment = b - a;
+            float lengthSquared = segment.sqrMagnitude;
+
+            if (lengthSquared <= .0001f)
+                return Vector2.Distance(p, a);
+
+            float t = Mathf.Clamp01(Vector2.Dot(p - a, segment) / lengthSquared);
+            return Vector2.Distance(p, a + segment * t);
         }
 
         public static float DistanceToRoad(float x, float z)
