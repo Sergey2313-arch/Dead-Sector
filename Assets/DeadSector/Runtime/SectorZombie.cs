@@ -177,6 +177,26 @@ namespace DeadSector
             alerted = true;
         }
 
+        public void HearNoise(Vector3 source, float radius)
+        {
+            if (Dead || radius <= 0f)
+                return;
+
+            Vector3 direction = source - transform.position;
+            direction.y = 0f;
+
+            if (direction.sqrMagnitude > radius * radius)
+                return;
+
+            lastKnownPosition = source;
+            lastContactAt = Time.time;
+
+            if (!alerted)
+                TriggerIfExists(ScreamHash);
+
+            alerted = true;
+        }
+
         void Think(float distance)
         {
             // Night hordes track the player; ordinary zombies keep their
