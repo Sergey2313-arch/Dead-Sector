@@ -61,6 +61,41 @@ namespace DeadSector.Tests
         }
 
         [Test]
+        public void ZombieMeleeCannotDamagePlayerThroughClosedWall()
+        {
+            var attacker = new GameObject("AttackingZombie");
+            var defender = new GameObject("PlayerBehindWall");
+            var wall = GameObject.CreatePrimitive(PrimitiveType.Cube);
+
+            try
+            {
+                attacker.transform.position = Vector3.zero;
+                defender.transform.position = new Vector3(0f, 0f, 2f);
+                wall.transform.position = new Vector3(0f, 1f, 1f);
+                wall.transform.localScale =
+                    new Vector3(2f, 2.4f, .2f);
+                Physics.SyncTransforms();
+
+                Assert.IsTrue(SectorCombatVisibility.HasBlockingGeometry(
+                    Vector3.up, defender.transform.position + Vector3.up,
+                    attacker.transform, defender.transform));
+
+                wall.SetActive(false);
+                Physics.SyncTransforms();
+
+                Assert.IsFalse(SectorCombatVisibility.HasBlockingGeometry(
+                    Vector3.up, defender.transform.position + Vector3.up,
+                    attacker.transform, defender.transform));
+            }
+            finally
+            {
+                Object.DestroyImmediate(wall);
+                Object.DestroyImmediate(attacker);
+                Object.DestroyImmediate(defender);
+            }
+        }
+
+        [Test]
         public void MissingTargetIsNeverReportedAsValidHit()
         {
             Assert.IsTrue(SectorCombatVisibility.IsObstructed(
