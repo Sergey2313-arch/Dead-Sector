@@ -142,7 +142,7 @@ namespace DeadSector
             if (clock == null || player == null || !player.Ready)
                 return;
 
-            GUI.Label(new Rect(14f, 180f, 250f, 24f),
+            GUI.Label(new Rect(14f, 202f, 250f, 24f),
                 "Weather: " + WeatherLabel +
                 "  |  Time: " + clock.hourOfDay.ToString("00.0") + "h");
         }
