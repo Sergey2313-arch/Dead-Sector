@@ -644,6 +644,14 @@ namespace DeadSector
                     return;
                 }
 
+                // Set saved backpack capacity before item import, otherwise
+                // saves with 23-30 distinct stacks can lose their last items.
+                bool savedBag = data.armor != null &&
+                    data.armor.Length >= 5 &&
+                    data.armor[4] == "cotton_bag";
+
+                Inventory.ResetForLoad(savedBag
+                    ? 30 : SectorInventory.DefaultSlots);
                 Inventory.Import(data.inventory);
                 equipment[0] = ValidEquipped(data.primary);
                 equipment[1] = ValidEquipped(data.secondary);
