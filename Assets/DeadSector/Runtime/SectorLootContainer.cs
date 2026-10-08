@@ -71,6 +71,7 @@ namespace DeadSector
                     case 1:
                         AddInitial(new SectorItemStack("bandage", 2));
                         AddInitial(new SectorItemStack("scrap", 3));
+                        AddInitial(new SectorItemStack("cloth", 2));
                         break;
                     case 2:
                         AddInitial(new SectorItemStack("water", 1));
@@ -78,6 +79,7 @@ namespace DeadSector
                         break;
                     case 3:
                         AddInitial(new SectorItemStack("wood", 3));
+                        AddInitial(new SectorItemStack("cloth", 2));
                         AddInitial(new SectorItemStack("food", 1));
                         break;
                     default:
