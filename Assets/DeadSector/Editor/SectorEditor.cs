@@ -120,7 +120,23 @@ namespace DeadSector.Editor
                     Save(terrain.materialTemplate, "TerrainMaterial", ".mat", output, saved, ref index);
                 }
                 foreach (var renderer in go.GetComponentsInChildren<Renderer>())
-                    foreach (var material in renderer.sharedMaterials) Save(material, "Material", ".mat", output, saved, ref index);
+                    foreach (var material in renderer.sharedMaterials)
+                        Save(material, "Material", ".mat", output, saved, ref index);
+
+                // The generated roads and water use runtime meshes. Persist
+                // them as assets before saving the editable Unity scene.
+                foreach (MeshFilter filter in go.GetComponentsInChildren<MeshFilter>())
+                {
+                    Mesh mesh = filter.sharedMesh;
+
+                    if (mesh != null &&
+                        (mesh.name.StartsWith("Road_") ||
+                         mesh.name == "Water_Surface"))
+                    {
+                        Save(mesh, "WorldMesh", ".asset", output, saved, ref index);
+                    }
+                }
+
                 Object.DestroyImmediate(world); // Editable scene has no runtime generation or cleanup.
                 Camera.main.transform.SetPositionAndRotation(new Vector3(0, 420, -400), Quaternion.Euler(40, 0, 0));
                 AssetDatabase.SaveAssets();
