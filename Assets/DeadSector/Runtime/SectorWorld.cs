@@ -204,6 +204,7 @@ namespace DeadSector
                 root.transform, origin, roadMaterial, waterMaterial);
 
             SectorLandmarkBuilder.Build(root.transform, origin, Art);
+            SectorWorldProps.Build(root.transform, origin, Art);
 
             return terrain;
         }
