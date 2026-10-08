@@ -23,6 +23,8 @@ namespace DeadSector
         public float homeRadius = 24f;
 
         public string State { get; private set; } = "Idle";
+        public float Health { get; private set; } = 100f;
+        public bool Dead { get; private set; } = false;
 
         NavMeshAgent agent;
         Vector3 home;
@@ -55,6 +57,8 @@ namespace DeadSector
 
         void Update()
         {
+            if (Dead) return;
+
             if (target == null || !agent.isOnNavMesh)
             {
                 SetMotion(0f, false);
@@ -259,6 +263,45 @@ namespace DeadSector
             int variant = Random.Range(0, 3);
             SetIntIfExists(AttackVariantHash, variant);
             TriggerIfExists(AttackHash);
+        }
+
+        public void TakeDamage(float damage)
+        {
+            if (Dead || damage <= 0f)
+                return;
+
+            Health = Mathf.Max(0f, Health - damage);
+
+            if (target != null)
+            {
+                lastKnownPosition = target.transform.position;
+                lastContactAt = Time.time;
+                alerted = true;
+            }
+
+            if (Health > 0f)
+                return;
+
+            Dead = true;
+            State = "Dead";
+            pendingDamageAt = -1f;
+
+            if (agent != null && agent.enabled)
+            {
+                if (agent.isOnNavMesh)
+                    agent.ResetPath();
+                agent.enabled = false;
+            }
+
+            Collider collider = GetComponent<Collider>();
+            if (collider != null)
+                collider.enabled = false;
+
+            if (animator != null)
+                animator.enabled = false;
+
+            // Temporary static corpse; real death animations / ragdoll later.
+            Destroy(gameObject, 25f);
         }
 
         void FaceTarget()
