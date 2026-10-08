@@ -21,6 +21,7 @@ namespace DeadSector
         Vector3 navigationCenter;
         bool rebuilding;
         float nextRebuild;
+        float nextCountRefresh;
 
         IEnumerator Start()
         {
@@ -87,6 +88,17 @@ namespace DeadSector
 
         void Update()
         {
+            if (Time.time >= nextCountRefresh)
+            {
+                nextCountRefresh = Time.time + 2f;
+                int alive = 0;
+                foreach (SectorZombie zombie in
+                    FindObjectsByType<SectorZombie>(FindObjectsSortMode.None))
+                    if (zombie != null && !zombie.Dead)
+                        alive++;
+                ZombieCount = alive;
+            }
+
             if (!Ready || rebuilding || world == null || player == null ||
                 !world.Ready || world.Status != "Ready" ||
                 Time.time < nextRebuild)
