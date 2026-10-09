@@ -42,8 +42,8 @@ namespace DeadSector
         public SectorBuildSpecification SelectedPlan =>
             SectorBuildCatalog.At(selected);
         public string ControlHint => buildMode
-            ? "B ВЫХОД | 1–5 ВЫБОР | Q/E ПОВОРОТ | ЛКМ ПОСТРОИТЬ | ПКМ ОТМЕНА"
-            : "[B] СТРОИТЬ";
+            ? "B ВЫХОД | 1–7 ВЫБОР | Q/E ПОВОРОТ | ЛКМ ПОСТРОИТЬ | ПКМ ОТМЕНА"
+            : "[B] СТРОИТЬ | H РЕМОНТ (1 ДОСКА)";
 
         public void Configure(SectorPlayer target,
             SectorGameplay owner, SectorInventory items)
@@ -86,6 +86,12 @@ namespace DeadSector
             {
                 if (buildMode)
                     ExitBuildMode();
+                return;
+            }
+
+            if (!buildMode && SectorInput.Pressed(KeyCode.H))
+            {
+                TryRepairNearest();
                 return;
             }
 
@@ -138,6 +144,11 @@ namespace DeadSector
             target.x = Mathf.Round(target.x / 3f) * 3f;
             target.z = Mathf.Round(target.z / 3f) * 3f;
             target.y = SurfaceHeight(target.x, target.z);
+            // A roof must sit above an existing wall. Avoid placing an
+            // unsupported floating roof at terrain level.
+            if (spec.Kind == SectorBuildKind.Roof &&
+                TryFindRoofSupport(target, out float wallTop))
+                target.y = wallTop;
             plannedPosition = target;
 
             if (preview == null)
@@ -154,7 +165,9 @@ namespace DeadSector
             PlacementIssue = !hasMaterials
                 ? "Нет готового комплекта или материалов. Откройте C."
                 : !clearGround
-                    ? "Место занято, слишком близко, склон или вода. Переместитесь."
+                    ? spec.Kind == SectorBuildKind.Roof
+                        ? "Крыша устанавливается над готовой стеной."
+                        : "Место занято, слишком близко, склон или вода. Переместитесь."
                     : "";
 
             if (previewMaterial != null)
@@ -214,10 +227,83 @@ namespace DeadSector
             return true;
         }
 
+        // Restores a damaged wall/door/roof using one log.
+        // No repairs to broken (already destroyed) pieces.
+        public bool TryRepairNearest()
+        {
+            if (player == null || backpack == null)
+                return false;
+            SectorBuildPiece closest = null;
+            float nearestSqr = 3.2f * 3.2f;
+            foreach (SectorBuildPiece piece in pieces)
+            {
+                if (piece == null || !piece.CanRepair) continue;
+                float sqr = (piece.transform.position -
+                    player.transform.position).sqrMagnitude;
+                if (sqr < nearestSqr)
+                {
+                    nearestSqr = sqr;
+                    closest = piece;
+                }
+            }
+
+            if (closest == null)
+            {
+                gameplay?.NotifyBuildFailure(
+                    "Рядом нет повреждённой постройки для ремонта.");
+                return false;
+            }
+            if (!backpack.Remove("wood", 1))
+            {
+                gameplay?.NotifyBuildFailure(
+                    "Для ремонта нужна 1 доска. Рубите деревья топором.");
+                return false;
+            }
+
+            float restored = closest.Repair(35f);
+            if (restored <= 0f)
+            {
+                backpack.Add("wood", 1);
+                return false;
+            }
+            bool saved = gameplay != null && gameplay.TrySaveGame(true);
+            gameplay?.NotifyBuildFailure(
+                "Ремонт +" + restored.ToString("0") +
+                " прочности" + (saved ? " — сохранено" : " — F5 для сохранения"));
+            return true;
+        }
+
+        bool TryFindRoofSupport(Vector3 position, out float top)
+        {
+            top = 0f;
+            float nearest = 2.1f * 2.1f;
+            bool found = false;
+            foreach (SectorBuildPiece piece in pieces)
+            {
+                if (piece == null || piece.Destroyed ||
+                    piece.Kind != SectorBuildKind.Wall)
+                    continue;
+                Vector3 offset = piece.transform.position - position;
+                float sqr = offset.x * offset.x + offset.z * offset.z;
+                if (sqr >= nearest) continue;
+                nearest = sqr;
+                top = piece.transform.position.y +
+                    SectorBuildCatalog.At((int)SectorBuildKind.Wall).Dimensions.y;
+                found = true;
+            }
+            return found;
+        }
+
         bool ValidPlacement(SectorBuildSpecification plan,
             Vector3 position, float rotation)
         {
             RemoveDestroyed();
+            if (plan.Kind == SectorBuildKind.Roof)
+            {
+                if (!TryFindRoofSupport(position, out float supportTop) ||
+                    Mathf.Abs(position.y - supportTop) > .2f)
+                    return false;
+            }
 
             if (pieces.Count >= SectorBuildCatalog.MaxPieces ||
                 Mathf.Abs(position.x) > 3990f ||
