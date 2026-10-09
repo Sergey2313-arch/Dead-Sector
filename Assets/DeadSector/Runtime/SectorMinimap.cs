@@ -31,6 +31,14 @@ namespace DeadSector
         bool canvasHudActive;
         public bool TacticalOpen => tacticalOpen;
 
+        public void CloseTacticalMap()
+        {
+            if (!tacticalOpen)
+                return;
+            tacticalOpen = false;
+            ApplyCameraMode();
+        }
+
         /// <summary>
         /// The new Canvas draws a bright unlit local map. Do not keep
         /// rendering the obsolete world camera or its IMGUI border behind it.
