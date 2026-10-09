@@ -118,6 +118,21 @@ namespace DeadSector
                 case "cotton_bag":
                     Bag(p);
                     break;
+                case "build_foundation":
+                    BuildingKit(p, 0);
+                    break;
+                case "build_wall":
+                    BuildingKit(p, 1);
+                    break;
+                case "build_barricade":
+                    BuildingKit(p, 2);
+                    break;
+                case "build_storage":
+                    BuildingKit(p, 3);
+                    break;
+                case "build_door":
+                    BuildingKit(p, 4);
+                    break;
                 case "stone":
                     Stone(p);
                     break;
@@ -370,6 +385,44 @@ namespace DeadSector
             Circle(p, 24, 23, 15, Warm);
             Circle(p, 24, 23, 8, Shadow);
             Line(p, 30, 8, 39, 17, Warm, 4);
+        }
+
+        static void BuildingKit(Color32[] p, int kind)
+        {
+            // Distinct icons for the five prepared construction parts.
+            if (kind == 0)
+            {
+                Box(p, 5, 12, 43, 30, Warm);
+                Line(p, 6, 17, 42, 17, Shadow, 3);
+                Line(p, 6, 26, 42, 26, Shadow, 3);
+                Line(p, 15, 12, 15, 30, Shadow, 2);
+                Line(p, 34, 12, 34, 30, Shadow, 2);
+            }
+            else if (kind == 1)
+            {
+                Box(p, 8, 7, 40, 41, Warm);
+                for (int x = 15; x <= 33; x += 9)
+                    Line(p, x, 8, x, 40, Shadow, 2);
+                Line(p, 9, 13, 39, 35, Olive, 3);
+            }
+            else if (kind == 2)
+            {
+                Line(p, 6, 13, 42, 36, Warm, 8);
+                Line(p, 6, 36, 42, 13, Warm, 8);
+                Line(p, 8, 13, 40, 34, Shadow, 2);
+                Line(p, 8, 34, 40, 13, Shadow, 2);
+            }
+            else if (kind == 3)
+            {
+                Crate(p);
+            }
+            else
+            {
+                Box(p, 9, 6, 39, 42, Shadow);
+                Box(p, 13, 9, 36, 40, Warm);
+                Line(p, 21, 11, 21, 38, Shadow, 2);
+                Circle(p, 32, 25, 2, Metal);
+            }
         }
 
         static void Crate(Color32[] p)
