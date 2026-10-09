@@ -11,6 +11,10 @@ namespace DeadSector
         public Transform leftArm, rightArm, leftLeg, rightLeg, torso;
         float speed, phase, airborne, lean, poseWeight;
         SectorCarryPose carryPose;
+        float crouchBlend;
+        bool crouching;
+
+        public void SetCrouching(bool value) => crouching = value;
 
         public SectorCarryPose CarryPose => carryPose;
 
@@ -58,6 +62,8 @@ namespace DeadSector
 
             float normalized = Mathf.Clamp01(speed / 7f);
             float dt = Time.deltaTime;
+            crouchBlend = Mathf.MoveTowards(crouchBlend,
+                crouching ? 1f : 0f, dt * 5f);
             phase += dt * Mathf.Lerp(0.75f, 12f, normalized);
             float stride = Mathf.Sin(phase) * 48f * normalized *
                 (1f - airborne);
@@ -65,11 +71,13 @@ namespace DeadSector
 
             leftLeg.localRotation = Quaternion.Lerp(
                 leftLeg.localRotation,
-                Quaternion.Euler(stride - airborne * 32f, 0f, 0f),
+                Quaternion.Euler(stride - airborne * 32f -
+                    crouchBlend * 31f, 0f, 0f),
                 1f - Mathf.Exp(-16f * dt));
             rightLeg.localRotation = Quaternion.Lerp(
                 rightLeg.localRotation,
-                Quaternion.Euler(-stride - airborne * 12f, 0f, 0f),
+                Quaternion.Euler(-stride - airborne * 12f -
+                    crouchBlend * 31f, 0f, 0f),
                 1f - Mathf.Exp(-16f * dt));
 
             // Hands are attached under the right arm, so their weapon
@@ -91,7 +99,8 @@ namespace DeadSector
             torso.localRotation = Quaternion.Lerp(
                 torso.localRotation,
                 Quaternion.Euler(
-                    Mathf.Lerp(speed * 1.1f, lean, airborne) + breathe * .3f,
+                    Mathf.Lerp(speed * 1.1f, lean, airborne) +
+                    breathe * .3f + crouchBlend * 21f,
                     carryPose == SectorCarryPose.Rifle ? -5f : 0f, 0f),
                 1f - Mathf.Exp(-9f * dt));
         }
