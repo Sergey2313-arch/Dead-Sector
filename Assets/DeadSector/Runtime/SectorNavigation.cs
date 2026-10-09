@@ -204,7 +204,7 @@ namespace DeadSector
                     "Horde_Zombie_" + i);
                 root.transform.SetParent(transform, true);
                 root.transform.position = hit.position;
-                SectorArt.SetActorLayer(root.transform);
+                SectorArt.SetActorLayer(root.transform, SectorArt.EnemyVisualLayer);
 
                 CapsuleCollider collider =
                     root.AddComponent<CapsuleCollider>();
@@ -230,13 +230,14 @@ namespace DeadSector
                         Instantiate(zombieVisualPrefab, root.transform);
                     visual.transform.localPosition = Vector3.zero;
                     visual.transform.localRotation = Quaternion.identity;
-                    SectorArt.SetActorLayer(visual.transform);
+                    SectorArt.SetActorLayer(visual.transform, SectorArt.EnemyVisualLayer);
                     animator = visual.GetComponentInChildren<Animator>(true);
                 }
                 else
                 {
                     rig = world.Art.Person(root.transform,
                         new Color(.29f, .25f, .23f));
+                    SectorArt.SetActorLayer(rig.transform, SectorArt.EnemyVisualLayer);
                 }
 
                 SectorZombie ai = root.AddComponent<SectorZombie>();
@@ -318,7 +319,7 @@ namespace DeadSector
                 root.transform.SetParent(transform);
                 root.transform.position = hit.position;
 
-                SectorArt.SetActorLayer(root.transform);
+                SectorArt.SetActorLayer(root.transform, SectorArt.EnemyVisualLayer);
 
                 CapsuleCollider collider = root.AddComponent<CapsuleCollider>();
                 collider.height = 1.8f;
@@ -350,13 +351,14 @@ namespace DeadSector
                     visual.transform.localRotation = Quaternion.identity;
 
                     animator = visual.GetComponentInChildren<Animator>(true);
-                    SectorArt.SetActorLayer(visual.transform);
+                    SectorArt.SetActorLayer(visual.transform, SectorArt.EnemyVisualLayer);
                 }
                 else
                 {
                     rig = world.Art.Person(
                         root.transform,
                         new Color(.30f, .25f, .20f));
+                    SectorArt.SetActorLayer(rig.transform, SectorArt.EnemyVisualLayer);
                 }
 
                 SectorZombie ai = root.AddComponent<SectorZombie>();
