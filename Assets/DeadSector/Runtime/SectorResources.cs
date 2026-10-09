@@ -52,6 +52,11 @@ namespace DeadSector
             new Dictionary<string, SectorResourceNode>(StringComparer.Ordinal);
         readonly HashSet<string> harvested =
             new HashSet<string>(StringComparer.Ordinal);
+        // Refresh runs every 1.1s. Reuse scratch containers instead of
+        // producing a new HashSet/List on each scan.
+        readonly HashSet<string> expected =
+            new HashSet<string>(StringComparer.Ordinal);
+        readonly List<string> unload = new List<string>();
 
         Material[] materials;
         float nextRefresh;
@@ -101,7 +106,8 @@ namespace DeadSector
             Vector3 playerPos = player.transform.position;
             int cellX = Mathf.FloorToInt((playerPos.x + 4000f) / CellSize);
             int cellZ = Mathf.FloorToInt((playerPos.z + 4000f) / CellSize);
-            var expected = new HashSet<string>(StringComparer.Ordinal);
+            expected.Clear();
+            unload.Clear();
 
             for (int dx = -3; dx <= 3; dx++)
             {
@@ -138,7 +144,7 @@ namespace DeadSector
                 }
             }
 
-            var unload = new List<string>();
+
             foreach (var pair in active)
                 if (!expected.Contains(pair.Key))
                     unload.Add(pair.Key);
