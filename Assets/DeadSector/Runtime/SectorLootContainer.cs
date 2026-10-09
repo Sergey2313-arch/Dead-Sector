@@ -191,5 +191,8 @@ namespace DeadSector
     {
         public string id;
         public List<SectorItemStack> items = new List<SectorItemStack>();
+        // Optional additive field for harvest piles. Legacy V1 caches do
+        // not need a position, so old saves load unchanged.
+        public Vector3 position;
     }
 }
