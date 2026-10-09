@@ -231,7 +231,10 @@ namespace DeadSector
                 return;
             }
 
-            if (pendingTitle || !SectorInput.Pressed(KeyCode.Escape))
+            // Death overlay owns the input once the player has died.
+            // Keep the initial profile selector functional until Continue.
+            if (pendingTitle || player.Health <= 0f ||
+                !SectorInput.Pressed(KeyCode.Escape))
                 return;
 
             SectorEscapeAction action = SectorMenuRules.OnEscape(
