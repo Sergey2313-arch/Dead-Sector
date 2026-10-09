@@ -7,6 +7,14 @@ namespace DeadSector
 {
     public static class SectorInput
     {
+        // Shared between the old and the new Input System paths.
+        static float lookSensitivity = 1f;
+        public static float LookSensitivity
+        {
+            get => lookSensitivity;
+            set => lookSensitivity = Mathf.Clamp(value, .35f, 2.5f);
+        }
+
         public static Vector2 Move
         {
             get
@@ -26,9 +34,10 @@ namespace DeadSector
             get
             {
 #if ENABLE_INPUT_SYSTEM
-                return Mouse.current == null ? Vector2.zero : Mouse.current.delta.ReadValue() * .12f;
+                return Mouse.current == null ? Vector2.zero :
+                    Mouse.current.delta.ReadValue() * (.12f * lookSensitivity);
 #else
-                return new Vector2(Input.GetAxis("Mouse X"), Input.GetAxis("Mouse Y")) * 2f;
+                return new Vector2(Input.GetAxis("Mouse X"), Input.GetAxis("Mouse Y")) * (2f * lookSensitivity);
 #endif
             }
         }
