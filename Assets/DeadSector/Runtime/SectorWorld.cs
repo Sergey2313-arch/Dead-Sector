@@ -995,18 +995,58 @@ namespace DeadSector
             root.transform.SetParent(Settlement, false);
             root.transform.localPosition = position;
 
-            Art.Box(
-                root.transform,
-                "Shop",
-                new Vector3(-8, 2.7f, 4),
-                new Vector3(12, 5.4f, 10),
-                concrete);
+            // Previously "Shop" was a single solid 12x5.4x10 cube, so
+            // the station had no traversable interior at all.
+            // Build a modest 3.4m-high shop with a real accessible entrance.
+            var shop = new GameObject("Shop");
+            shop.transform.SetParent(root.transform, false);
+            shop.transform.localPosition = new Vector3(-8f, 0f, 4f);
+            const float shopWidth = 12f;
+            const float shopDepth = 10f;
+            const float shopHeight = 3.4f;
+            const float entranceWidth = ResidentialDoorWidth;
+            const float entranceHeight = ResidentialDoorHeight;
+            const float front = -shopDepth * .5f;
+            const float side = (shopWidth - entranceWidth) * .5f;
 
-            Window(
-                root.transform,
-                new Vector3(-8, 3.0f, -1.05f),
-                new Vector3(5.0f, 1.8f, .08f),
-                glass);
+            Art.Box(shop.transform, "Floor",
+                new Vector3(0f, .16f, 0f),
+                new Vector3(shopWidth, .32f, shopDepth), concrete);
+            Art.Box(shop.transform, "BackWall",
+                new Vector3(0f, shopHeight * .5f, -front),
+                new Vector3(shopWidth, shopHeight, .24f), concrete);
+            for (int dir = -1; dir <= 1; dir += 2)
+            {
+                Art.Box(shop.transform, dir < 0 ? "LeftWall" : "RightWall",
+                    new Vector3(dir * shopWidth * .5f, shopHeight * .5f, 0f),
+                    new Vector3(.24f, shopHeight, shopDepth), concrete);
+                Art.Box(shop.transform, dir < 0 ? "FrontLeft" : "FrontRight",
+                    new Vector3(dir * (entranceWidth + side) * .5f,
+                        shopHeight * .5f, front),
+                    new Vector3(side, shopHeight, .24f), concrete);
+            }
+            Art.Box(shop.transform, "EntranceLintel",
+                new Vector3(0f,
+                    entranceHeight + (shopHeight - entranceHeight) * .5f,
+                    front),
+                new Vector3(entranceWidth, shopHeight - entranceHeight, .24f),
+                concrete);
+            Art.Box(shop.transform, "Roof",
+                new Vector3(0f, shopHeight + .12f, 0f),
+                new Vector3(shopWidth + .4f, .24f, shopDepth + .4f), concrete);
+            Art.Box(shop.transform, "EntranceStep",
+                new Vector3(0f, .09f, front - .55f),
+                new Vector3(2.5f, .18f, 1f), concrete);
+            CreateHingedPortal(shop.transform, "Shop_FrontDoor",
+                new Vector3(entranceWidth * .5f - .07f, 0f, front - .18f),
+                entranceWidth - .14f, entranceHeight, rust, true);
+
+            Window(shop.transform,
+                new Vector3(-3f, 2.25f, front - .14f),
+                new Vector3(2.2f, 1f, .08f), glass);
+            Window(shop.transform,
+                new Vector3(3f, 2.25f, front - .14f),
+                new Vector3(2.2f, 1f, .08f), glass);
 
             Art.Box(
                 root.transform,
