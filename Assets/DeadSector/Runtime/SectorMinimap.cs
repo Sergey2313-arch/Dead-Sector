@@ -91,6 +91,19 @@ namespace DeadSector
 
         void Update()
         {
+            // Modal inventory/crafting owns the pointer. Never allow the
+            // full atlas to cover an active modal and strand the user with
+            // the game input still locked by a hidden UI.
+            if (player != null && player.InputBlockedByUI)
+            {
+                if (tacticalOpen)
+                {
+                    tacticalOpen = false;
+                    ApplyCameraMode();
+                }
+                return;
+            }
+
             if (SectorInput.Pressed(KeyCode.M))
             {
                 tacticalOpen = !tacticalOpen;
