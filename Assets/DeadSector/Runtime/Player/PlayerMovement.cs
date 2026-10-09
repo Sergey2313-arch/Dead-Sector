@@ -13,6 +13,10 @@ public class PlayerMovement : MonoBehaviour
     public float jumpHeight = 1.5f;
     public float hardLandingVelocity = -7.5f;
     public float rollLandingVelocity = -11.5f;
+    [Header("Grounding")]
+    [Min(0f)] public float groundedGraceSeconds = 0.10f;
+    [Min(0f)] public float jumpBufferSeconds = 0.10f;
+    [Min(0f)] public float groundStickVelocity = 2f;
 
     [Header("Look")]
     public float mouseSensitivity = 150f;
@@ -55,6 +59,9 @@ public class PlayerMovement : MonoBehaviour
     private bool running;
     private bool combatMode;
     private bool previousGrounded = true;
+    private float lastGroundedTime = float.NegativeInfinity;
+    private float lastJumpPressedTime = float.NegativeInfinity;
+    private bool jumpConsumed;
 
     private readonly HashSet<int> animatorParameters = new();
 
@@ -89,6 +96,7 @@ public class PlayerMovement : MonoBehaviour
         Cursor.visible = false;
 
         previousGrounded = controller.isGrounded;
+        if (previousGrounded) lastGroundedTime = Time.time;
     }
 
     private void Update()
@@ -106,53 +114,70 @@ public class PlayerMovement : MonoBehaviour
 
     private void HandleMovement()
     {
-        bool groundedBeforeMove = controller.isGrounded;
+        float dt = Time.deltaTime;
+        if (dt <= 0f) return;
 
-        if (groundedBeforeMove && velocity.y < 0f)
-            velocity.y = -2f;
+        bool groundedBeforeMove = controller.isGrounded;
+        if (groundedBeforeMove)
+        {
+            lastGroundedTime = Time.time;
+            jumpConsumed = false;
+            if (velocity.y < 0f)
+                velocity.y = -groundStickVelocity;
+        }
+
+        if (Input.GetButtonDown("Jump"))
+            lastJumpPressedTime = Time.time;
 
         float x = Input.GetAxisRaw("Horizontal");
         float z = Input.GetAxisRaw("Vertical");
-
-        Vector3 move = transform.right * x + transform.forward * z;
-        move = Vector3.ClampMagnitude(move, 1f);
+        Vector3 move = Vector3.ClampMagnitude(
+            transform.right * x + transform.forward * z, 1f);
 
         running = Input.GetKey(KeyCode.LeftShift) && move.sqrMagnitude > 0.01f;
         float moveSpeed = running ? runSpeed : walkSpeed;
-
         currentMoveAmount = move.magnitude;
 
-        if (Input.GetButtonDown("Jump") && groundedBeforeMove)
+        bool bufferedJump = Time.time - lastJumpPressedTime <= jumpBufferSeconds;
+        bool allowedGround = groundedBeforeMove ||
+            Time.time - lastGroundedTime <= groundedGraceSeconds;
+        bool jumpingNow = bufferedJump && allowedGround && !jumpConsumed;
+        if (jumpingNow)
         {
-            velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
+            velocity.y = Mathf.Sqrt(Mathf.Max(0f, jumpHeight) *
+                -2f * Mathf.Min(-0.01f, gravity));
+            lastJumpPressedTime = float.NegativeInfinity;
+            jumpConsumed = true;
             SetIntIfExists("LandingType", 0);
         }
 
-        velocity.y += gravity * Time.deltaTime;
+        velocity.y += gravity * dt;
         float impactVerticalVelocity = velocity.y;
+        CollisionFlags flags = controller.Move(
+            (move * moveSpeed + Vector3.up * velocity.y) * dt);
 
-        Vector3 finalMove = move * moveSpeed + Vector3.up * velocity.y;
-        controller.Move(finalMove * Time.deltaTime);
+        bool groundedAfterMove = (flags & CollisionFlags.Below) != 0;
+        if ((flags & CollisionFlags.Above) != 0 && velocity.y > 0f)
+            velocity.y = 0f;
 
-        bool groundedAfterMove = controller.isGrounded;
-
-        if (!groundedAfterMove && previousGrounded)
-            SetIntIfExists("LandingType", 0);
+        if (groundedAfterMove)
+        {
+            lastGroundedTime = Time.time;
+            jumpConsumed = false;
+            if (velocity.y < 0f)
+                velocity.y = -groundStickVelocity;
+        }
 
         if (groundedAfterMove && !previousGrounded)
         {
-            int landingType = 0;
-
-            if (impactVerticalVelocity <= rollLandingVelocity)
-                landingType = 2;
-            else if (impactVerticalVelocity <= hardLandingVelocity)
-                landingType = 1;
-
+            int landingType = impactVerticalVelocity <= rollLandingVelocity ? 2 :
+                impactVerticalVelocity <= hardLandingVelocity ? 1 : 0;
             SetIntIfExists("LandingType", landingType);
         }
-
-        if (groundedAfterMove && velocity.y < 0f)
-            velocity.y = -2f;
+        else if (!groundedAfterMove && previousGrounded)
+        {
+            SetIntIfExists("LandingType", 0);
+        }
 
         previousGrounded = groundedAfterMove;
     }
@@ -290,6 +315,9 @@ public class PlayerMovement : MonoBehaviour
 #if UNITY_EDITOR
     private void OnValidate()
     {
+        groundStickVelocity = Mathf.Max(0f, groundStickVelocity);
+        groundedGraceSeconds = Mathf.Max(0f, groundedGraceSeconds);
+        jumpBufferSeconds = Mathf.Max(0f, jumpBufferSeconds);
         if (playerCamera != null)
             playerCamera.nearClipPlane = nearClipPlane;
     }
