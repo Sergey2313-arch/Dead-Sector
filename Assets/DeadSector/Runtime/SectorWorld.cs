@@ -25,6 +25,20 @@ namespace DeadSector
         }
     }
 
+    public readonly struct SectorInteriorCache
+    {
+        public readonly string Id;
+        public readonly string Label;
+        public readonly Vector2 Position;
+
+        public SectorInteriorCache(string id, string label, Vector2 position)
+        {
+            Id = id;
+            Label = label;
+            Position = position;
+        }
+    }
+
     public sealed class SectorWorld : MonoBehaviour
     {
         // Metres. A standing player is ~1.78m; homes should read as
@@ -41,6 +55,9 @@ namespace DeadSector
         public SectorResources resources;
         public bool Ready { get; private set; }
         public IReadOnlyList<SectorPointOfInterest> PointsOfInterest => pointsOfInterest;
+        readonly List<SectorInteriorCache> interiorCaches =
+            new List<SectorInteriorCache>();
+        public IReadOnlyList<SectorInteriorCache> InteriorCaches => interiorCaches;
         public int LoadedTiles => tiles.Count;
         public string Status { get; private set; } = "Generating terrain...";
         public SectorArt Art { get; private set; }
@@ -412,6 +429,15 @@ namespace DeadSector
             };
         }
         public Transform Settlement { get; private set; }
+
+        void RegisterInteriorCache(
+            string id, string label, Transform parent, Vector3 localPosition)
+        {
+            Vector3 worldPos = parent.TransformPoint(localPosition);
+            interiorCaches.Add(new SectorInteriorCache(
+                "interior_" + id, label,
+                new Vector2(worldPos.x, worldPos.z)));
+        }
 
         void BuildSettlement()
         {
@@ -797,12 +823,32 @@ namespace DeadSector
                 new Vector3(.65f, 2.3f, .65f),
                 new Color(.25f, .23f, .21f));
 
-            Art.Box(
-                root.transform,
-                "Supply_Crate",
-                new Vector3(width * .28f, .75f, depth * .24f),
-                new Vector3(1.1f, .8f, .9f),
+            // Collision-backed household furniture, away from the
+            // front centre corridor and the usable door opening.
+            Art.Box(root.transform, "House_Bed_Base",
+                new Vector3(-width * .26f, .61f, depth * .29f),
+                new Vector3(1.65f, .35f, 2.25f),
+                new Color(.32f, .24f, .18f));
+            Art.Box(root.transform, "House_Bed_Mattress",
+                new Vector3(-width * .26f, .88f, depth * .29f),
+                new Vector3(1.45f, .20f, 2f),
+                new Color(.42f, .42f, .37f));
+            Art.Box(root.transform, "House_Table",
+                new Vector3(width * .23f, .86f, depth * .02f),
+                new Vector3(1.25f, .10f, 1.10f),
+                new Color(.38f, .28f, .17f));
+            Art.Box(root.transform, "House_Shelf",
+                new Vector3(width * .36f, 1.18f, depth * .39f),
+                new Vector3(1.15f, 1.5f, .43f),
+                new Color(.32f, .25f, .18f));
+            Art.Box(root.transform, "Supply_Crate",
+                new Vector3(width * .28f, .70f, depth * .24f),
+                new Vector3(.75f, .56f, .64f),
                 new Color(.34f, .26f, .14f));
+
+            RegisterInteriorCache(name, "Тайник в жилом доме",
+                root.transform,
+                new Vector3(width * .29f, 0f, depth * .24f));
         }
 
         void GabledRoof(
@@ -996,6 +1042,40 @@ namespace DeadSector
                         -depth * .5f - .20f),
                     shutterWidth - .14f, portalHeight,
                     wallColor, true);
+            }
+
+            // Basic believable clinic/workshop interior blockout,
+            // leaving the entrance and central aisle unobstructed.
+            if (clinic)
+            {
+                for (int bed = -1; bed <= 1; bed += 2)
+                {
+                    Art.Box(root.transform, "Clinic_Bed_" + bed,
+                        new Vector3(bed * 4f, .72f, depth * .19f),
+                        new Vector3(1.4f, .40f, 2.5f),
+                        new Color(.40f, .45f, .44f));
+                    Art.Box(root.transform, "Clinic_Mattress_" + bed,
+                        new Vector3(bed * 4f, 1f, depth * .19f),
+                        new Vector3(1.25f, .20f, 2.3f),
+                        new Color(.72f, .74f, .68f));
+                }
+                Art.Box(root.transform, "Clinic_Medicine_Cabinet",
+                    new Vector3(width * .36f, 1.23f, depth * .36f),
+                    new Vector3(1.25f, 1.9f, .58f),
+                    new Color(.63f, .66f, .64f));
+                RegisterInteriorCache("Clinic", "Аптечный шкаф",
+                    root.transform,
+                    new Vector3(width * .36f, 0f, depth * .29f));
+            }
+            else
+            {
+                Art.Box(root.transform, "Industrial_Workbench",
+                    new Vector3(width * .30f, .75f, depth * .28f),
+                    new Vector3(2.4f, .32f, 1.0f),
+                    new Color(.35f, .32f, .29f));
+                RegisterInteriorCache(name, "Инструменты и запчасти",
+                    root.transform,
+                    new Vector3(width * .29f, 0f, depth * .28f));
             }
 
             Art.Box(
@@ -1221,6 +1301,17 @@ namespace DeadSector
             CreateHingedPortal(shop.transform, "Shop_FrontDoor",
                 new Vector3(entranceWidth * .5f - .07f, 0f, front - .18f),
                 entranceWidth - .14f, entranceHeight, rust, true);
+            Art.Box(shop.transform, "Shop_Counter",
+                new Vector3(3f, .82f, 1.0f),
+                new Vector3(3.2f, 1.1f, .72f),
+                new Color(.38f, .30f, .22f));
+            for (int shelf = -1; shelf <= 1; shelf += 2)
+                Art.Box(shop.transform, "Shop_Shelf_" + shelf,
+                    new Vector3(shelf * 3.5f, 1.05f, 2.7f),
+                    new Vector3(1.35f, 1.6f, .65f),
+                    new Color(.48f, .42f, .31f));
+            RegisterInteriorCache("FuelShop", "Продукты магазина",
+                shop.transform, new Vector3(3f, 0f, 1.4f));
 
             Window(shop.transform,
                 new Vector3(-3f, 2.25f, front - .14f),
