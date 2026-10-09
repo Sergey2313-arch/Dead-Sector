@@ -557,6 +557,13 @@ namespace DeadSector
                     origin, expected);
             }
 
+            // Interior caches use stable scene-generated positions and IDs
+            // so clearing a cabinet stays cleared after F5/F9.
+            if (world != null)
+                foreach (SectorInteriorCache cache in world.InteriorCaches)
+                    EnsureNearby(cache.Id, cache.Label,
+                        cache.Position, origin, expected);
+
             // Pick up logs/ore left after chopping with a full backpack.
             foreach (var pair in harvestCacheLocations)
             {
@@ -604,8 +611,14 @@ namespace DeadSector
 
             GameObject crate = GameObject.CreatePrimitive(PrimitiveType.Cube);
             crate.name = "Loot_" + id;
-            crate.transform.position = new Vector3(pos.x, y + .7f, pos.y);
-            crate.transform.localScale = new Vector3(1.3f, 1.4f, 1.0f);
+            bool small = id.StartsWith(
+                "interior_", StringComparison.Ordinal) ||
+                id.StartsWith("corpse_", StringComparison.Ordinal);
+            crate.transform.position = new Vector3(
+                pos.x, y + (small ? .73f : .7f), pos.y);
+            crate.transform.localScale = small
+                ? new Vector3(.60f, .60f, .60f)
+                : new Vector3(1.3f, 1.4f, 1.0f);
 
             if (crateMaterial == null)
             {
