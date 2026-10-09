@@ -157,10 +157,10 @@ namespace DeadSector
                 new Vector2(253f, 187f));
             Paint(vitalPanel, new Color(.018f, .026f, .028f, .82f));
             RectAt(vitalPanel, "Accent_Line", 0f, 0f, 3f, 187f, Accent);
-            Label(vitalPanel, "SURVIVOR   /   01", 16f, 12f, 210f, 22f,
-                15, White, FontStyle.Bold);
-            Label(vitalPanel, "STATUS MONITOR", 16f, 36f, 205f, 14f,
-                10, Muted);
+            Label(vitalPanel, "Title", "SURVIVOR   /   01", 16f, 12f,
+                210f, 22f, 15, White, FontStyle.Bold);
+            Label(vitalPanel, "Subtitle", "STATUS MONITOR",
+                16f, 36f, 205f, 14f, 10, Muted);
 
             string[] names = { "HEALTH", "STAMINA", "HUNGER", "THIRST" };
             for (int i = 0; i < names.Length; i++)
@@ -305,6 +305,7 @@ namespace DeadSector
                     13f, 26f, 264f, 25f, 13, White);
                 Button click = tile.gameObject.AddComponent<Button>();
                 click.targetGraphic = tile.GetComponent<Image>();
+                tile.GetComponent<Image>().raycastTarget = true;
                 click.onClick.AddListener(() =>
                     gameplay.RemoveGear((SectorEquipment.GearSlot)gearIndex));
             }
@@ -375,6 +376,7 @@ namespace DeadSector
 
             RectTransform viewport = RectAt(left, "Scroll_Viewport",
                 14f, 46f, 819f, 555f, Color.clear);
+            viewport.GetComponent<Image>().raycastTarget = true;
             viewport.gameObject.AddComponent<RectMask2D>();
             ScrollRect scroll = left.gameObject.AddComponent<ScrollRect>();
             scroll.viewport = viewport;
