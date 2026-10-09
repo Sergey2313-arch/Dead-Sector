@@ -271,6 +271,29 @@ namespace DeadSector
             UpdatePanelInput();
         }
 
+        public void SetJournalOpen(bool isOpen)
+        {
+            if (Journal == null)
+                return;
+
+            Journal.SetVisible(isOpen);
+            SetExternalUiBlocking(isOpen);
+        }
+
+        public bool SplitInventoryStack(int stackIndex, int count)
+        {
+            bool result = Inventory.SplitStack(stackIndex, count);
+            if (result)
+                Notify("Split stack");
+            return result;
+        }
+
+        public void SortInventory()
+        {
+            Inventory.SortStacks();
+            Notify("Backpack sorted");
+        }
+
         public void UseInventoryItem(string id) => UseItem(id);
         public void EquipInventoryItem(string id) => EquipItem(id);
 
