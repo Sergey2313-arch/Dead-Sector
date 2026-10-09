@@ -64,11 +64,15 @@ namespace DeadSector
         Text mapCoordsLabel;
         RectTransform playerArrow;
         RectTransform mapRect;
+        RectTransform mapPoiOverlay;
         Texture2D mapTexture;
         Color32[] mapPixels;
         Vector2 lastMapCenter = new Vector2(float.PositiveInfinity, float.PositiveInfinity);
         float mapRefreshAt;
         readonly List<CompassTick> compassTicks = new List<CompassTick>();
+        readonly Text[] compassPoiTexts = new Text[4];
+        readonly RectTransform[] compassPoiRects = new RectTransform[4];
+        RectTransform compassPanel;
         readonly List<MapPoiMarker> mapPoiMarkers = new List<MapPoiMarker>();
         Text bagSummary;
         Text selectedTitle;
@@ -272,6 +276,278 @@ namespace DeadSector
                 12f, 3f, 336f, 30f, 13, White,
                 FontStyle.Bold, TextAnchor.MiddleCenter);
             messageRoot.SetActive(false);
+        }
+
+
+        void BuildCompass(RectTransform root)
+        {
+            compassPanel = Rect(root, "Tactical_Compass",
+                new Vector2(.5f, 1f), new Vector2(.5f, 1f),
+                new Vector2(.5f, 1f), new Vector2(0f, -12f),
+                new Vector2(632f, 79f));
+            Paint(compassPanel, new Color(.02f, .028f, .028f, .80f));
+
+            RectAt(compassPanel, "TopLine", 4f, 0f, 624f, 2f, Accent);
+            compassBearing = Label(compassPanel, "Heading", "000°",
+                255f, 1f, 122f, 25f, 18, Accent,
+                FontStyle.Bold, TextAnchor.MiddleCenter);
+
+            RectAt(compassPanel, "CenterNeedle", 315f, 26f,
+                2f, 38f, Accent);
+            RectAt(compassPanel, "CenterDiamond", 311f, 24f,
+                10f, 3f, Accent);
+
+            for (int i = 0; i < 27; i++)
+            {
+                RectTransform tick = RectAt(compassPanel,
+                    "BearingTick_" + i, 0f, 38f,
+                    52f, 37f, Color.clear);
+                Image line = RectAt(tick, "Notch", 25f, 0f,
+                    1f, 10f, Muted).GetComponent<Image>();
+                Text text = Label(tick, "Degrees", "", 0f, 14f,
+                    52f, 20f, 10, White, FontStyle.Bold,
+                    TextAnchor.MiddleCenter);
+                compassTicks.Add(new CompassTick
+                {
+                    rect = tick,
+                    text = text,
+                    line = line
+                });
+            }
+
+            for (int i = 0; i < compassPoiTexts.Length; i++)
+            {
+                RectTransform marker = RectAt(compassPanel,
+                    "PoiBearing_" + i, 0f, 80f, 126f, 21f,
+                    new Color(.04f, .063f, .055f, .94f));
+                compassPoiRects[i] = marker;
+                compassPoiTexts[i] = Label(marker, "POI", "",
+                    3f, 0f, 119f, 20f, 10, Accent,
+                    FontStyle.Bold, TextAnchor.MiddleCenter);
+                marker.gameObject.SetActive(false);
+            }
+        }
+
+        void BuildMinimap(RectTransform root)
+        {
+            const int mapSize = 214;
+            RectTransform panel = Rect(root, "NorthUp_Local_Map",
+                new Vector2(1f, 1f), new Vector2(1f, 1f),
+                new Vector2(1f, 1f), new Vector2(-25f, -23f),
+                new Vector2(232f, 283f));
+            Paint(panel, new Color(.018f, .030f, .032f, .95f));
+            RectAt(panel, "TopAccent", 0f, 0f, 232f, 3f, Accent);
+            Label(panel, "MapHeader", "LOCAL SCAN    N ↑",
+                10f, 8f, 216f, 21f, 13, White, FontStyle.Bold);
+
+            mapRect = Rect(panel, "SurveyMap",
+                new Vector2(0f, 1f), new Vector2(0f, 1f),
+                new Vector2(0f, 1f), new Vector2(9f, -34f),
+                new Vector2(mapSize, mapSize));
+            RawImage image = mapRect.gameObject.AddComponent<RawImage>();
+            image.color = Color.white;
+            image.raycastTarget = false;
+            tacticalMap = image;
+
+            mapPixels = new Color32[
+                SectorTacticalMapRaster.Resolution *
+                SectorTacticalMapRaster.Resolution];
+            mapTexture = new Texture2D(
+                SectorTacticalMapRaster.Resolution,
+                SectorTacticalMapRaster.Resolution,
+                TextureFormat.RGBA32, false);
+            mapTexture.name = "DeadSector_LocalSurvey_128";
+            mapTexture.wrapMode = TextureWrapMode.Clamp;
+            mapTexture.filterMode = FilterMode.Bilinear;
+            tacticalMap.texture = mapTexture;
+
+            RectTransform overlay = RectAt(mapRect,
+                "Map_Annotations", 0f, 0f, mapSize, mapSize,
+                Color.clear);
+            RectAt(overlay, "CrosshairVertical", mapSize * .5f,
+                0f, 1f, mapSize, new Color(.87f, .97f, .80f, .16f));
+            RectAt(overlay, "CrosshairHorizontal", 0f, mapSize * .5f,
+                mapSize, 1f, new Color(.87f, .97f, .80f, .16f));
+
+            // The marker is always at the local map center; map is
+            // north-up while the arrow rotates to the actual player yaw.
+            playerArrow = RectAt(overlay, "Player_NorthArrow",
+                mapSize * .5f - 17f, mapSize * .5f - 17f,
+                34f, 34f, new Color(.02f, .04f, .04f, .82f));
+            Label(playerArrow, "ArrowGlyph", "▲",
+                0f, 0f, 34f, 34f, 28, Accent,
+                FontStyle.Bold, TextAnchor.MiddleCenter);
+
+            Label(panel, "MapFooter", "TERRAIN  /  ROADS  /  WATER",
+                10f, 253f, 212f, 13f, 10, Muted);
+            mapScaleLabel = Label(panel, "Scale", "340 M",
+                166f, 253f, 56f, 13f, 10, Accent,
+                FontStyle.Bold, TextAnchor.MiddleRight);
+            mapCoordsLabel = Label(panel, "Coordinates", "",
+                10f, 268f, 211f, 14f, 10, Muted);
+            mapPoiOverlay = overlay;
+        }
+
+        void RefreshCompass()
+        {
+            if (player.view == null)
+                return;
+
+            float heading = Mathf.Repeat(
+                player.view.transform.eulerAngles.y, 360f);
+            compassBearing.text =
+                (Mathf.RoundToInt(heading) % 360).ToString("000") + "°";
+
+            int first = Mathf.FloorToInt(
+                (heading - 65f) / 5f) * 5;
+            for (int i = 0; i < compassTicks.Count; i++)
+            {
+                int absolute = first + i * 5;
+                float delta = Mathf.DeltaAngle(heading, absolute);
+                CompassTick tick = compassTicks[i];
+                bool visible = Mathf.Abs(delta) <= 64f;
+                tick.rect.gameObject.SetActive(visible);
+                if (!visible)
+                    continue;
+
+                tick.rect.anchoredPosition =
+                    new Vector2(310f + delta / 65f * 300f - 26f, -37f);
+                int angle = ((absolute % 360) + 360) % 360;
+                bool cardinal = angle % 45 == 0;
+                bool major = angle % 15 == 0;
+                tick.line.rectTransform.sizeDelta =
+                    new Vector2(cardinal ? 2f : 1f,
+                        cardinal ? 17f : major ? 11f : 6f);
+                tick.line.color = cardinal ? Accent : Muted;
+                tick.text.text = cardinal
+                    ? SectorCompass.CardinalName(angle)
+                    : major ? angle.ToString("000") : "";
+            }
+
+            int marked = 0;
+            if (minimap != null && minimap.world != null &&
+                minimap.world.Ready)
+            {
+                Vector3 center = player.transform.position;
+                foreach (SectorPointOfInterest poi in
+                    minimap.world.PointsOfInterest)
+                {
+                    if (marked >= compassPoiTexts.Length)
+                        break;
+
+                    Vector3 delta = poi.Position - center;
+                    delta.y = 0f;
+                    float metres = delta.magnitude;
+                    if (metres > 1250f || metres < 16f)
+                        continue;
+
+                    float relative = SectorCompass.RelativeAngle(
+                        heading, SectorCompass.Bearing(center, poi.Position));
+                    if (Mathf.Abs(relative) > 55f)
+                        continue;
+
+                    float x = 310f + relative / 65f * 300f;
+                    bool overlap = false;
+                    for (int j = 0; j < marked; j++)
+                    {
+                        if (Mathf.Abs(compassPoiRects[j].anchoredPosition.x -
+                            (x - 63f)) < 115f)
+                        {
+                            overlap = true;
+                            break;
+                        }
+                    }
+
+                    if (overlap)
+                        continue;
+
+                    compassPoiRects[marked].gameObject.SetActive(true);
+                    compassPoiRects[marked].anchoredPosition =
+                        new Vector2(x - 63f, -83f);
+                    compassPoiTexts[marked].text =
+                        poi.Name + "  " + Mathf.RoundToInt(metres) + "m";
+                    marked++;
+                }
+            }
+
+            for (int i = marked; i < compassPoiTexts.Length; i++)
+                compassPoiRects[i].gameObject.SetActive(false);
+        }
+
+        void RefreshMinimap()
+        {
+            if (tacticalMap == null || player == null)
+                return;
+
+            Vector3 pos = player.transform.position;
+            Vector2 center = new Vector2(pos.x, pos.z);
+            float diameter = SectorTacticalMapRaster.DefaultDiameter;
+
+            if (Time.unscaledTime >= mapRefreshAt &&
+                (lastMapCenter - center).sqrMagnitude > 36f)
+            {
+                mapRefreshAt = Time.unscaledTime + 1.7f;
+                lastMapCenter = center;
+                SectorTacticalMapRaster.Write(
+                    mapPixels, center, diameter,
+                    SectorTacticalMapRaster.Resolution);
+                mapTexture.SetPixels32(mapPixels);
+                mapTexture.Apply(false, false);
+            }
+
+            // Rotate the arrow clockwise when facing East, and keep the
+            // top edge of the raster fixed to geographic North.
+            if (playerArrow != null)
+                playerArrow.localRotation = Quaternion.Euler(
+                    0f, 0f, -player.transform.eulerAngles.y);
+
+            mapCoordsLabel.text =
+                "X " + pos.x.ToString("0") +
+                "      Z " + pos.z.ToString("0") +
+                "      [M]  ATLAS";
+            mapScaleLabel.text = diameter.ToString("0") + " M";
+
+            BuildPoiMapMarkersIfReady();
+            foreach (MapPoiMarker marker in mapPoiMarkers)
+            {
+                Vector2 position = new Vector2(
+                    marker.poi.Position.x, marker.poi.Position.z);
+                Vector2 uv = SectorTacticalMapRaster.Project(
+                    position, center, diameter);
+                bool inside = uv.x >= .03f && uv.x <= .97f &&
+                    uv.y >= .03f && uv.y <= .97f;
+                marker.rect.gameObject.SetActive(inside);
+                if (!inside)
+                    continue;
+
+                marker.rect.anchoredPosition = new Vector2(
+                    uv.x * 214f - 3f, -(1f - uv.y) * 214f + 3f);
+            }
+        }
+
+        void BuildPoiMapMarkersIfReady()
+        {
+            if (mapPoiMarkers.Count > 0 || mapPoiOverlay == null ||
+                minimap == null || minimap.world == null ||
+                !minimap.world.Ready)
+                return;
+
+            foreach (SectorPointOfInterest poi in
+                minimap.world.PointsOfInterest)
+            {
+                if (poi.Name == "Spawn")
+                    continue;
+
+                RectTransform marker = RectAt(mapPoiOverlay,
+                    "Location_" + poi.Name, 0f, 0f, 7f, 7f,
+                    poi.MapColor);
+                mapPoiMarkers.Add(new MapPoiMarker
+                {
+                    poi = poi,
+                    rect = marker
+                });
+                marker.gameObject.SetActive(false);
+            }
         }
 
         void BuildModal(RectTransform root)
