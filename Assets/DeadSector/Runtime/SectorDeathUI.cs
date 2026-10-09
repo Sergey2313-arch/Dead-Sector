@@ -76,13 +76,13 @@ namespace DeadSector
 
             AddImage(frame, "Warning", 0f, 0f, 6f, 560f,
                 new Color(.73f, .22f, .19f));
-            Label(frame, "Chapter", "DEAD SECTOR  /  INCIDENT REPORT",
+            Label(frame, "Chapter", "DEAD SECTOR  /  СМЕРТЬ",
                 30f, 20f, 700f, 30f, 16,
                 new Color(.77f, .45f, .42f));
-            Label(frame, "Title", "YOU DIED", 18f, 89f,
+            Label(frame, "Title", "ВЫ ПОГИБЛИ", 18f, 89f,
                 750f, 125f, 87, Color.white);
             Label(frame, "Description",
-                "SURVIVOR LOST. YOUR PREVIOUS CHECKPOINT IS PRESERVED.",
+                "ВЫЖИВШИЙ ПОГИБ. ПОСЛЕДНЕЕ СОХРАНЕНИЕ ОСТАЛОСЬ.",
                 30f, 220f, 720f, 52f, 16,
                 new Color(.69f, .72f, .67f));
 
@@ -96,7 +96,7 @@ namespace DeadSector
                         HideDeath();
                     else
                         status.text =
-                            "CHECKPOINT MISSING OR UNREADABLE";
+                            "СОХРАНЕНИЕ НЕ НАЙДЕНО ИЛИ ПОВРЕЖДЕНО";
                 });
 
             MakeButton(frame, "Respawn", "ВОЗРОДИТЬСЯ В ЛАГЕРЕ",
@@ -109,7 +109,7 @@ namespace DeadSector
                 });
 
             status = Label(frame, "WarningText",
-                "NO PERMADEATH. SAVE FILES ARE NOT DELETED.",
+                "СОХРАНЕНИЯ НЕ УДАЛЯЮТСЯ ПРИ СМЕРТИ.",
                 30f, 455f, 707f, 62f, 13,
                 new Color(.79f, .71f, .58f));
             root.SetActive(false);
@@ -150,8 +150,8 @@ namespace DeadSector
             root.SetActive(true);
             restoreButton.interactable = gameplay.HasLiveCheckpoint;
             status.text = gameplay.HasLiveCheckpoint
-                ? "CHECKPOINT AVAILABLE / PROGRESS BEFORE LAST SAVE"
-                : "NO LIVE CHECKPOINT / RESPAWN AVAILABLE";
+                ? "ДОСТУПНО ПОСЛЕДНЕЕ СОХРАНЕНИЕ"
+                : "НЕТ СОХРАНЕНИЯ — МОЖНО ВОЗРОДИТЬСЯ";
         }
 
         void HideDeath()
