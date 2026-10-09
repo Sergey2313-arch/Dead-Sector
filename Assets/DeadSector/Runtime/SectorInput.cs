@@ -52,6 +52,20 @@ namespace DeadSector
 #endif
             }
         }
+        public static bool Crouch
+        {
+            get
+            {
+#if ENABLE_INPUT_SYSTEM
+                return Keyboard.current != null &&
+                    (Keyboard.current.leftCtrlKey.isPressed ||
+                     Keyboard.current.rightCtrlKey.isPressed);
+#else
+                return Input.GetKey(KeyCode.LeftControl) ||
+                    Input.GetKey(KeyCode.RightControl);
+#endif
+            }
+        }
 #if ENABLE_INPUT_SYSTEM
         // One authoritative key map for the New Input System. All gameplay
         // hotkeys (including construction) must go through this table.
