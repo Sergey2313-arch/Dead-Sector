@@ -38,6 +38,37 @@ namespace DeadSector.Tests
         }
 
         [Test]
+        public void StageTwoLowPolyConiferMeshHasOutwardFacesAndBounds()
+        {
+            Mesh cone = SectorVegetationMesh.CreateConiferCone(10);
+            try
+            {
+                Assert.AreEqual(12, cone.vertexCount);
+                Assert.AreEqual(60, cone.triangles.Length);
+                Assert.That(cone.bounds.min.y, Is.EqualTo(0f).Within(.001f));
+                Assert.That(cone.bounds.max.y, Is.EqualTo(1f).Within(.001f));
+                Assert.Greater(cone.bounds.size.x, .9f);
+                Assert.Greater(cone.bounds.size.z, .9f);
+            }
+            finally
+            {
+                Object.DestroyImmediate(cone);
+            }
+        }
+
+        [Test]
+        public void StageThreeWallsSnapToRealFoundationEdges()
+        {
+            Vector3 foundation = new Vector3(21f, 60f, -36f);
+            Vector3 north = SectorBaseBuilding.FoundationEdge(foundation, 0f);
+            Vector3 east = SectorBaseBuilding.FoundationEdge(foundation, 90f);
+            Assert.That(north.z, Is.EqualTo(-34.5f).Within(.001f));
+            Assert.That(north.y, Is.EqualTo(60.25f).Within(.001f));
+            Assert.That(east.x, Is.EqualTo(22.5f).Within(.001f));
+            Assert.That(east.z, Is.EqualTo(-36f).Within(.001f));
+        }
+
+        [Test]
         public void StageThreeConstructionSupportsIgnoreOnlyIntendedContacts()
         {
             Assert.IsTrue(SectorBaseBuilding.CanOverlapSupports(
