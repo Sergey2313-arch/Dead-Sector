@@ -448,7 +448,13 @@ namespace DeadSector
             harvested.Add(node.Id);
             active.Remove(node.Id);
             worldTrees.Remove(node.Id);
-            Destroy(node.gameObject);
+            // EditMode tests invoke this without a running player loop.
+            // Destroy is deferred/unsupported there; play mode must keep
+            // deferred destruction for physics and streaming safety.
+            if (Application.isPlaying)
+                Destroy(node.gameObject);
+            else
+                DestroyImmediate(node.gameObject);
             return true;
         }
 
