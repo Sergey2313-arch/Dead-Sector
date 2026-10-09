@@ -11,6 +11,10 @@ namespace DeadSector
         SectorArt actorArt;
         bool debugOverlay;
 
+        [Header("UI")]
+        [Tooltip("Disable to restore the legacy IMGUI during UI testing.")]
+        public bool useModernUi = true;
+
         void Awake()
         {
             actorArt = new SectorArt();
@@ -192,6 +196,17 @@ namespace DeadSector
             var hud = hudObject.AddComponent<SectorHUD>();
             hud.Configure(player, gameplay.Needs, clock,
                 gameplay.Armor, gameplay.Inventory);
+
+            // The runtime-built Canvas replaces the IMGUI HUD and modal
+            // windows, without editing locally modified Unity scenes.
+            // If creation fails, legacy IMGUI remains the fallback.
+            if (useModernUi)
+            {
+                var modern = new GameObject("Tactical_UI")
+                    .AddComponent<SectorModernUI>();
+                if (modern.Configure(gameplay, player, clock))
+                    hud.enabled = false;
+            }
         }
 
         void Update()
