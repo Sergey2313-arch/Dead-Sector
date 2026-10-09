@@ -222,12 +222,12 @@ namespace DeadSector
                 new Vector2(253f, 202f));
             Paint(vitalPanel, new Color(.018f, .026f, .028f, .82f));
             RectAt(vitalPanel, "Accent_Line", 0f, 0f, 3f, 202f, Accent);
-            Label(vitalPanel, "Title", "SURVIVOR   /   01", 16f, 12f,
+            Label(vitalPanel, "Title", "ВЫЖИВШИЙ   /   01", 16f, 12f,
                 210f, 22f, 15, White, FontStyle.Bold);
-            Label(vitalPanel, "Subtitle", "STATUS MONITOR",
+            Label(vitalPanel, "Subtitle", "СОСТОЯНИЕ",
                 16f, 36f, 205f, 14f, 10, Muted);
 
-            string[] names = { "HEALTH", "STAMINA", "HUNGER", "THIRST" };
+            string[] names = { "ЗДОРОВЬЕ", "ВЫНОСЛИВОСТЬ", "СЫТОСТЬ", "ЖАЖДА" };
             for (int i = 0; i < names.Length; i++)
             {
                 float y = 56f + 30f * i;
@@ -243,7 +243,7 @@ namespace DeadSector
                 meterFill[i] = fill.GetComponent<Image>();
             }
 
-            Label(vitalPanel, "Shortcuts", "I BAG   C CRAFT   J LOG   B BUILD",
+            Label(vitalPanel, "Shortcuts", "I РЮКЗАК   C КРАФТ   J ЖУРНАЛ   B СТРОЙКА",
                 16f, 176f, 230f, 16f, 10, Muted);
 
             RectTransform bar = Rect(root, "Weapon_Hotbar",
@@ -259,9 +259,9 @@ namespace DeadSector
                 hotbarAccent[i] = RectAt(frame, "Active", 0f, 0f,
                     142f, 3f, Accent).GetComponent<Image>();
                 Label(frame, "SlotTag", (i + 1) + "  " +
-                    (i == 0 ? "PRIMARY" : i == 1 ? "SIDEARM" : "MELEE"),
+                    (i == 0 ? "ОСНОВНОЕ" : i == 1 ? "ЗАПАСНОЕ" : "БЛИЖНИЙ БОЙ"),
                     10f, 10f, 120f, 17f, 11, Muted, FontStyle.Bold);
-                hotbarLabels[i] = Label(frame, "ItemName", "EMPTY",
+                hotbarLabels[i] = Label(frame, "ItemName", "ПУСТО",
                     48f, 30f, 88f, 35f, 12, White, FontStyle.Bold);
                 hotbarIcons[i] = IconImage(frame, "WeaponIcon",
                     8f, 28f, 37f, 37f);
@@ -273,9 +273,9 @@ namespace DeadSector
                 new Vector2(205f, 54f));
             Paint(dayPanel, new Color(.025f, .038f, .038f, .88f));
             RectAt(dayPanel, "Stripe", 0f, 0f, 3f, 54f, Accent);
-            dayLabel = Label(dayPanel, "WorldTime", "DAY 01  /  12:00",
+            dayLabel = Label(dayPanel, "WorldTime", "ДЕНЬ 01  /  12:00",
                 16f, 10f, 178f, 18f, 13, White, FontStyle.Bold);
-            Label(dayPanel, "SaveShortcuts", "F5 SAVE   /   F9 LOAD",
+            Label(dayPanel, "SaveShortcuts", "F5 СОХРАНИТЬ   /   F9 ЗАГРУЗИТЬ",
                 16f, 32f, 175f, 14f, 10, Muted);
 
             buildingRoot = Rect(root, "Construction_Control",
@@ -306,7 +306,7 @@ namespace DeadSector
                 new Vector2(420f, 44f)).gameObject;
             Paint(hintRoot.GetComponent<RectTransform>(),
                 new Color(.022f, .030f, .032f, .84f));
-            hintText = Label(hintRoot.transform, "Action", "E  INTERACT",
+            hintText = Label(hintRoot.transform, "Action", "E  ДЕЙСТВИЕ",
                 10f, 6f, 400f, 32f, 14, White,
                 FontStyle.Bold, TextAnchor.MiddleCenter);
             hintRoot.SetActive(false);
@@ -382,7 +382,7 @@ namespace DeadSector
                 new Vector2(232f, 283f));
             Paint(panel, new Color(.018f, .030f, .032f, .95f));
             RectAt(panel, "TopAccent", 0f, 0f, 232f, 3f, Accent);
-            Label(panel, "MapHeader", "LOCAL SCAN    N ↑",
+            Label(panel, "MapHeader", "МИНИ-КАРТА    С ↑",
                 10f, 8f, 216f, 21f, 13, White, FontStyle.Bold);
 
             mapRect = Rect(panel, "SurveyMap",
@@ -423,7 +423,7 @@ namespace DeadSector
                 0f, 0f, 34f, 34f, 28, Accent,
                 FontStyle.Bold, TextAnchor.MiddleCenter);
 
-            Label(panel, "MapFooter", "TERRAIN  /  ROADS  /  WATER",
+            Label(panel, "MapFooter", "МЕСТНОСТЬ / ДОРОГИ / ВОДА",
                 10f, 253f, 212f, 13f, 10, Muted);
             mapScaleLabel = Label(panel, "Scale", "340 M",
                 166f, 253f, 56f, 13f, 10, Accent,
@@ -549,7 +549,7 @@ namespace DeadSector
             mapCoordsLabel.text =
                 "X " + pos.x.ToString("0") +
                 "      Z " + pos.z.ToString("0") +
-                "      [M]  ATLAS";
+                "      [M]  КАРТА";
             mapScaleLabel.text = diameter.ToString("0") + " M";
 
             BuildPoiMapMarkersIfReady();
@@ -610,19 +610,19 @@ namespace DeadSector
                 new Vector2(1260f, 738f));
             Paint(panel, Panel);
             RectAt(panel, "Header_Accent", 0f, 0f, 1260f, 3f, Accent);
-            Label(panel, "GameTitle", "DEAD SECTOR  /  SURVIVAL SYSTEM",
+            Label(panel, "GameTitle", "DEAD SECTOR  /  ВЫЖИВАНИЕ",
                 30f, 16f, 510f, 26f, 18, White, FontStyle.Bold);
-            Label(panel, "Build", "FIELD OPERATIONS   //   PROTOTYPE",
+            Label(panel, "Build", "ПОЛЕВЫЕ ЗАДАЧИ   //   ПРОТОТИП",
                 30f, 44f, 430f, 18f, 11, Muted);
 
             MakeButton(panel, "TAB_INVENTORY",
-                "INVENTORY  [I]", 638f, 22f, 155f, 43f,
+                "РЮКЗАК  [I]", 638f, 22f, 155f, 43f,
                 Cell, Accent, OpenInventoryTab);
             MakeButton(panel, "TAB_CRAFT",
-                "CRAFTING  [C]", 802f, 22f, 155f, 43f,
+                "КРАФТ  [C]", 802f, 22f, 155f, 43f,
                 Cell, Accent, OpenCraftingTab);
             MakeButton(panel, "TAB_JOURNAL",
-                "JOURNAL  [J]", 966f, 22f, 155f, 43f,
+                "ЖУРНАЛ  [J]", 966f, 22f, 155f, 43f,
                 Cell, Accent, OpenJournalTab);
             MakeButton(panel, "CLOSE", "X", 1169f, 22f, 57f, 43f,
                 new Color(.26f, .12f, .12f, 1f), White,
@@ -646,7 +646,7 @@ namespace DeadSector
             RectTransform left = RectAt(root, "Player_Equipment",
                 24f, 13f, 322f, 626f, new Color(.06f, .076f, .074f, 1f));
             RectAt(left, "SectionIndicator", 0f, 0f, 3f, 40f, Accent);
-            Label(left, "Title", "OPERATIVE  /  GEAR",
+            Label(left, "Title", "ПЕРСОНАЖ  /  СНАРЯЖЕНИЕ",
                 15f, 9f, 276f, 23f, 15, White, FontStyle.Bold);
 
             // Minimal vector-like human figure: visual orientation only;
@@ -659,7 +659,7 @@ namespace DeadSector
             RectAt(bodyPanel, "RightArm", 160f, 59f, 24f, 80f, Edge);
             RectAt(bodyPanel, "LeftLeg", 99f, 135f, 23f, 57f, Edge);
             RectAt(bodyPanel, "RightLeg", 128f, 135f, 23f, 57f, Edge);
-            Label(bodyPanel, "SilhouetteLabel", "BODY  /  ARMOR",
+            Label(bodyPanel, "SilhouetteLabel", "ТЕЛО  /  БРОНЯ",
                 10f, 174f, 110f, 20f, 10, Muted);
 
             string[] names = { "HEAD", "CHEST", "LEGS", "FEET", "BACKPACK" };
@@ -671,7 +671,7 @@ namespace DeadSector
                 RectAt(tile, "Tier_Line", 0f, 0f, 3f, 58f, Muted);
                 Label(tile, "GearType", names[i], 13f, 6f,
                     254f, 18f, 10, Muted, FontStyle.Bold);
-                gearLabels[i] = Label(tile, "GearItem", "EMPTY",
+                gearLabels[i] = Label(tile, "GearItem", "ПУСТО",
                     55f, 26f, 223f, 25f, 13, White);
                 gearIcons[i] = IconImage(tile,
                     "GearIcon", 12f, 16f, 36f, 36f);
@@ -689,7 +689,7 @@ namespace DeadSector
                 359f, 13f, 875f, 626f,
                 new Color(.06f, .076f, .074f, 1f));
             RectAt(right, "SectionIndicator", 0f, 0f, 3f, 40f, Accent);
-            Label(right, "Title", "BACKPACK  /  LOADOUT",
+            Label(right, "Title", "РЮКЗАК  /  ПРЕДМЕТЫ",
                 17f, 9f, 490f, 23f, 15, White, FontStyle.Bold);
             bagSummary = Label(right, "Capacity", "",
                 548f, 9f, 304f, 23f, 12, Accent,
@@ -728,35 +728,35 @@ namespace DeadSector
                 606f, 44f, 253f, 474f,
                 new Color(.036f, .047f, .046f, 1f));
             RectAt(details, "SelectionAccent", 0f, 0f, 253f, 3f, Accent);
-            Label(details, "Label", "SELECTED ITEM", 15f, 16f,
+            Label(details, "Label", "ВЫБРАННЫЙ ПРЕДМЕТ", 15f, 16f,
                 225f, 24f, 12, Muted, FontStyle.Bold);
             selectedIcon = IconImage(details, "SelectedThumb",
                 14f, 52f, 76f, 76f);
-            selectedTitle = Label(details, "ItemTitle", "NO ITEM",
+            selectedTitle = Label(details, "ItemTitle", "НЕТ ПРЕДМЕТА",
                 103f, 55f, 138f, 75f, 17, White, FontStyle.Bold);
             selectedDetails = Label(details, "ItemMeta", "",
                 15f, 139f, 222f, 200f, 13, Muted);
-            useButton = MakeButton(details, "UseItem", "USE",
+            useButton = MakeButton(details, "UseItem", "ИСПОЛЬЗОВАТЬ",
                 13f, 365f, 108f, 43f,
                 new Color(.18f, .28f, .19f, 1f), White,
                 () => gameplay.UseInventoryItem(selectedId));
-            equipButton = MakeButton(details, "EquipItem", "EQUIP",
+            equipButton = MakeButton(details, "EquipItem", "НАДЕТЬ",
                 131f, 365f, 108f, 43f,
                 new Color(.18f, .28f, .19f, 1f), White,
                 () => gameplay.EquipInventoryItem(selectedId));
             splitButton = MakeButton(details, "SplitStack",
-                "SPLIT STACK IN HALF", 13f, 418f, 226f, 42f,
+                "РАЗДЕЛИТЬ СТОПКУ", 13f, 418f, 226f, 42f,
                 Cell, Accent, SplitSelectedStack);
 
             RectTransform footer = RectAt(right, "Inventory_Hint",
                 14f, 531f, 844f, 79f,
                 new Color(.035f, .047f, .044f, 1f));
-            Label(footer, "Help", "CLICK AN ITEM TO INSPECT",
+            Label(footer, "Help", "НАЖМИТЕ НА ПРЕДМЕТ",
                 14f, 11f, 620f, 24f, 12, Accent, FontStyle.Bold);
             Label(footer, "HelpSecondary",
-                "DRAG ARMOR TO GEAR SLOT    /    CLICK TO INSPECT    /    SORT AND SPLIT STACKS",
+                "ПЕРЕТАЩИТЕ БРОНЮ В СЛОТ  /  НАЖМИТЕ ДЛЯ ОСМОТРА  /  СОРТИРОВКА",
                 14f, 43f, 815f, 22f, 11, Muted);
-            MakeButton(footer, "SortInventory", "SORT BACKPACK",
+            MakeButton(footer, "SortInventory", "СОРТИРОВАТЬ РЮКЗАК",
                 670f, 7f, 159f, 31f, Panel, Accent,
                 SortBackpack);
         }
@@ -767,19 +767,19 @@ namespace DeadSector
                 24f, 13f, 837f, 626f,
                 new Color(.06f, .076f, .074f, 1f));
             RectAt(objectives, "HeaderAccent", 0f, 0f, 3f, 41f, Accent);
-            Label(objectives, "Title", "FIELD JOURNAL  /  OBJECTIVES",
+            Label(objectives, "Title", "ЖУРНАЛ  /  ЗАДАЧИ",
                 20f, 12f, 785f, 30f,
                 17, White, FontStyle.Bold);
             Label(objectives, "Description",
-                "TRACK PROGRESS  //  EXPLORE, SCAVENGE, SURVIVE",
+                "ИССЛЕДУЙТЕ, СОБИРАЙТЕ И ВЫЖИВАЙТЕ",
                 20f, 47f, 775f, 23f, 11, Muted);
 
             string[] targets =
             {
-                "01 / SCOUT THE VILLAGE", "02 / FIND THE CLINIC",
-                "03 / LOCATE THE FACTORY", "04 / TRACE RADIO SIGNAL",
-                "05 / COLLECT SUPPLIES", "06 / HARVEST RESOURCES",
-                "07 / CRAFT SURVIVAL GEAR", "08 / ELIMINATE INFECTED"
+                "01 / РАЗВЕДАТЬ ДЕРЕВНЮ", "02 / НАЙТИ КЛИНИКУ",
+                "03 / НАЙТИ ЗАВОД", "04 / НАЙТИ РАДИОСИГНАЛ",
+                "05 / СОБРАТЬ ПРИПАСЫ", "06 / ДОБЫТЬ РЕСУРСЫ",
+                "07 / СОЗДАТЬ СНАРЯЖЕНИЕ", "08 / УБИТЬ ЗАРАЖЁННЫХ"
             };
 
             for (int i = 0; i < targets.Length; i++)
@@ -790,7 +790,7 @@ namespace DeadSector
                     0f, 0f, 4f, 57f, Edge).GetComponent<Image>();
                 Label(row, "Description", targets[i],
                     17f, 5f, 552f, 45f, 14, White, FontStyle.Bold);
-                journalStatuses[i] = Label(row, "Progress", "PENDING",
+                journalStatuses[i] = Label(row, "Progress", "В ПРОЦЕССЕ",
                     612f, 5f, 180f, 45f, 13, Muted,
                     FontStyle.Bold, TextAnchor.MiddleRight);
             }
@@ -799,25 +799,25 @@ namespace DeadSector
                 878f, 13f, 356f, 626f,
                 new Color(.06f, .076f, .074f, 1f));
             RectAt(overview, "HeaderAccent", 0f, 0f, 3f, 41f, Accent);
-            Label(overview, "Title", "MISSION CONTROL",
+            Label(overview, "Title", "ПРОГРЕСС ВЫЖИВАНИЯ",
                 18f, 11f, 318f, 25f,
                 16, White, FontStyle.Bold);
-            Label(overview, "CompletedLabel", "OBJECTIVES COMPLETED",
+            Label(overview, "CompletedLabel", "ВЫПОЛНЕНО ЗАДАНИЙ",
                 18f, 69f, 317f, 23f, 13, Muted);
             journalCompleted = Label(overview, "Completed", "00 / 08",
                 18f, 101f, 315f, 82f, 42, Accent, FontStyle.Bold);
 
             RectAt(overview, "Divider", 17f, 204f, 320f, 2f, Edge);
-            Label(overview, "WorldLocation", "CURRENT POSITION",
+            Label(overview, "WorldLocation", "ТЕКУЩИЕ КООРДИНАТЫ",
                 18f, 237f, 311f, 22f, 13, Muted, FontStyle.Bold);
             journalPosition = Label(overview, "Coordinates", "",
                 18f, 277f, 315f, 94f, 17, White);
 
             Label(overview, "JournalInstructions",
-                "TRACKING IS AUTOMATIC.\n\n" +
-                "EXPLORE NAMED LOCATIONS, COLLECT\n" +
-                "SUPPLIES AND ELIMINATE THE INFECTED.\n\n" +
-                "PRESS J OR ESC TO CLOSE.",
+                "ПРОГРЕСС УЧИТЫВАЕТСЯ АВТОМАТИЧЕСКИ.\n\n" +
+                "ИССЛЕДУЙТЕ МЕСТА, СОБИРАЙТЕ\n" +
+                "ПРИПАСЫ И УНИЧТОЖАЙТЕ ЗАРАЖЁННЫХ.\n\n" +
+                "НАЖМИТЕ J ИЛИ ESC ДЛЯ ВЫХОДА.",
                 18f, 407f, 314f, 193f, 13, Muted);
         }
 
@@ -833,7 +833,7 @@ namespace DeadSector
             };
             string[] goals =
             {
-                "VISITED", "VISITED", "VISITED", "VISITED",
+                "ПОСЕЩЕНО", "ПОСЕЩЕНО", "ПОСЕЩЕНО", "ПОСЕЩЕНО",
                 "3", "5", "2", "3"
             };
             int[] counts =
@@ -852,8 +852,8 @@ namespace DeadSector
                     : counts[i] >= int.Parse(goals[i]);
                 journalIndicators[i].color = complete ? Accent : Edge;
                 journalStatuses[i].color = complete ? Accent : Muted;
-                journalStatuses[i].text = complete ? "COMPLETE" :
-                    i < 4 ? "UNDISCOVERED" :
+                journalStatuses[i].text = complete ? "ВЫПОЛНЕНО" :
+                    i < 4 ? "НЕ НАЙДЕНО" :
                     Mathf.Min(counts[i], int.Parse(goals[i])) +
                     " / " + goals[i];
             }
@@ -950,7 +950,7 @@ namespace DeadSector
             RectTransform left = RectAt(root, "RecipesPanel",
                 24f, 13f, 850f, 626f, new Color(.06f, .076f, .074f, 1f));
             RectAt(left, "Indicator", 0f, 0f, 3f, 40f, Accent);
-            Label(left, "Header", "FIELD WORKSHOP  /  RECIPES",
+            Label(left, "Header", "МАСТЕРСКАЯ  /  РЕЦЕПТЫ",
                 18f, 10f, 660f, 25f, 16, White, FontStyle.Bold);
 
             RectTransform viewport = RectAt(left, "Scroll_Viewport",
@@ -980,13 +980,19 @@ namespace DeadSector
                     recipe.Tier == 0 ? Accent :
                     recipe.Tier == 1 ? new Color(.87f, .68f, .38f) :
                     new Color(.53f, .69f, .87f));
-                Label(row, "Tier", "TIER " + recipe.Tier, 14f,
+                Label(row, "Tier", "ЭТАП " + recipe.Tier, 14f,
                     4f, 75f, 20f, 11, Muted, FontStyle.Bold);
+                // The output is visible before crafting, not just as a text row.
+                // Icons are generated locally from stable item IDs.
+                Image outputIcon = IconImage(
+                    row, "Recipe_Output_Icon", 90f, 9f, 48f, 48f);
+                outputIcon.sprite = SectorItemIcons.Get(recipe.OutputId);
+                outputIcon.enabled = true;
                 Label(row, "RecipeName", recipe.Name,
-                    95f, 4f, 500f, 22f, 15, White, FontStyle.Bold);
+                    149f, 4f, 495f, 22f, 15, White, FontStyle.Bold);
                 Text ingredients = Label(row, "Requirements", "",
-                    15f, 34f, 628f, 26f, 12, Muted);
-                Button action = MakeButton(row, "MakeRecipe", "CRAFT",
+                    149f, 34f, 494f, 26f, 12, Muted);
+                Button action = MakeButton(row, "MakeRecipe", "СОЗДАТЬ",
                     670f, 13f, 111f, 42f,
                     new Color(.19f, .31f, .23f, 1f), White,
                     () => gameplay.CraftRecipe(recipe.Id));
@@ -1002,12 +1008,12 @@ namespace DeadSector
             RectTransform right = RectAt(root, "CraftingInfo",
                 891f, 13f, 343f, 626f, new Color(.06f, .076f, .074f, 1f));
             RectAt(right, "Indicator", 0f, 0f, 3f, 40f, Accent);
-            Label(right, "Title", "PROGRESSION", 17f, 10f, 295f, 25f,
+            Label(right, "Title", "ПУТЬ ВЫЖИВАНИЯ", 17f, 10f, 295f, 25f,
                 16, White, FontStyle.Bold);
             Label(right, "Hint",
-                "01  WILDERNESS\n\nGather stone, sticks and plant fiber.\n\n" +
-                "02  PRIMITIVE\n\nMake wooden tools and protection.\n\n" +
-                "03  TEXTILES\n\nWeave cotton into clothes, a backpack and medical gear.",
+                "01  ПРИРОДА\n\nСобирайте камни, палки и волокна.\n\n" +
+                "02  РЕМЕСЛО\n\nСоздавайте инструменты и броню.\n\n" +
+                "03  ТКАНИ\n\nСоздавайте одежду, рюкзак и бинты.",
                 17f, 64f, 301f, 385f, 14, Muted);
             RectTransform summaryPanel = RectAt(right, "Resources",
                 17f, 486f, 305f, 111f,
@@ -1063,7 +1069,7 @@ namespace DeadSector
             {
                 string id = gameplay.WeaponInSlot(i);
                 string name = SectorItems.TryGet(id, out SectorItemDefinition item)
-                    ? item.Label : i == 2 ? "FISTS" : "EMPTY";
+                    ? item.Label : i == 2 ? "КУЛАКИ" : "ПУСТО";
                 int magazine = gameplay.MagazineCapacityForSlot(i);
                 if (magazine > 0)
                     name += "\n" + gameplay.RoundsForSlot(i) +
@@ -1083,7 +1089,7 @@ namespace DeadSector
             int h = Mathf.FloorToInt(hour);
             int m = Mathf.FloorToInt((hour - h) * 60f);
             int day = clock != null ? clock.DayNumber : 1;
-            dayLabel.text = "DAY " + day.ToString("00") + "  /  " +
+            dayLabel.text = "ДЕНЬ " + day.ToString("00") + "  /  " +
                 h.ToString("00") + ":" + m.ToString("00");
 
             bool modal = gameplay.InventoryOpen ||
@@ -1095,14 +1101,14 @@ namespace DeadSector
             if (building && !modal)
             {
                 SectorBuildSpecification plan = construction.SelectedPlan;
-                buildingTitle.text = "BUILD  /  " + plan.Label.ToUpperInvariant();
+                buildingTitle.text = "СТРОЙКА  /  " + plan.Label.ToUpperInvariant();
                 buildingCost.text = SectorBuildCatalog.CostLabel(plan) +
-                    (construction.CanPlace ? "   /   READY" : "   /   BLOCKED");
+                    (construction.CanPlace ? "   /   ГОТОВО" : "   /   НЕЛЬЗЯ");
                 buildingCost.color = construction.CanPlace
                     ? Accent : new Color(.87f, .40f, .36f);
                 buildingHelp.text =
-                    "1-5 SELECT  |  Q/E ROTATE  |  LMB PLACE\n" +
-                    "B/RMB EXIT   |   MAX 200 PIECES";
+                    "1–5 ВЫБОР  |  Q/E ПОВОРОТ  |  ЛКМ ПОСТАВИТЬ\n" +
+                    "B/ПКМ ВЫХОД   |   ДО 200 ПОСТРОЕК";
             }
 
             if (weatherReadout != null)
@@ -1231,7 +1237,7 @@ namespace DeadSector
         {
             SectorInventory inventory = gameplay.Inventory;
             bagSummary.text = inventory.UsedSlots + "/" +
-                inventory.SlotLimit + " SLOTS   /   " +
+                inventory.SlotLimit + " ЯЧЕЕК   /   " +
                 inventory.Weight.ToString("0.0") + " / " +
                 inventory.MaxWeight.ToString("0.0") + " KG";
 
@@ -1286,7 +1292,7 @@ namespace DeadSector
                 bool filled = SectorItems.TryGet(
                     id, out SectorItemDefinition item);
                 gearLabels[i].text = filled
-                    ? item.Label + "   [REMOVE]" : "EMPTY";
+                    ? item.Label + "   [СНЯТЬ]" : "ПУСТО";
                 gearIcons[i].enabled = filled;
                 if (filled)
                     gearIcons[i].sprite = SectorItemIcons.Get(id);
@@ -1297,17 +1303,17 @@ namespace DeadSector
                 selectedTitle.text = selected.Label;
                 selectedIcon.enabled = true;
                 selectedIcon.sprite = SectorItemIcons.Get(selected.Id);
-                selectedDetails.text = selected.Kind + "\n\n" +
-                    "WEIGHT   " + selected.Weight.ToString("0.00") + " KG\n" +
-                    "STACK   " + (selectedStackIndex >= 0
+                selectedDetails.text = SectorRussian.Kind(selected.Kind) + "\n\n" +
+                    "ВЕС   " + selected.Weight.ToString("0.00") + " KG\n" +
+                    "В СТОПКЕ   " + (selectedStackIndex >= 0
                         ? inventory.Stacks[selectedStackIndex].count : 0) +
-                    "\nTOTAL   " + inventory.Count(selected.Id) + "\n\n" +
+                    "\nВСЕГО   " + inventory.Count(selected.Id) + "\n\n" +
                     (selected.Kind == SectorItemKind.Melee ||
                      selected.Kind == SectorItemKind.Firearm
-                        ? "DAMAGE   " + selected.Damage.ToString("0") :
-                    selected.IsConsumable ? "SURVIVAL CONSUMABLE" :
-                    selected.Kind == SectorItemKind.Armor ? "EQUIPMENT" :
-                    "CRAFTING MATERIAL");
+                        ? "УРОН   " + selected.Damage.ToString("0") :
+                    selected.IsConsumable ? "РАСХОДНИК" :
+                    selected.Kind == SectorItemKind.Armor ? "СНАРЯЖЕНИЕ" :
+                    "МАТЕРИАЛ");
                 useButton.interactable = selected.IsConsumable;
                 equipButton.interactable =
                     selected.Kind == SectorItemKind.Armor ||
@@ -1320,9 +1326,9 @@ namespace DeadSector
             }
             else
             {
-                selectedTitle.text = "NO ITEM";
+                selectedTitle.text = "НЕТ ПРЕДМЕТА";
                 selectedIcon.enabled = false;
-                selectedDetails.text = "Choose an item from your backpack.";
+                selectedDetails.text = "Выберите предмет в рюкзаке.";
                 useButton.interactable = false;
                 equipButton.interactable = false;
                 splitButton.interactable = false;
@@ -1374,9 +1380,9 @@ namespace DeadSector
             }
 
             craftingSummary.text =
-                "BAG SLOTS   " + gameplay.Inventory.UsedSlots +
+                "ЯЧЕЙКИ РЮКЗАКА   " + gameplay.Inventory.UsedSlots +
                 "/" + gameplay.Inventory.SlotLimit +
-                "\nWEIGHT   " + gameplay.Inventory.Weight.ToString("0.0") +
+                "\nВЕС   " + gameplay.Inventory.Weight.ToString("0.0") +
                 "/" + gameplay.Inventory.MaxWeight.ToString("0.0") +
                 " KG";
         }
