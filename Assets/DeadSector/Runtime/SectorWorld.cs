@@ -213,7 +213,16 @@ namespace DeadSector
             var texture = new Texture2D(32, 32); texture.wrapMode = TextureWrapMode.Repeat;
             var random = new System.Random(123);
             for (int y = 0; y < 32; y++) for (int x = 0; x < 32; x++) texture.SetPixel(x, y, color * (.85f + (float)random.NextDouble() * .3f));
-            texture.Apply(); return new TerrainLayer { diffuseTexture = texture, tileSize = Vector2.one * 12 };
+            texture.Apply();
+            // Ground should be matte. Default TerrainLayer smoothness can
+            // cause unrealistically glossy fields under the URP Terrain/Lit shader.
+            return new TerrainLayer
+            {
+                diffuseTexture = texture,
+                tileSize = Vector2.one * 12,
+                metallic = 0f,
+                smoothness = 0f
+            };
         }
         public Transform Settlement { get; private set; }
 
