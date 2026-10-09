@@ -1348,11 +1348,15 @@ namespace DeadSector
                             ingredient.Count;
                     }
 
-                    GUI.Label(new Rect(10f, y, viewWidth - 140f, 24f),
+                    GUI.DrawTexture(
+                        new Rect(10f, y + 2f, 36f, 36f),
+                        SectorItemIcons.Get(recipe.OutputId).texture,
+                        ScaleMode.ScaleToFit, true);
+                    GUI.Label(new Rect(52f, y, viewWidth - 188f, 24f),
                         recipe.Name + "  →  " +
                         SectorItems.Get(recipe.OutputId).Label);
 
-                    GUI.Label(new Rect(10f, y + 23f, viewWidth - 140f, 18f),
+                    GUI.Label(new Rect(52f, y + 23f, viewWidth - 188f, 18f),
                         ingredients);
 
                     bool canCraft =
@@ -1451,7 +1455,7 @@ namespace DeadSector
 
             GUI.Label(new Rect(rightX, 33f, rightWidth, 21f),
                 "РЮКЗАК  " + Inventory.UsedSlots + "/" +
-                Inventory.SlotLimit + " SLOTS   " +
+                Inventory.SlotLimit + " ЯЧЕЕК   " +
                 Inventory.Weight.ToString("0.0") + "/" +
                 Inventory.MaxWeight.ToString("0.0") + " KG");
 
@@ -1474,7 +1478,7 @@ namespace DeadSector
 
             GUIStyle itemStyle = new GUIStyle(GUI.skin.button);
             itemStyle.wordWrap = true;
-            itemStyle.alignment = TextAnchor.MiddleCenter;
+            itemStyle.alignment = TextAnchor.LowerCenter;
             itemStyle.fontSize = 11;
 
             for (int i = 0; i < Inventory.Stacks.Count; i++)
@@ -1499,6 +1503,10 @@ namespace DeadSector
                     itemStyle))
                     selectedInventoryItem = stack.id;
                 GUI.color = old;
+                GUI.DrawTexture(
+                    new Rect(x + cellWidth * .5f - 17f, y + 3f, 34f, 34f),
+                    SectorItemIcons.Get(stack.id).texture,
+                    ScaleMode.ScaleToFit, true);
             }
 
             GUI.EndScrollView();
@@ -1516,7 +1524,7 @@ namespace DeadSector
             {
                 GUI.Label(new Rect(rightX + 8f, footer + 25f,
                     rightWidth - 24f, 20f), selected.Label + "  /  " +
-                    selected.Kind + "  /  " +
+                    SectorRussian.Kind(selected.Kind) + "  /  " +
                     selected.Weight.ToString("0.00") + " KG");
 
                 if (selected.IsConsumable &&
