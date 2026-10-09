@@ -61,6 +61,7 @@ namespace DeadSector
         int selectedSlot = 2;
         bool inventoryOpen;
         bool craftingOpen;
+        bool externalUiBlocking;
         bool loadedOnce;
         Vector2 inventoryScroll;
         Vector2 craftingScroll;
@@ -158,10 +159,10 @@ namespace DeadSector
             if (SectorInput.Pressed(KeyCode.F9))
                 LoadGame(false);
 
-            if (SectorInput.Pressed(KeyCode.I))
+            if (!externalUiBlocking && SectorInput.Pressed(KeyCode.I))
                 ToggleInventory();
 
-            if (SectorInput.Pressed(KeyCode.C))
+            if (!externalUiBlocking && SectorInput.Pressed(KeyCode.C))
                 ToggleCrafting();
 
             if (SectorInput.Pressed(KeyCode.Alpha1)) selectedSlot = 0;
@@ -174,7 +175,8 @@ namespace DeadSector
                 RefreshContainers();
             }
 
-            if (!inventoryOpen && !craftingOpen && player.Health > 0f &&
+            if (!externalUiBlocking && !inventoryOpen &&
+                !craftingOpen && player.Health > 0f &&
                 Cursor.lockState == CursorLockMode.Locked)
             {
                 if (SectorInput.Pressed(KeyCode.E))
@@ -214,6 +216,19 @@ namespace DeadSector
         // Public UI-facing API. The Canvas and the legacy IMGUI can use
         // exactly the same inventory and save rules; no duplicated state.
         public bool ModernUiEnabled { get; set; }
+        public bool ExternalUiBlocking => externalUiBlocking;
+
+        public void SetExternalUiBlocking(bool blocked)
+        {
+            externalUiBlocking = blocked;
+            if (blocked)
+            {
+                inventoryOpen = false;
+                craftingOpen = false;
+            }
+            UpdatePanelInput();
+        }
+
         public bool InventoryOpen => inventoryOpen;
         public bool CraftingOpen => craftingOpen;
         public int ActiveWeaponSlot => selectedSlot;
@@ -333,7 +348,8 @@ namespace DeadSector
 
         void UpdatePanelInput()
         {
-            bool modalOpen = inventoryOpen || craftingOpen;
+            bool modalOpen = inventoryOpen || craftingOpen ||
+                externalUiBlocking;
             player.InputBlockedByUI = modalOpen;
             Cursor.lockState = modalOpen
                 ? CursorLockMode.None : CursorLockMode.Locked;
