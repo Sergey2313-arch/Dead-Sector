@@ -26,6 +26,9 @@ namespace DeadSector.Tests
             Assert.AreNotEqual(
                 SectorMannequin.ArmAngles(SectorCarryPose.Unarmed, false),
                 SectorMannequin.ArmAngles(SectorCarryPose.Pistol, false));
+            Assert.AreNotEqual(
+                SectorMannequin.ArmAngles(SectorCarryPose.Infected, true),
+                SectorMannequin.ArmAngles(SectorCarryPose.Unarmed, true));
         }
 
         [Test]
@@ -83,6 +86,35 @@ namespace DeadSector.Tests
                 SectorBuildKind.Roof, SectorBuildKind.Roof));
             Assert.IsFalse(SectorBaseBuilding.CanOverlapSupports(
                 SectorBuildKind.Foundation, SectorBuildKind.Wall));
+        }
+
+        [Test]
+        public void StageThreeRestRadiusOnlyIncludesExistingCampfire()
+        {
+            var root = new GameObject("WarmBase");
+            try
+            {
+                var building = root.AddComponent<SectorBaseBuilding>();
+                building.Import(new[]
+                {
+                    new SectorBuildSnapshot
+                    {
+                        id = "campfire_saved_1",
+                        kind = SectorBuildKind.Campfire,
+                        health = SectorBuildCatalog.At(
+                            (int)SectorBuildKind.Campfire).Health,
+                        position = new Vector3(40f, 60f, 20f)
+                    }
+                });
+                Assert.IsTrue(building.IsNearCampfire(
+                    new Vector3(42f, 60f, 21f)));
+                Assert.IsFalse(building.IsNearCampfire(
+                    new Vector3(55f, 60f, 20f)));
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+            }
         }
 
         [Test]
