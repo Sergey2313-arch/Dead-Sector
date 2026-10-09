@@ -53,6 +53,25 @@ namespace DeadSector
                 leftLeg = animator.GetBoneTransform(HumanBodyBones.LeftUpperLeg);
             }
 
+            // Procedural SectorMannequin is not an Animator humanoid.
+            // Attaching to the player origin places weapons at ground level.
+            // Use the mannequin's animated right forearm/hand attachment instead.
+            SectorMannequin mannequin = player != null && player.visual != null
+                ? player.visual.GetComponent<SectorMannequin>() : null;
+            if (mannequin != null)
+            {
+                if (rightHand == null && mannequin.rightArm != null)
+                {
+                    GameObject handMount = new GameObject("RightHand_WeaponMount");
+                    handMount.transform.SetParent(mannequin.rightArm, false);
+                    handMount.transform.localPosition = new Vector3(0f, -.53f, 0f);
+                    rightHand = handMount.transform;
+                }
+                if (back == null) back = mannequin.torso;
+                if (hip == null) hip = player.visual;
+                if (leftLeg == null) leftLeg = mannequin.leftLeg;
+            }
+
             if (rightHand == null) rightHand = transform;
             if (back == null) back = transform;
             if (hip == null) hip = transform;
