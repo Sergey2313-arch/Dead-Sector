@@ -226,6 +226,64 @@ namespace DeadSector
             return true;
         }
 
+        /// <summary>
+        /// Rearranges existing stacks only. Amounts and carried mass remain
+        /// exactly the same; it does not merge stacks or drop items.
+        /// Sort by gameplay category, then visible name and stable ID.
+        /// </summary>
+        public void SortStacks()
+        {
+            stacks.Sort((left, right) =>
+            {
+                bool leftKnown = SectorItems.TryGet(
+                    left.id, out SectorItemDefinition a);
+                bool rightKnown = SectorItems.TryGet(
+                    right.id, out SectorItemDefinition b);
+
+                if (leftKnown != rightKnown)
+                    return leftKnown ? -1 : 1;
+
+                int kind = leftKnown
+                    ? a.Kind.CompareTo(b.Kind) : 0;
+                if (kind != 0)
+                    return kind;
+
+                int name = leftKnown
+                    ? string.Compare(a.Label, b.Label,
+                        StringComparison.Ordinal) : 0;
+                if (name != 0)
+                    return name;
+
+                return string.Compare(
+                    left.id, right.id, StringComparison.Ordinal);
+            });
+        }
+
+        /// <summary>
+        /// Split just one stack, not the combined count of an item ID.
+        /// Inventory.Add would merge the result straight back, so this
+        /// direct operation enforces all stack/slot invariants instead.
+        /// </summary>
+        public bool SplitStack(int index, int count)
+        {
+            if (index < 0 || index >= stacks.Count ||
+                count <= 0 || UsedSlots >= SlotLimit)
+                return false;
+
+            SectorItemStack original = stacks[index];
+            if (original == null ||
+                !SectorItems.TryGet(original.id,
+                    out SectorItemDefinition item) ||
+                item.MaxStack <= 1 || count >= original.count ||
+                count > item.MaxStack)
+                return false;
+
+            original.count -= count;
+            stacks.Insert(index + 1,
+                new SectorItemStack(original.id, count));
+            return true;
+        }
+
         public List<SectorItemStack> Export()
         {
             var copy = new List<SectorItemStack>();
