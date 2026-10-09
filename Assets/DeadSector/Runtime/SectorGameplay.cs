@@ -86,6 +86,7 @@ namespace DeadSector
         public SectorHordeDirector Horde { get; private set; }
         public SectorBaseBuilding Building { get; private set; }
         public SectorSoundscape Sounds { get; private set; }
+        public SectorFlashlight Flashlight { get; private set; }
         public string StorageDepositItemId { get; private set; } = "";
 
         readonly Dictionary<string, SectorLootContainer> active =
@@ -242,6 +243,11 @@ namespace DeadSector
             if (Sounds == null)
                 Sounds = gameObject.AddComponent<SectorSoundscape>();
             Sounds.Configure(target);
+
+            Flashlight = target.GetComponent<SectorFlashlight>();
+            if (Flashlight == null)
+                Flashlight = target.gameObject.AddComponent<SectorFlashlight>();
+            Flashlight.Configure(target);
 
             WorldClock = FindFirstObjectByType<SectorWorldClock>();
 
