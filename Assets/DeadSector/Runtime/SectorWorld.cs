@@ -772,7 +772,10 @@ namespace DeadSector
                 new Vector3(.35f, height, depth),
                 wallColor);
 
-            float shutterWidth = 6f;
+            // Clinics use human-scale doors, factories retain wide bays.
+            bool clinic = name == "Clinic";
+            float shutterWidth = clinic ? 2.2f : 6f;
+            float portalHeight = clinic ? 2.55f : height - 2.4f;
             float sideWidth = (width - shutterWidth) * .5f;
 
             Art.Box(
@@ -792,9 +795,27 @@ namespace DeadSector
             Art.Box(
                 root.transform,
                 "Shutter_Lintel",
-                new Vector3(0, height - 1.2f, -depth * .5f),
-                new Vector3(shutterWidth, 2.4f, .35f),
+                new Vector3(0, portalHeight + (height - portalHeight) * .5f, -depth * .5f),
+                new Vector3(shutterWidth, height - portalHeight, .35f),
                 wallColor);
+
+            // .40m foundation requires an intermediate step for
+            // a player with .30m CharacterController.stepOffset.
+            Art.Box(
+                root.transform, "Entrance_Low_Step",
+                new Vector3(0f, .10f, -depth * .5f - 1.15f),
+                new Vector3(shutterWidth + .7f, .20f, 1.6f),
+                new Color(.32f, .32f, .30f));
+
+            if (clinic)
+            {
+                CreateHingedPortal(
+                    root.transform, "Clinic_Door",
+                    new Vector3(shutterWidth * .5f - .07f, 0f,
+                        -depth * .5f - .20f),
+                    shutterWidth - .14f, portalHeight,
+                    wallColor, true);
+            }
 
             Art.Box(
                 root.transform,
@@ -824,6 +845,33 @@ namespace DeadSector
                     new Vector3(2.4f, 1.6f, 2.4f),
                     new Color(.31f, .24f, .13f));
             }
+        }
+
+        // A collision-bearing door on a real hinge, also used for garages.
+        void CreateHingedPortal(
+            Transform parent, string name, Vector3 hinge,
+            float width, float height, Color color, bool hingeRight)
+        {
+            GameObject pivot = new GameObject(name + "_Hinge");
+            pivot.transform.SetParent(parent, false);
+            pivot.transform.localPosition = hinge;
+
+            SectorDoor door = pivot.AddComponent<SectorDoor>();
+            door.openAngle = hingeRight ? 105f : -105f;
+            door.turnSpeed = 8f;
+
+            float leafOffset = (hingeRight ? -1f : 1f) * width * .5f;
+            var leaf = Art.Shape(
+                pivot.transform, name + "_Slab", PrimitiveType.Cube,
+                new Vector3(leafOffset, height * .5f, 0f),
+                new Vector3(width, height - .10f, .12f), color);
+
+            NavMeshObstacle nav = pivot.AddComponent<NavMeshObstacle>();
+            nav.shape = NavMeshObstacleShape.Box;
+            nav.center = leaf.transform.localPosition;
+            nav.size = leaf.transform.localScale;
+            nav.carving = true;
+            nav.carveOnlyStationary = true;
         }
 
         void BuildCheckpoint(Color concrete, Color rust)
