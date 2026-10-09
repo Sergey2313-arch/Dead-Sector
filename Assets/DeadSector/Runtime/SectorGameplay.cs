@@ -64,6 +64,39 @@ namespace DeadSector
         readonly Dictionary<string, List<SectorItemStack>> persistent =
             new Dictionary<string, List<SectorItemStack>>(StringComparer.Ordinal);
 
+        const string HarvestCachePrefix = "harvest_";
+        readonly Dictionary<string, Vector2> harvestCacheLocations =
+            new Dictionary<string, Vector2>(StringComparer.Ordinal);
+
+        // Register the dropped remainder BEFORE finalizing a tree strike.
+        // Harvest caches are saved as ordinary loot containers with positions.
+        public bool StoreHarvestOverflow(
+            SectorResourceNode node, List<SectorItemStack> materials)
+        {
+            if (node == null || string.IsNullOrEmpty(node.Id) ||
+                materials == null || materials.Count == 0)
+                return false;
+
+            string id = HarvestCachePrefix + node.Id;
+            var copy = new List<SectorItemStack>(materials.Count);
+            foreach (SectorItemStack stack in materials)
+            {
+                if (stack == null || stack.count <= 0 ||
+                    !SectorItems.TryGet(stack.id, out _))
+                    return false;
+                copy.Add(new SectorItemStack(stack.id, stack.count));
+            }
+            if (copy.Count == 0)
+                return false;
+
+            Vector3 position = node.transform.position;
+            harvestCacheLocations[id] =
+                new Vector2(position.x, position.z);
+            persistent[id] = copy;
+            refreshAt = 0f;
+            return true;
+        }
+
         string[] equipment = { "", "", "" };
         int selectedSlot = 2;
         int pistolRounds;
@@ -147,6 +180,7 @@ namespace DeadSector
             if (Resources == null)
                 Resources = gameObject.AddComponent<SectorResources>();
             Resources.Configure(target);
+            Resources.StoreOverflow = StoreHarvestOverflow;
             // World-generated pines join the same gather/save registry.
             // Bootstrap creates gameplay before World.Start streams its tiles.
             if (world != null)
@@ -494,6 +528,18 @@ namespace DeadSector
                     "poi_" + location.Id,
                     location.Name + " Припасы",
                     location.MapPosition + new Vector2(18f, 14f),
+                    origin, expected);
+            }
+
+            // Pick up logs/ore left after chopping with a full backpack.
+            foreach (var pair in harvestCacheLocations)
+            {
+                if (!persistent.TryGetValue(
+                        pair.Key, out List<SectorItemStack> contents) ||
+                    contents == null || contents.Count == 0)
+                    continue;
+                EnsureNearby(
+                    pair.Key, "Добытые материалы", pair.Value,
                     origin, expected);
             }
 
@@ -1043,7 +1089,12 @@ namespace DeadSector
                 data.containers.Add(new SectorContainerSnapshot
                 {
                     id = pair.Key,
-                    items = pair.Value
+                    items = pair.Value,
+                    position = harvestCacheLocations.TryGetValue(
+                        pair.Key, out Vector2 storedPosition)
+                        ? new Vector3(
+                            storedPosition.x, 0f, storedPosition.y)
+                        : Vector3.zero
                 });
             }
 
@@ -1175,14 +1226,20 @@ namespace DeadSector
                         Destroy(container.gameObject);
                 active.Clear();
                 persistent.Clear();
+                harvestCacheLocations.Clear();
 
                 if (data.containers != null)
                 {
                     foreach (SectorContainerSnapshot state in data.containers)
                     {
-                        if (state != null && !string.IsNullOrEmpty(state.id))
-                            persistent[state.id] = state.items ??
-                                new List<SectorItemStack>();
+                        if (state == null || string.IsNullOrEmpty(state.id))
+                            continue;
+                        persistent[state.id] = state.items ??
+                            new List<SectorItemStack>();
+                        if (state.id.StartsWith(
+                                HarvestCachePrefix, StringComparison.Ordinal))
+                            harvestCacheLocations[state.id] = new Vector2(
+                                state.position.x, state.position.z);
                     }
                 }
 
