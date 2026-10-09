@@ -295,6 +295,20 @@ namespace DeadSector
             return found;
         }
 
+        // Building-on-building contacts are structural supports, not
+        // obstacles. Unrelated overlaps remain prohibited.
+        public static bool CanOverlapSupports(
+            SectorBuildKind placing, SectorBuildKind existing)
+        {
+            return (placing == SectorBuildKind.Roof &&
+                    existing == SectorBuildKind.Wall) ||
+                   ((placing == SectorBuildKind.Wall ||
+                     placing == SectorBuildKind.Door ||
+                     placing == SectorBuildKind.Campfire ||
+                     placing == SectorBuildKind.Storage) &&
+                    existing == SectorBuildKind.Foundation);
+        }
+
         bool ValidPlacement(SectorBuildSpecification plan,
             Vector3 position, float rotation)
         {
@@ -349,6 +363,11 @@ namespace DeadSector
                     collider.gameObject.layer == 2)
                     continue;
 
+                SectorBuildPiece existing =
+                    collider.GetComponentInParent<SectorBuildPiece>();
+                if (existing != null && !existing.Destroyed &&
+                    CanOverlapSupports(plan.Kind, existing.Kind))
+                    continue;
                 return false;
             }
             return true;
