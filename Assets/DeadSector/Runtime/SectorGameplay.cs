@@ -1030,7 +1030,9 @@ namespace DeadSector
                 player.ActivateAtSpawn();
 
             autoSaveAt = Time.time + 90f;
-            Notify("Загружено: " + ActiveProfileName);
+            Notify("Загружено: " + ActiveProfileName +
+                " | построек: " +
+                (Building != null ? Building.PieceCount : 0));
             return true;
         }
 
@@ -1118,7 +1120,8 @@ namespace DeadSector
                 }
 
                 if (!silent)
-                    Notify("Игра сохранена");
+                    Notify("Игра сохранена: " +
+                        data.structures.Count + " построек");
                 return true;
             }
             catch (Exception ex)
@@ -1181,7 +1184,9 @@ namespace DeadSector
             }
 
             if (ApplySave(saved) && !silent)
-                Notify("Сохранение загружено");
+                Notify("Сохранение загружено: " +
+                    (Building != null ? Building.PieceCount : 0) +
+                    " построек");
         }
 
         bool ApplySave(SectorGameSave data)
