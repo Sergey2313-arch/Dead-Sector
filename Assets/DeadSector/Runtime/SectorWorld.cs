@@ -83,6 +83,12 @@ namespace DeadSector
                 terrainShader = Shader.Find("Nature/Terrain/Standard");
 
             terrainMaterial = new Material(terrainShader);
+            // Explicitly override shader surface settings as well as
+            // individual TerrainLayers. Keep daylight hills non-metallic.
+            if (terrainMaterial.HasProperty("_Metallic"))
+                terrainMaterial.SetFloat("_Metallic", 0f);
+            if (terrainMaterial.HasProperty("_Smoothness"))
+                terrainMaterial.SetFloat("_Smoothness", 0f);
 
             roadMaterial = Art.Material(new Color(.19f, .18f, .165f));
 
@@ -414,16 +420,35 @@ namespace DeadSector
 
         TerrainLayer Layer(Color color)
         {
-            var texture = new Texture2D(32, 32); texture.wrapMode = TextureWrapMode.Repeat;
-            var random = new System.Random(123);
-            for (int y = 0; y < 32; y++) for (int x = 0; x < 32; x++) texture.SetPixel(x, y, color * (.85f + (float)random.NextDouble() * .3f));
-            texture.Apply();
+            // Diffuse colour variation without shiny plastic gradients:
+            // coarse soil mottling + fine grain, reproducible across tiles.
+            var texture = new Texture2D(64, 64, TextureFormat.RGBA32, false);
+            texture.name = "DeadSector_MatteTerrain";
+            texture.wrapMode = TextureWrapMode.Repeat;
+            texture.filterMode = FilterMode.Bilinear;
+            const float seed = 72.4f;
+            for (int y = 0; y < 64; y++)
+            for (int x = 0; x < 64; x++)
+            {
+                float coarse = Mathf.PerlinNoise(
+                    seed + x * .083f, seed + y * .083f);
+                float fine = Mathf.PerlinNoise(
+                    seed + x * .45f, seed + y * .45f);
+                float brightness = Mathf.Lerp(.73f, 1.16f, coarse) *
+                    Mathf.Lerp(.90f, 1.10f, fine);
+                texture.SetPixel(x, y,
+                    new Color(
+                        Mathf.Clamp01(color.r * brightness),
+                        Mathf.Clamp01(color.g * brightness),
+                        Mathf.Clamp01(color.b * brightness), 1f));
+            }
+            texture.Apply(false, false);
             // Ground should be matte. Default TerrainLayer smoothness can
             // cause unrealistically glossy fields under the URP Terrain/Lit shader.
             return new TerrainLayer
             {
                 diffuseTexture = texture,
-                tileSize = Vector2.one * 12,
+                tileSize = Vector2.one * 8,
                 metallic = 0f,
                 smoothness = 0f
             };
