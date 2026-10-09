@@ -9,7 +9,7 @@ namespace DeadSector
     /// </summary>
     public sealed class SectorDoor : MonoBehaviour
     {
-        [Range(45f, 145f)] public float openAngle = 105f;
+        [Range(-145f, 145f)] public float openAngle = 105f;
         public float turnSpeed = 6f;
         public bool startsOpen;
 
