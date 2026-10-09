@@ -214,6 +214,7 @@ namespace DeadSector
             AttackCooldown = profile.AttackCooldown;
             sightRange = profile.SightRange;
             hearingRange = profile.HearingRange;
+            rig?.SetCarryPose(SectorCarryPose.Infected);
 
             if (model != null)
             {
