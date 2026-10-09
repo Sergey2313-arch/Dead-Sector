@@ -36,6 +36,7 @@ namespace DeadSector
         SectorGameplay gameplay;
         SectorPlayer player;
         SectorWorldClock clock;
+        SectorWeather weather;
         SectorMinimap minimap;
         SectorCompass compass;
         Canvas mainCanvas;
@@ -47,6 +48,11 @@ namespace DeadSector
         GameObject journalPage;
         GameObject hintRoot;
         GameObject messageRoot;
+        GameObject buildingRoot;
+        Text buildingTitle;
+        Text buildingCost;
+        Text buildingHelp;
+        Text weatherReadout;
 
         readonly Image[] meterFill = new Image[4];
         readonly Text[] meterValues = new Text[4];
@@ -133,6 +139,7 @@ namespace DeadSector
             gameplay = source;
             player = target;
             clock = worldClock;
+            weather = FindFirstObjectByType<SectorWeather>();
             minimap = worldMinimap;
             compass = worldCompass;
 
@@ -236,8 +243,8 @@ namespace DeadSector
                 meterFill[i] = fill.GetComponent<Image>();
             }
 
-            Label(vitalPanel, "Shortcuts", "I  INVENTORY     C  CRAFTING",
-                16f, 176f, 225f, 16f, 10, Muted);
+            Label(vitalPanel, "Shortcuts", "I BAG   C CRAFT   J LOG   B BUILD",
+                16f, 176f, 230f, 16f, 10, Muted);
 
             RectTransform bar = Rect(root, "Weapon_Hotbar",
                 new Vector2(.5f, 0f), new Vector2(.5f, 0f),
@@ -270,6 +277,28 @@ namespace DeadSector
                 16f, 10f, 178f, 18f, 13, White, FontStyle.Bold);
             Label(dayPanel, "SaveShortcuts", "F5 SAVE   /   F9 LOAD",
                 16f, 32f, 175f, 14f, 10, Muted);
+
+            buildingRoot = Rect(root, "Construction_Control",
+                new Vector2(0f, 0f), new Vector2(0f, 0f),
+                new Vector2(0f, 0f), new Vector2(24f, 115f),
+                new Vector2(402f, 137f)).gameObject;
+            Paint(buildingRoot.GetComponent<RectTransform>(),
+                new Color(.02f, .03f, .028f, .92f));
+            RectAt(buildingRoot.transform, "Accent", 0f, 0f,
+                4f, 137f, Accent);
+            buildingTitle = Label(buildingRoot.transform,
+                "ConstructionTitle", "CONSTRUCTION",
+                17f, 9f, 365f, 28f, 16, White, FontStyle.Bold);
+            buildingCost = Label(buildingRoot.transform,
+                "Requirements", "", 17f, 43f,
+                374f, 40f, 12, Accent);
+            buildingHelp = Label(buildingRoot.transform,
+                "Controls", "", 17f, 89f,
+                372f, 37f, 11, Muted);
+            buildingRoot.SetActive(false);
+
+            weatherReadout = Label(dayPanel, "Weather",
+                "", 16f, 45f, 175f, 11f, 9, Muted);
 
             hintRoot = Rect(root, "Interaction_Tip",
                 new Vector2(.5f, .5f), new Vector2(.5f, .5f),
@@ -1051,8 +1080,30 @@ namespace DeadSector
             dayLabel.text = "DAY " + day.ToString("00") + "  /  " +
                 h.ToString("00") + ":" + m.ToString("00");
 
-            bool modal = gameplay.InventoryOpen || gameplay.CraftingOpen;
-            string hint = modal ? "" : gameplay.InteractionHint();
+            bool modal = gameplay.InventoryOpen ||
+                gameplay.CraftingOpen ||
+                (gameplay.Journal != null && gameplay.Journal.Visible);
+            SectorBaseBuilding construction = gameplay.Building;
+            bool building = construction != null && construction.BuildMode;
+            buildingRoot.SetActive(building && !modal);
+            if (building && !modal)
+            {
+                SectorBuildSpecification plan = construction.SelectedPlan;
+                buildingTitle.text = "BUILD  /  " + plan.Label.ToUpperInvariant();
+                buildingCost.text = SectorBuildCatalog.CostLabel(plan) +
+                    (construction.CanPlace ? "   /   READY" : "   /   BLOCKED");
+                buildingCost.color = construction.CanPlace
+                    ? Accent : new Color(.87f, .40f, .36f);
+                buildingHelp.text =
+                    "1-4 SELECT  |  Q/E ROTATE  |  LMB PLACE\n" +
+                    "B/RMB EXIT   |   MAX 200 PIECES";
+            }
+
+            if (weatherReadout != null)
+                weatherReadout.text = weather != null
+                    ? weather.WeatherLabel.ToUpperInvariant() : "";
+
+            string hint = modal || building ? "" : gameplay.InteractionHint();
             hintRoot.SetActive(!string.IsNullOrEmpty(hint));
             if (!string.IsNullOrEmpty(hint))
                 hintText.text = hint;
@@ -1166,6 +1217,7 @@ namespace DeadSector
 
             selectedStackIndex = slot;
             selectedId = gameplay.Inventory.Stacks[slot].id;
+            gameplay.SelectStorageDepositItem(selectedId);
             RefreshInventory();
         }
 
