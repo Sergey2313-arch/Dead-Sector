@@ -153,6 +153,29 @@ namespace DeadSector
         /// Infected break player-built barriers that physically block the
         /// line towards their target. No damage to arbitrary scenery.
         /// </summary>
+        // Fortifications differ against infected archetypes: brutes
+        // punch through doors faster; barricades absorb regular blows.
+        public static float StructureDamage(
+            SectorZombieKind kind, SectorBuildKind structure, float baseDamage)
+        {
+            if (baseDamage <= 0f) return 0f;
+            float kindScale = kind == SectorZombieKind.Brute ? 1.8f
+                : kind == SectorZombieKind.Runner ? .78f : 1f;
+            float protection = structure == SectorBuildKind.Barricade
+                ? .65f : structure == SectorBuildKind.Door ? 1.25f : 1f;
+            return baseDamage * kindScale * protection;
+        }
+
+        public static float EffectiveHearingRange(
+            float baseRange, float playerSpeed, bool playerCrouching)
+        {
+            if (playerSpeed < .25f) return 0f;
+            float movementNoise = Mathf.Lerp(
+                .45f, 1.2f, Mathf.Clamp01(playerSpeed / 7f));
+            return Mathf.Max(0f, baseRange) * movementNoise *
+                (playerCrouching ? .40f : 1f);
+        }
+
         void AttackBlockingStructure()
         {
             if (target == null || target.Health <= 0f ||
@@ -177,7 +200,7 @@ namespace DeadSector
             SectorBuildPiece piece =
                 hit.collider.GetComponentInParent<SectorBuildPiece>();
             if (piece != null && !piece.Destroyed)
-                piece.Damage(AttackDamage);
+                piece.Damage(StructureDamage(Kind, piece.Kind, AttackDamage));
         }
 
         public void ConfigureArchetype(SectorZombieKind kind, Transform model)
@@ -359,7 +382,9 @@ namespace DeadSector
 
         bool CanSeePlayer(float distance)
         {
-            if (distance > sightRange)
+            float effectiveSight = target != null && target.IsCrouching
+                ? sightRange * .60f : sightRange;
+            if (distance > effectiveSight)
                 return false;
 
             Vector3 eye = transform.position + Vector3.up * 1.45f;
@@ -396,15 +421,9 @@ namespace DeadSector
             if (distance > hearingRange)
                 return false;
 
-            float noise = target.Speed;
-
-            if (noise < .25f)
-                return false;
-
-            float effectiveRange =
-                hearingRange * Mathf.Lerp(.45f, 1.2f, Mathf.Clamp01(noise / 7f));
-
-            return distance <= effectiveRange;
+            float effectiveRange = EffectiveHearingRange(
+                hearingRange, target.Speed, target.IsCrouching);
+            return effectiveRange > 0f && distance <= effectiveRange;
         }
 
         void BeginAttack(float distance)
