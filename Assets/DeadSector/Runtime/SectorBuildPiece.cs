@@ -104,8 +104,14 @@ namespace DeadSector
                         new Vector3(0f, .44f, 0f);
                     flame.transform.localScale =
                         new Vector3(.30f, .47f, .30f);
-                    flame.GetComponent<Renderer>().sharedMaterial =
-                        metalMaterial;
+                    Renderer fireRenderer = flame.GetComponent<Renderer>();
+                    fireRenderer.sharedMaterial = metalMaterial;
+                    var fireColours = new MaterialPropertyBlock();
+                    fireColours.SetColor("_BaseColor",
+                        new Color(1.0f, .35f, .07f));
+                    fireColours.SetColor("_Color",
+                        new Color(1.0f, .35f, .07f));
+                    fireRenderer.SetPropertyBlock(fireColours);
                     Collider fireCollider = flame.GetComponent<Collider>();
                     if (fireCollider != null) fireCollider.enabled = false;
                     Light glow = flame.AddComponent<Light>();
