@@ -104,10 +104,13 @@ namespace DeadSector
                 return;
             }
 
-            float distance =
-                Vector3.Distance(transform.position, target.transform.position);
+            // Most infected only need a squared distance to check dormancy.
+            // Avoid sqrt every rendered frame; resolve actual distance only
+            // for their staggered AI tick or a due melee attack.
+            Vector3 offset = target.transform.position - transform.position;
+            float distanceSquared = offset.sqrMagnitude;
 
-            if (distance > 600f)
+            if (distanceSquared > 600f * 600f)
             {
                 agent.isStopped = true;
                 State = "Dormant";
@@ -115,7 +118,13 @@ namespace DeadSector
                 return;
             }
 
-            if (Time.time >= nextThink)
+            bool thinkDue = Time.time >= nextThink;
+            bool attackDue = State == "Attack" && Time.time >= nextAttack;
+            float distance = 0f;
+            if (thinkDue || attackDue)
+                distance = Mathf.Sqrt(distanceSquared);
+
+            if (thinkDue)
             {
                 nextThink = Time.time + .18f + Random.value * .10f;
                 Think(distance);
@@ -126,7 +135,13 @@ namespace DeadSector
                 FaceTarget();
 
                 if (Time.time >= nextAttack)
+                {
+                    // Think can enter Attack this frame, so calculate the
+                    // distance here if it was not otherwise required.
+                    if (!thinkDue && !attackDue)
+                        distance = Mathf.Sqrt(distanceSquared);
                     BeginAttack(distance);
+                }
             }
 
             SetMotion(agent.velocity.magnitude, alerted);
