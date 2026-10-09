@@ -28,7 +28,19 @@ namespace DeadSector
         readonly List<Material> materials = new List<Material>();
         Mesh arrowMesh;
         bool tacticalOpen;
+        bool canvasHudActive;
         public bool TacticalOpen => tacticalOpen;
+
+        /// <summary>
+        /// The new Canvas draws a bright unlit local map. Do not keep
+        /// rendering the obsolete world camera or its IMGUI border behind it.
+        /// The M-key fullscreen design atlas remains owned by this class.
+        /// </summary>
+        public void SetCanvasHudActive(bool active)
+        {
+            canvasHudActive = active;
+            ApplyCameraMode();
+        }
         bool poiBuilt;
 
         Rect MinimapRect => new Rect(.76f, .72f, .225f, .255f);
@@ -155,7 +167,7 @@ namespace DeadSector
 
             // Tactical M view is the canonical full-world blueprint atlas.
             // The top-down live camera remains exclusive to the local minimap.
-            mapCamera.enabled = !tacticalOpen;
+            mapCamera.enabled = !tacticalOpen && !canvasHudActive;
             mapCamera.rect = MinimapRect;
             mapCamera.orthographicSize = minimapSize;
         }
@@ -257,6 +269,9 @@ namespace DeadSector
 
         void OnGUI()
         {
+            if (canvasHudActive)
+                return;
+
             if (mapCamera == null)
                 return;
 
