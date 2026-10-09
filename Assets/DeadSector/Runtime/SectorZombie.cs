@@ -478,8 +478,9 @@ namespace DeadSector
             if (rig != null)
                 rig.enabled = false;
 
-            // Dynamic ragdoll owns the model if the FBX is a valid Humanoid.
-            // Fallback keeps the existing simple fall on primitive zombies.
+            // Only a valid Humanoid FBX can use jointed physics here.
+            // For procedural mannequins the intact visual drops using
+            // SectorZombieReaction.Die(), avoiding detached flying limbs.
             bool physicsDeath = ragdoll != null &&
                 ragdoll.TryActivate(
                     incomingDirection, impactPoint, deathVelocity);
