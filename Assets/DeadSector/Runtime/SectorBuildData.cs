@@ -112,6 +112,24 @@ namespace DeadSector
             return true;
         }
 
+        // UI-only diagnostic, never consumes items or mutates placement.
+        public static string MissingLabel(
+            SectorInventory backpack, SectorBuildSpecification plan)
+        {
+            if (backpack == null) return "РЮКЗАК НЕДОСТУПЕН";
+            string missing = "";
+            for (int i = 0; i < plan.ItemIds.Length; i++)
+            {
+                int lack = plan.Counts[i] - backpack.Count(plan.ItemIds[i]);
+                if (lack <= 0) continue;
+                if (missing.Length > 0) missing += ", ";
+                missing += SectorItems.Get(plan.ItemIds[i]).Label +
+                    " ×" + lack;
+            }
+            return missing.Length == 0
+                ? "МАТЕРИАЛЫ СОБРАНЫ" : "НЕ ХВАТАЕТ: " + missing;
+        }
+
         public static string CostLabel(SectorBuildSpecification plan)
         {
             string text = "";
