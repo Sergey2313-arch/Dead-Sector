@@ -233,7 +233,8 @@ namespace DeadSector
             if (Time.time >= autoSaveAt)
             {
                 autoSaveAt = Time.time + 90f;
-                SaveGame(true);
+                if (player.Health > 0f)
+                    SaveGame(true);
             }
 
             Armor?.Refresh(Inventory);
@@ -893,7 +894,8 @@ namespace DeadSector
 
         public bool TrySaveGame(bool silent = false)
         {
-            if (player == null || !player.Ready)
+            // Never overwrite a living checkpoint with a dead player.
+            if (player == null || !player.Ready || player.Health <= 0f)
                 return false;
 
             // Never replace corrupted, unreadable or unsupported files.
@@ -971,6 +973,46 @@ namespace DeadSector
                 Notify("Save failed: check Console");
                 return false;
             }
+        }
+
+        public bool HasLiveCheckpoint
+        {
+            get
+            {
+                return SectorSaveProfiles.TryRead(
+                    Application.persistentDataPath, activeSaveSlot,
+                    out SectorGameSave state) &&
+                    state.health > 0f;
+            }
+        }
+
+        public bool RestoreCheckpointAfterDeath()
+        {
+            if (!SectorSaveProfiles.TryRead(
+                Application.persistentDataPath, activeSaveSlot,
+                out SectorGameSave state) || state.health <= 0f ||
+                !ApplySave(state))
+                return false;
+
+            SectorNavigation ai = FindFirstObjectByType<SectorNavigation>();
+            if (ai != null)
+                ai.ResetPopulationForProfile();
+            autoSaveAt = Time.time + 90f;
+            return player.Health > 0f;
+        }
+
+        public void RespawnAtCamp()
+        {
+            if (player == null || !player.Ready)
+                return;
+
+            player.Respawn();
+            Needs?.ApplySaved(65f, 65f, 100f);
+            SectorNavigation ai = FindFirstObjectByType<SectorNavigation>();
+            if (ai != null)
+                ai.ResetPopulationForProfile();
+            autoSaveAt = Time.time + 90f;
+            Notify("Respawned at camp (backpack retained)");
         }
 
         public void LoadGame(bool silent)
