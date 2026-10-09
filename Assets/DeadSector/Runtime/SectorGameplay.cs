@@ -343,18 +343,18 @@ namespace DeadSector
         {
             bool result = Inventory.SplitStack(stackIndex, count);
             if (result)
-                Notify("Split stack");
+                Notify("Стопка разделена");
             return result;
         }
 
         public void SortInventory()
         {
             Inventory.SortStacks();
-            Notify("Backpack sorted");
+            Notify("Рюкзак отсортирован");
         }
 
         public void NotifyConstruction(string description) =>
-            Notify("Built: " + description);
+            Notify("Построено: " + description);
 
         public void SelectStorageDepositItem(string id)
         {
@@ -368,20 +368,20 @@ namespace DeadSector
         public void RemoveGear(SectorEquipment.GearSlot slot)
         {
             Armor?.Unequip(slot, Inventory);
-            Notify("Equipment removed");
+            Notify("Снаряжение снято");
         }
 
         public bool CraftRecipe(string id)
         {
             if (!SectorCrafting.Craft(Inventory, id))
             {
-                Notify("Missing components or space");
+                Notify("Не хватает материалов или места");
                 return false;
             }
 
             Journal?.RecordCraft();
             SectorRecipe recipe = SectorCrafting.Find(id);
-            Notify("Crafted " + (recipe != null
+            Notify("Создано: " + (recipe != null
                 ? SectorItems.Get(recipe.OutputId).Label : id));
             return true;
         }
@@ -402,8 +402,8 @@ namespace DeadSector
                 Building != null ? Building.NearbyStorage() : null;
             if (storage != null)
                 return SectorInput.Sprint
-                    ? "[SHIFT+E]  DEPOSIT SELECTED ITEM"
-                    : "[E]  STORAGE  (" + storage.StorageItemCount + ")";
+                    ? "[SHIFT+E]  ПОЛОЖИТЬ В ХРАНИЛИЩЕ"
+                    : "[E]  ХРАНИЛИЩЕ  (" + storage.StorageItemCount + ")";
             if (Building != null && Building.BuildMode)
                 return Building.ControlHint;
             Vector3 position = player.transform.position;
@@ -420,14 +420,14 @@ namespace DeadSector
 
             if (resourceDistance < doorDistance &&
                 resourceDistance < containerDistance)
-                return "[E]  COLLECT  " + SectorItems.Get(resource.ItemId).Label;
+                return "[E]  СОБРАТЬ  " + SectorItems.Get(resource.ItemId).Label;
 
             if (doorDistance < containerDistance)
-                return door.IsOpen ? "[E]  CLOSE DOOR" : "[E]  OPEN DOOR";
+                return door.IsOpen ? "[E]  ЗАКРЫТЬ ДВЕРЬ" : "[E]  ОТКРЫТЬ ДВЕРЬ";
 
             if (container != null)
                 return "[E]  " + container.title +
-                    (container.Empty ? "  (EMPTY)" : "  TAKE");
+                    (container.Empty ? "  (ПУСТО)" : "  ВЗЯТЬ");
 
             return "";
         }
@@ -468,7 +468,7 @@ namespace DeadSector
             {
                 Vector2 pos = StarterSupplies[i];
                 EnsureNearby(
-                    "starter_" + i, "Supply Box",
+                    "starter_" + i, "Ящик с припасами",
                     pos, origin, expected);
             }
 
@@ -480,7 +480,7 @@ namespace DeadSector
 
                 EnsureNearby(
                     "poi_" + location.Id,
-                    location.Name + " Supplies",
+                    location.Name + " Припасы",
                     location.MapPosition + new Vector2(18f, 14f),
                     origin, expected);
             }
@@ -599,15 +599,15 @@ namespace DeadSector
                 if (SectorInput.Sprint)
                 {
                     if (storage.TryDeposit(Inventory, StorageDepositItemId))
-                        Notify("Stored " +
+                        Notify("Сложено: " +
                             SectorItems.Get(StorageDepositItemId).Label);
                     else
-                        Notify("Select an item in I, or storage is full");
+                        Notify("Выберите предмет в I или хранилище заполнено");
                 }
                 else if (storage.TryWithdraw(Inventory, out string taken))
-                    Notify("Took from storage: " + taken);
+                    Notify("Из хранилища: " + taken);
                 else
-                    Notify("Storage empty or backpack full");
+                    Notify("Хранилище пусто или рюкзак заполнен");
                 return;
             }
 
@@ -627,10 +627,10 @@ namespace DeadSector
                 if (Resources.Harvest(resource, Inventory, out string found))
                 {
                     Journal?.RecordHarvest();
-                    Notify("Harvested: " + found);
+                    Notify("Добыто: " + found);
                 }
                 else
-                    Notify("Not enough inventory space for resources");
+                    Notify("В рюкзаке не хватает места");
                 return;
             }
 
@@ -639,13 +639,13 @@ namespace DeadSector
                 Vector3.Distance(container.transform.position, player.transform.position)))
             {
                 door.Toggle();
-                Notify(door.IsOpen ? "Door opened" : "Door closed");
+                Notify(door.IsOpen ? "Дверь открыта" : "Дверь закрыта");
                 return;
             }
 
             if (container == null)
             {
-                Notify("No supply container in reach");
+                Notify("Рядом нет ящика с припасами");
                 return;
             }
 
@@ -653,13 +653,13 @@ namespace DeadSector
             {
                 persistent[container.containerId] = container.Export();
                 Journal?.RecordPickup();
-                Notify("Picked up: " + description);
+                Notify("Подобрано: " + description);
             }
             else
             {
                 Notify(container.Empty
-                    ? "Container is empty"
-                    : "Not enough free inventory space / weight");
+                    ? "Ящик пуст"
+                    : "Не хватает места или превышен вес");
             }
         }
 
@@ -685,13 +685,13 @@ namespace DeadSector
                 {
                     if (!SectorMagazineRules.Fire(ref rifleRounds))
                     {
-                        Notify("Magazine empty — press R");
+                        Notify("Магазин пуст — нажмите R");
                         return;
                     }
                 }
                 else if (!SectorMagazineRules.Fire(ref pistolRounds))
                 {
-                    Notify("Magazine empty — press R");
+                    Notify("Магазин пуст — нажмите R");
                     return;
                 }
             }
@@ -806,7 +806,7 @@ namespace DeadSector
 
             if (loaded <= 0)
             {
-                Notify("No ammunition or magazine already full");
+                Notify("Нет патронов или магазин уже полон");
                 return false;
             }
 
@@ -814,7 +814,7 @@ namespace DeadSector
             // only after the animation-ready reload window completes.
             reloadingUntil = Time.time +
                 (gun == "rifle" ? 1.8f : 1.35f);
-            Notify("Reloading " + gun + " (+" + loaded + ")");
+            Notify("Перезарядка: " + gun + " (+" + loaded + ")");
             return true;
         }
 
@@ -827,7 +827,7 @@ namespace DeadSector
             if (def.HealthRestore > 0f && player.Health >= 100f &&
                 def.HungerRestore <= 0f && def.ThirstRestore <= 0f)
             {
-                Notify("Health is already full");
+                Notify("Здоровье уже полное");
                 return;
             }
 
@@ -836,7 +836,7 @@ namespace DeadSector
 
             Needs?.Restore(def.HungerRestore, def.ThirstRestore);
             player.Heal(def.HealthRestore);
-            Notify("Used " + def.Label);
+            Notify("Использовано: " + def.Label);
         }
 
         void EquipItem(string id)
@@ -850,7 +850,7 @@ namespace DeadSector
             if (item.Kind == SectorItemKind.Armor)
             {
                 if (Armor != null && Armor.Equip(id, Inventory))
-                    Notify("Equipped " + item.Label);
+                    Notify("Экипировано: " + item.Label);
                 return;
             }
 
@@ -865,7 +865,7 @@ namespace DeadSector
 
             equipment[slot] = id;
             selectedSlot = slot;
-            Notify("Equipped " + item.Label);
+            Notify("Экипировано: " + item.Label);
         }
 
         void Notify(string messageText)
@@ -911,13 +911,13 @@ namespace DeadSector
                     Application.persistentDataPath, slot,
                     out SectorGameSave saved))
             {
-                Notify("Cannot open profile " + slot);
+                Notify("Не удалось открыть профиль " + slot);
                 return false;
             }
 
             if (!ApplySave(saved))
             {
-                Notify("Profile load failed; current slot preserved");
+                Notify("Ошибка загрузки профиля — текущий слот сохранён");
                 return false;
             }
 
@@ -939,7 +939,7 @@ namespace DeadSector
                 player.ActivateAtSpawn();
 
             autoSaveAt = Time.time + 90f;
-            Notify("Loaded " + ActiveProfileName);
+            Notify("Загружено: " + ActiveProfileName);
             return true;
         }
 
@@ -962,7 +962,7 @@ namespace DeadSector
                     Application.persistentDataPath, activeSaveSlot,
                     out SectorGameSave _))
             {
-                Notify("Unreadable save preserved; choose empty profile");
+                Notify("Повреждённое сохранение сохранено; выберите пустой слот");
                 return false;
             }
 
@@ -1022,13 +1022,13 @@ namespace DeadSector
                 }
 
                 if (!silent)
-                    Notify("Game saved");
+                    Notify("Игра сохранена");
                 return true;
             }
             catch (Exception ex)
             {
                 Debug.LogError("[Dead Sector] Save failed: " + ex.Message);
-                Notify("Save failed: check Console");
+                Notify("Ошибка сохранения — см. консоль");
                 return false;
             }
         }
@@ -1070,7 +1070,7 @@ namespace DeadSector
             if (ai != null)
                 ai.ResetPopulationForProfile();
             autoSaveAt = Time.time + 90f;
-            Notify("Respawned at camp (backpack retained)");
+            Notify("Возрождение в лагере (рюкзак сохранён)");
         }
 
         public void LoadGame(bool silent)
@@ -1080,12 +1080,12 @@ namespace DeadSector
                 out SectorGameSave saved))
             {
                 if (!silent)
-                    Notify("No valid save for " + ActiveProfileName);
+                    Notify("Нет рабочего сохранения в " + ActiveProfileName);
                 return;
             }
 
             if (ApplySave(saved) && !silent)
-                Notify("Save loaded");
+                Notify("Сохранение загружено");
         }
 
         bool ApplySave(SectorGameSave data)
@@ -1208,7 +1208,7 @@ namespace DeadSector
                 {
                     GUI.Box(new Rect(Screen.width * .5f - 142f,
                         Screen.height * .61f, 284f, 50f),
-                        "[E] HARVEST " + SectorItems.Get(resource.ItemId).Label);
+                        "[E] ДОБЫТЬ " + SectorItems.Get(resource.ItemId).Label);
                 }
                 else if (door != null && (nearby == null ||
                     Vector3.Distance(door.transform.position, player.transform.position) <
@@ -1216,14 +1216,14 @@ namespace DeadSector
                 {
                     GUI.Box(new Rect(Screen.width * .5f - 142f,
                         Screen.height * .61f, 284f, 50f),
-                        "[E] " + (door.IsOpen ? "CLOSE DOOR" : "OPEN DOOR"));
+                        "[E] " + (door.IsOpen ? "ЗАКРЫТЬ ДВЕРЬ" : "ОТКРЫТЬ ДВЕРЬ"));
                 }
                 else if (nearby != null)
                 {
                     GUI.Box(new Rect(Screen.width * .5f - 142f,
                         Screen.height * .61f, 284f, 50f),
-                        nearby.title + "  [E] TAKE" +
-                        (nearby.Empty ? "  (EMPTY)" : ""));
+                        nearby.title + "  [E] ВЗЯТЬ" +
+                        (nearby.Empty ? "  (ПУСТО)" : ""));
                 }
             }
 
@@ -1238,7 +1238,7 @@ namespace DeadSector
                         (Screen.width - width) * .5f,
                         (Screen.height - height) * .5f,
                         width, height),
-                    DrawInventoryWindow, "DEAD SECTOR  /  INVENTORY [I]");
+                    DrawInventoryWindow, "DEAD SECTOR  /  РЮКЗАК [I]");
             }
 
             if (craftingOpen)
@@ -1252,7 +1252,7 @@ namespace DeadSector
                         (Screen.width - width) * .5f,
                         (Screen.height - height) * .5f,
                         width, height),
-                    DrawCraftingWindow, "DEAD SECTOR  /  CRAFTING [C]");
+                    DrawCraftingWindow, "DEAD SECTOR  /  КРАФТ [C]");
             }
         }
 
@@ -1291,11 +1291,11 @@ namespace DeadSector
                 string label = SectorItems.TryGet(id, out SectorItemDefinition item) &&
                     Inventory.Count(id) > 0
                     ? item.Label
-                    : i == 2 ? "FISTS" : "EMPTY";
+                    : i == 2 ? "КУЛАКИ" : "ПУСТО";
 
                 GUI.Label(new Rect(x + 7f, top + 6f, slotWidth - 12f, 20f),
-                    (i + 1) + "  /  " + (i == 0 ? "PRIMARY" :
-                    i == 1 ? "SIDEARM" : "MELEE"));
+                    (i + 1) + "  /  " + (i == 0 ? "ОСНОВНОЕ" :
+                    i == 1 ? "ЗАПАСНОЕ" : "БЛИЖНИЙ БОЙ"));
 
                 GUI.Label(new Rect(x + 7f, top + 29f, slotWidth - 12f, 21f), label);
             }
@@ -1314,7 +1314,7 @@ namespace DeadSector
             float w = Mathf.Min(685f, Screen.width - 18f);
             float h = Mathf.Min(550f, Screen.height - 22f);
             GUI.Label(new Rect(14f, 29f, w - 30f, 25f),
-                "STONE AGE → WOODEN GEAR → COTTON CLOTHING");
+                "КАМЕНЬ → ДЕРЕВЯННОЕ СНАРЯЖЕНИЕ → ТКАНЬ");
 
             float viewWidth = w - 42f;
             Rect scrollArea = new Rect(12f, 62f, w - 25f, h - 83f);
@@ -1324,9 +1324,9 @@ namespace DeadSector
 
             float y = 2f;
             string[] tierNames = {
-                "TIER 0 / WILDERNESS: STONE, STICKS, PLANT FIBER",
-                "TIER 1 / PRIMITIVE: WOODEN PROTECTION",
-                "TIER 2 / TEXTILES: COTTON CLOTHING"
+                "ЭТАП 0 / ПРИРОДА: КАМЕНЬ, ПАЛКИ, ВОЛОКНА",
+                "ЭТАП 1 / СНАРЯЖЕНИЕ ИЗ ДЕРЕВА",
+                "ЭТАП 2 / ХЛОПКОВАЯ ОДЕЖДА"
             };
 
             for (int tier = 0; tier <= 2; tier++)
@@ -1361,12 +1361,12 @@ namespace DeadSector
                     GUI.enabled = canCraft;
 
                     if (GUI.Button(new Rect(viewWidth - 119f, y + 7f,
-                        105f, 32f), "CRAFT"))
+                        105f, 32f), "СОЗДАТЬ"))
                     {
                         if (SectorCrafting.Craft(Inventory, recipe.Id))
                         {
                             Journal?.RecordCraft();
-                            Notify("Crafted " +
+                            Notify("Создано: " +
                                 SectorItems.Get(recipe.OutputId).Label);
                         }
                     }
@@ -1380,7 +1380,7 @@ namespace DeadSector
 
             GUI.EndScrollView();
 
-            if (GUI.Button(new Rect(w - 84f, 5f, 71f, 22f), "Close"))
+            if (GUI.Button(new Rect(w - 84f, 5f, 71f, 22f), "ЗАКРЫТЬ"))
                 ToggleCrafting();
         }
 
@@ -1410,7 +1410,7 @@ namespace DeadSector
             float gridBottom = h - 131f;
 
             GUI.Box(new Rect(10f, 31f, leftWidth - 2f, h - 43f),
-                "CHARACTER  /  EQUIPMENT");
+                "ПЕРСОНАЖ  /  СНАРЯЖЕНИЕ");
 
             DrawCharacterSilhouette(
                 12f + leftWidth * .5f,
@@ -1424,7 +1424,7 @@ namespace DeadSector
                     ? Armor.Equipped(gearSlot) : "";
                 string display = SectorItems.TryGet(
                     equipped, out SectorItemDefinition item)
-                        ? item.Label : "EMPTY";
+                        ? item.Label : "ПУСТО";
 
                 float y = 56f + i * 51f;
                 GUI.Label(new Rect(17f, y, leftWidth - 13f, 18f),
@@ -1432,25 +1432,25 @@ namespace DeadSector
 
                 if (GUI.Button(new Rect(17f, y + 19f,
                     leftWidth - 25f, 27f), display +
-                    (string.IsNullOrEmpty(equipped) ? "" : "   [REMOVE]")))
+                    (string.IsNullOrEmpty(equipped) ? "" : "   [СНЯТЬ]")))
                     Armor?.Unequip(gearSlot, Inventory);
             }
 
             float defenses = Armor != null
                 ? (1f - Armor.DamageMultiplier) * 100f : 0f;
             GUI.Label(new Rect(17f, h - 116f, leftWidth - 26f, 22f),
-                "ARMOR  " + defenses.ToString("0") + "% REDUCTION");
+                "БРОНЯ  " + defenses.ToString("0") + "% ЗАЩИТЫ");
             GUI.Label(new Rect(17f, h - 93f, leftWidth - 26f, 22f),
                 "HP " + player.Health.ToString("0") +
-                "   STAMINA " + (Needs != null
+                "   ВЫНОСЛИВОСТЬ " + (Needs != null
                     ? Needs.stamina.ToString("0") : "100"));
             GUI.Label(new Rect(17f, h - 69f, leftWidth - 26f, 22f),
-                "FOOD " + (Needs != null ? Needs.hunger.ToString("0") : "100") +
-                "   WATER " + (Needs != null
+                "СЫТОСТЬ " + (Needs != null ? Needs.hunger.ToString("0") : "100") +
+                "   ВОДА " + (Needs != null
                     ? Needs.thirst.ToString("0") : "100"));
 
             GUI.Label(new Rect(rightX, 33f, rightWidth, 21f),
-                "BACKPACK  " + Inventory.UsedSlots + "/" +
+                "РЮКЗАК  " + Inventory.UsedSlots + "/" +
                 Inventory.SlotLimit + " SLOTS   " +
                 Inventory.Weight.ToString("0.0") + "/" +
                 Inventory.MaxWeight.ToString("0.0") + " KG");
@@ -1505,7 +1505,7 @@ namespace DeadSector
 
             float footer = h - 118f;
             GUI.Box(new Rect(rightX - 4f, footer, rightWidth + 7f, 95f),
-                "SELECTED ITEM");
+                "ВЫБРАННЫЙ ПРЕДМЕТ");
 
             if (Inventory.Count(selectedInventoryItem) <= 0)
                 selectedInventoryItem = Inventory.Stacks.Count > 0
@@ -1521,18 +1521,18 @@ namespace DeadSector
 
                 if (selected.IsConsumable &&
                     GUI.Button(new Rect(rightX + 8f,
-                        footer + 53f, 105f, 28f), "USE"))
+                        footer + 53f, 105f, 28f), "ИСПОЛЬЗОВАТЬ"))
                     UseItem(selected.Id);
 
                 if ((selected.Kind == SectorItemKind.Armor ||
                     selected.Kind == SectorItemKind.Melee ||
                     selected.Kind == SectorItemKind.Firearm) &&
                     GUI.Button(new Rect(rightX + 119f,
-                        footer + 53f, 115f, 28f), "EQUIP"))
+                        footer + 53f, 115f, 28f), "НАДЕТЬ"))
                     EquipItem(selected.Id);
             }
 
-            if (GUI.Button(new Rect(w - 84f, 5f, 70f, 22f), "Close"))
+            if (GUI.Button(new Rect(w - 84f, 5f, 70f, 22f), "ЗАКРЫТЬ"))
                 ToggleInventory();
         }
 
