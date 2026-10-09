@@ -85,6 +85,7 @@ namespace DeadSector
                 case KeyCode.J: return Key.J;
                 case KeyCode.B: return Key.B;
                 case KeyCode.H: return Key.H;
+                case KeyCode.F: return Key.F;
                 case KeyCode.Q: return Key.Q;
                 case KeyCode.E: return Key.E;
                 case KeyCode.Alpha1: return Key.Digit1;
@@ -113,6 +114,7 @@ namespace DeadSector
             {
                 case KeyCode.B:
                 case KeyCode.H:
+                case KeyCode.F:
                 case KeyCode.Q:
                 case KeyCode.E:
                 case KeyCode.Alpha1:
