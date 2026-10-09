@@ -420,7 +420,15 @@ namespace DeadSector
 
             if (resourceDistance < doorDistance &&
                 resourceDistance < containerDistance)
+            {
+                if (SectorResources.RequiresTool(resource.Type))
+                    return "[ЛКМ]  " +
+                        (resource.Type == SectorResourceType.Tree
+                            ? "РУБИТЬ ДЕРЕВО" : "ДОБЫВАТЬ РУДУ") +
+                        "   /   НУЖЕН " +
+                        SectorResources.RequiredToolName(resource.Type);
                 return "[E]  СОБРАТЬ  " + SectorItems.Get(resource.ItemId).Label;
+            }
 
             if (doorDistance < containerDistance)
                 return door.IsOpen ? "[E]  ЗАКРЫТЬ ДВЕРЬ" : "[E]  ОТКРЫТЬ ДВЕРЬ";
@@ -624,6 +632,14 @@ namespace DeadSector
                     resource.transform.position, player.transform.position) <
                     Vector3.Distance(container.transform.position, player.transform.position)))
             {
+                if (SectorResources.RequiresTool(resource.Type))
+                {
+                    Notify("Используйте " +
+                        SectorResources.RequiredToolName(resource.Type) +
+                        " и ЛКМ для добычи");
+                    return;
+                }
+
                 if (Resources.Harvest(resource, Inventory, out string found))
                 {
                     Journal?.RecordHarvest();
@@ -677,6 +693,28 @@ namespace DeadSector
                 return;
 
             string id = EquippedId();
+            // Tool swings on nearby standing trees/ore override punching.
+            // Three axe hits chop a tree; four pickaxe hits break an ore node.
+            if (Resources != null && Resources.StrikeNearest(
+                id, Inventory, player.transform.forward,
+                out string resourcesObtained, out string harvestInfo))
+            {
+                nextAttack = Time.time + .42f;
+                if (SectorResources.CorrectTool(
+                    Resources.NearbyToolNode(player.transform.forward)?.Type ??
+                        SectorResourceType.GroundStone, id))
+                    PunchVisual?.Play(false, true);
+
+                if (!string.IsNullOrEmpty(resourcesObtained))
+                {
+                    Journal?.RecordHarvest();
+                    Notify("Добыто: " + resourcesObtained);
+                }
+                else if (!string.IsNullOrEmpty(harvestInfo))
+                    Notify(harvestInfo);
+                return;
+            }
+
             SectorAttackProfile attack = SectorCombatRules.ForAttack(id, strong);
 
             if (attack.Kind == SectorAttackKind.Firearm)
