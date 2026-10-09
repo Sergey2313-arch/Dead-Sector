@@ -66,6 +66,7 @@ namespace DeadSector
             new List<SectorPointOfInterest>();
         TerrainLayer[] layers;
         Texture2D grassTexture;
+        Mesh pineConeMesh;
         Material terrainMaterial;
         Material roadMaterial;
         Material waterMaterial;
@@ -78,6 +79,7 @@ namespace DeadSector
             Art = new SectorArt();
             layers = new[] { Layer(new Color(.23f, .28f, .16f)), Layer(new Color(.3f, .26f, .2f)), Layer(new Color(.35f, .37f, .37f)) };
             grassTexture = BuildGrassBladeTexture();
+            pineConeMesh = SectorVegetationMesh.CreateConiferCone();
             Shader terrainShader = Shader.Find("Universal Render Pipeline/Terrain/Lit");
             if (terrainShader == null)
                 terrainShader = Shader.Find("Nature/Terrain/Standard");
@@ -1556,6 +1558,7 @@ namespace DeadSector
             }
 
             if (grassTexture != null) Destroy(grassTexture);
+            if (pineConeMesh != null) Destroy(pineConeMesh);
             if (terrainMaterial != null) Destroy(terrainMaterial);
             if (waterMaterial != null) Destroy(waterMaterial);
             Art?.Dispose();
