@@ -2,26 +2,98 @@ using UnityEngine;
 
 namespace DeadSector
 {
-    // Articulated prototype rig. No third-party model or animation download required.
+    // Procedural prototype pose controller until Humanoid/Mixamo animation
+    // controllers are installed. Weapon type affects relaxed arm/torso pose.
+    public enum SectorCarryPose { Unarmed, Tool, Pistol, Rifle }
+
     public sealed class SectorMannequin : MonoBehaviour
     {
         public Transform leftArm, rightArm, leftLeg, rightLeg, torso;
-        float speed, phase, airborne, lean;
+        float speed, phase, airborne, lean, poseWeight;
+        SectorCarryPose carryPose;
+
+        public SectorCarryPose CarryPose => carryPose;
+
+        public void SetCarryPose(SectorCarryPose pose)
+        {
+            carryPose = pose;
+        }
+
+        public static Vector3 ArmAngles(SectorCarryPose pose, bool right)
+        {
+            switch (pose)
+            {
+                case SectorCarryPose.Tool:
+                    // Tool stays low at the thigh, wrist inward.
+                    return right ? new Vector3(-17f, -7f, -18f)
+                        : new Vector3(5f, 0f, 9f);
+                case SectorCarryPose.Pistol:
+                    return right ? new Vector3(-49f, -12f, -8f)
+                        : new Vector3(-17f, 14f, 18f);
+                case SectorCarryPose.Rifle:
+                    return right ? new Vector3(-62f, -21f, -16f)
+                        : new Vector3(-51f, 18f, 26f);
+                default:
+                    // Natural relaxed posture, not straight out like a T-pose.
+                    return right ? new Vector3(9f, 0f, 12f)
+                        : new Vector3(9f, 0f, -12f);
+            }
+        }
+
         public void SetMotion(float velocity, bool grounded, float vertical)
         {
-            speed = Mathf.Lerp(speed, velocity, 12f * Time.deltaTime);
-            airborne = Mathf.MoveTowards(airborne, grounded ? 0 : 1, Time.deltaTime * 8f);
-            lean = Mathf.Lerp(lean, vertical > 0 ? -8 : 8, Time.deltaTime * 6);
+            speed = Mathf.Lerp(speed, velocity,
+                1f - Mathf.Exp(-12f * Time.deltaTime));
+            airborne = Mathf.MoveTowards(
+                airborne, grounded ? 0f : 1f, Time.deltaTime * 8f);
+            lean = Mathf.Lerp(lean, vertical > 0f ? -8f : 8f,
+                1f - Mathf.Exp(-6f * Time.deltaTime));
         }
+
         void LateUpdate()
         {
-            phase += Time.deltaTime * Mathf.Lerp(0, 12, Mathf.Clamp01(speed / 7));
-            float stride = Mathf.Sin(phase) * Mathf.Lerp(0, 48, Mathf.Clamp01(speed / 7)) * (1 - airborne);
-            leftLeg.localRotation = Quaternion.Euler(stride - airborne * 32, 0, 0);
-            rightLeg.localRotation = Quaternion.Euler(-stride - airborne * 12, 0, 0);
-            leftArm.localRotation = Quaternion.Euler(-stride - airborne * 60, 0, -5 - airborne * 15);
-            rightArm.localRotation = Quaternion.Euler(stride - airborne * 60, 0, 5 + airborne * 15);
-            torso.localRotation = Quaternion.Euler(Mathf.Lerp(speed * 1.3f, lean, airborne), 0, 0);
+            if (leftArm == null || rightArm == null || leftLeg == null ||
+                rightLeg == null || torso == null)
+                return;
+
+            float normalized = Mathf.Clamp01(speed / 7f);
+            float dt = Time.deltaTime;
+            phase += dt * Mathf.Lerp(0.75f, 12f, normalized);
+            float stride = Mathf.Sin(phase) * 48f * normalized *
+                (1f - airborne);
+            float breathe = Mathf.Sin(Time.time * 1.35f) * 1.15f;
+
+            leftLeg.localRotation = Quaternion.Lerp(
+                leftLeg.localRotation,
+                Quaternion.Euler(stride - airborne * 32f, 0f, 0f),
+                1f - Mathf.Exp(-16f * dt));
+            rightLeg.localRotation = Quaternion.Lerp(
+                rightLeg.localRotation,
+                Quaternion.Euler(-stride - airborne * 12f, 0f, 0f),
+                1f - Mathf.Exp(-16f * dt));
+
+            // Hands are attached under the right arm, so their weapon
+            // transforms follow the changing carry posture automatically.
+            Vector3 leftBase = ArmAngles(carryPose, false);
+            Vector3 rightBase = ArmAngles(carryPose, true);
+            float armSwing = carryPose == SectorCarryPose.Rifle
+                ? .25f : carryPose == SectorCarryPose.Pistol ? .4f : 1f;
+            leftArm.localRotation = Quaternion.Lerp(
+                leftArm.localRotation,
+                Quaternion.Euler(leftBase.x - stride * armSwing -
+                    airborne * 38f + breathe, leftBase.y, leftBase.z),
+                1f - Mathf.Exp(-13f * dt));
+            rightArm.localRotation = Quaternion.Lerp(
+                rightArm.localRotation,
+                Quaternion.Euler(rightBase.x + stride * armSwing -
+                    airborne * 38f + breathe, rightBase.y, rightBase.z),
+                1f - Mathf.Exp(-13f * dt));
+            torso.localRotation = Quaternion.Lerp(
+                torso.localRotation,
+                Quaternion.Euler(
+                    Mathf.Lerp(speed * 1.1f, lean, airborne) + breathe * .3f,
+                    carryPose == SectorCarryPose.Rifle ? -5f : 0f, 0f),
+                1f - Mathf.Exp(-9f * dt));
         }
     }
 }
