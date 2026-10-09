@@ -40,9 +40,21 @@ namespace DeadSector.Tests
                 SectorWorld.ResidentialDoorWidth,
                 SectorPlayer.StandingRadius * 2f + .7f,
                 "The doorway must have room for a capsule and shoulder clearance.");
+            // Door height is measured from the FINISHED FLOOR, not terrain.
+            // Previously the roof lintel was placed only 2.22m above terrain,
+            // resulting in 1.80m headroom above the raised 0.42m floor.
+            Assert.That(SectorWorld.ResidentialDoorHeight,
+                Is.InRange(2.05f, 2.25f));
             Assert.Greater(
                 SectorWorld.ResidentialDoorHeight,
                 SectorPlayer.StandingHeight + .25f);
+            Assert.That(
+                SectorWorld.ResidentialFloorTop + SectorWorld.ResidentialDoorHeight,
+                Is.InRange(2.50f, 2.75f),
+                "Lintel must include raised finished-floor elevation.");
+            Assert.Less(
+                SectorWorld.ResidentialFloorTop,
+                SectorWorld.ResidentialPorchTop + .05f);
             Assert.LessOrEqual(SectorWorld.ResidentialStepTop, .30f);
             Assert.LessOrEqual(
                 SectorWorld.ResidentialPorchTop - SectorWorld.ResidentialStepTop,
@@ -70,6 +82,44 @@ namespace DeadSector.Tests
             finally
             {
                 Object.DestroyImmediate(root);
+            }
+        }
+
+        [Test]
+        public void RussianItemNamesKeepOriginalStableSaveIds()
+        {
+            SectorItemDefinition water = SectorItems.Get("water");
+            Assert.AreEqual("water", water.Id);
+            StringAssert.Contains("Вода", water.Label);
+            Assert.AreEqual("Бинт", SectorItems.Get("bandage").Label);
+            StringAssert.Contains("нож", SectorRussian.ItemName("knife"));
+            Assert.AreEqual("Деревянная стена",
+                SectorBuildCatalog.At((int)SectorBuildKind.Wall).Label);
+        }
+
+        [Test]
+        public void CraftingOutputsHaveRenderableItemIcons()
+        {
+            try
+            {
+                foreach (SectorRecipe recipe in SectorCrafting.Recipes)
+                {
+                    Sprite icon = SectorItemIcons.Get(recipe.OutputId);
+                    Assert.IsNotNull(icon, "Missing icon for " + recipe.OutputId);
+                    var pixels = icon.texture.GetPixels32();
+                    bool visible = false;
+                    foreach (Color32 pixel in pixels)
+                    {
+                        if (pixel.a == 0) continue;
+                        visible = true;
+                        break;
+                    }
+                    Assert.IsTrue(visible, "Transparent icon for " + recipe.OutputId);
+                }
+            }
+            finally
+            {
+                SectorItemIcons.Release();
             }
         }
 
