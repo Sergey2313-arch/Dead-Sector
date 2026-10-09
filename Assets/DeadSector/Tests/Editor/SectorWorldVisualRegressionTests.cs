@@ -33,6 +33,47 @@ namespace DeadSector.Tests
         }
 
         [Test]
+        public void ResidentialDoorAndPorchAreAccessibleToHumanPlayer()
+        {
+            Assert.That(SectorPlayer.StandingHeight, Is.InRange(1.65f, 1.90f));
+            Assert.GreaterOrEqual(
+                SectorWorld.ResidentialDoorWidth,
+                SectorPlayer.StandingRadius * 2f + .7f,
+                "The doorway must have room for a capsule and shoulder clearance.");
+            Assert.Greater(
+                SectorWorld.ResidentialDoorHeight,
+                SectorPlayer.StandingHeight + .25f);
+            Assert.LessOrEqual(SectorWorld.ResidentialStepTop, .30f);
+            Assert.LessOrEqual(
+                SectorWorld.ResidentialPorchTop - SectorWorld.ResidentialStepTop,
+                .30f, "Both porch rises must be below CharacterController stepOffset.");
+        }
+
+        [Test]
+        public void HingedDoorCanBeFoundThroughPhysicalDoorLeaf()
+        {
+            var root = new GameObject("DoorRegressionRoot");
+            try
+            {
+                SectorDoor door = root.AddComponent<SectorDoor>();
+                var slab = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                slab.transform.SetParent(root.transform, false);
+                Assert.AreSame(door,
+                    slab.GetComponent<BoxCollider>().GetComponentInParent<SectorDoor>());
+
+                Assert.IsFalse(door.IsOpen);
+                door.Toggle();
+                Assert.IsTrue(door.IsOpen);
+                door.Toggle();
+                Assert.IsFalse(door.IsOpen);
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+            }
+        }
+
+        [Test]
         public void StandardSizedCharacterNeedsAlmostNoScaling()
         {
             Assert.AreEqual(1f,
