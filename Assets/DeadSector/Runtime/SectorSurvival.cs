@@ -90,6 +90,17 @@ namespace DeadSector
             }
         }
 
+        // Resting near a placed campfire restores energy; no unrealistic
+        // instant health refill. Safe across save files (same stamina field).
+        public void RestNearCampfire(float seconds)
+        {
+            if (seconds <= 0f || player == null || player.Health <= 0f ||
+                player.IsSprinting || player.Speed > .5f)
+                return;
+            stamina = Mathf.Clamp(stamina + 6f * seconds, 0f, 100f);
+            UpdateSprintLockout();
+        }
+
         public void ConsumeJumpStamina()
         {
             stamina = Mathf.Max(0f, stamina - 8f);
