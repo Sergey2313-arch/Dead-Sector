@@ -1098,12 +1098,17 @@ namespace DeadSector
 
                 if (i % 2 == 0)
                 {
-                    Art.Box(
-                        root.transform,
-                        "Garage_" + i + "_Door",
-                        new Vector3(x, 1.7f, -4.85f),
-                        new Vector3(5.6f, 3.4f, .18f),
-                        new Color(.25f, .26f, .25f));
+                    // Split a garage gate into two real hinged leaves.
+                    // One open leaf already gives >2.5m of walkable space.
+                    Color gate = new Color(.25f, .26f, .25f);
+                    CreateHingedPortal(
+                        root.transform, "Garage_" + i + "_LeftDoor",
+                        new Vector3(x - 2.75f, 0f, -4.85f),
+                        2.7f, 3.4f, gate, false);
+                    CreateHingedPortal(
+                        root.transform, "Garage_" + i + "_RightDoor",
+                        new Vector3(x + 2.75f, 0f, -4.85f),
+                        2.7f, 3.4f, gate, true);
                 }
             }
 
