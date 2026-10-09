@@ -172,7 +172,7 @@ namespace DeadSector
                 !ValidPlacement(SelectedPlan, plannedPosition, orientation) ||
                 !SectorBuildCatalog.CanAfford(backpack, SelectedPlan))
             {
-                gameplay?.Notify(string.IsNullOrEmpty(PlacementIssue)
+                gameplay?.NotifyBuildFailure(string.IsNullOrEmpty(PlacementIssue)
                     ? "Постройку пока нельзя поставить на этом месте."
                     : PlacementIssue);
                 return false;
