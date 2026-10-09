@@ -700,9 +700,10 @@ namespace DeadSector
                 out string resourcesObtained, out string harvestInfo))
             {
                 nextAttack = Time.time + .42f;
-                if (SectorResources.CorrectTool(
-                    Resources.NearbyToolNode(player.transform.forward)?.Type ??
-                        SectorResourceType.GroundStone, id))
+                // A valid swing should animate even on the final hit,
+                // when the harvested node has already been removed.
+                if (!harvestInfo.StartsWith(
+                        "Нужен инструмент:", StringComparison.Ordinal))
                     PunchVisual?.Play(false, true);
 
                 if (!string.IsNullOrEmpty(resourcesObtained))
