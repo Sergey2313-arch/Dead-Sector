@@ -144,6 +144,12 @@ namespace DeadSector
             target.x = Mathf.Round(target.x / 3f) * 3f;
             target.z = Mathf.Round(target.z / 3f) * 3f;
             target.y = SurfaceHeight(target.x, target.z);
+            // Walls and hinged doors align with existing 3m floor edges,
+            // preventing overlapping or disconnected base modules.
+            if ((spec.Kind == SectorBuildKind.Wall ||
+                 spec.Kind == SectorBuildKind.Door) &&
+                TrySnapToFoundation(target, orientation, out Vector3 edge))
+                target = edge;
             // A roof must sit above an existing wall. Avoid placing an
             // unsupported floating roof at terrain level.
             if (spec.Kind == SectorBuildKind.Roof &&
@@ -272,6 +278,40 @@ namespace DeadSector
                 "Ремонт +" + restored.ToString("0") +
                 " прочности" + (saved ? " — сохранено" : " — F5 для сохранения"));
             return true;
+        }
+
+        // For a 3x3m floor, the centre of a wall sits at a 1.5m edge.
+        public static Vector3 FoundationEdge(
+            Vector3 foundationCenter, float angleDegrees)
+        {
+            return foundationCenter +
+                Quaternion.Euler(0f, angleDegrees, 0f) *
+                Vector3.forward * 1.5f +
+                Vector3.up * .25f;
+        }
+
+        bool TrySnapToFoundation(
+            Vector3 target, float angle, out Vector3 snapped)
+        {
+            snapped = target;
+            float bestSqr = 2.8f * 2.8f;
+            bool found = false;
+            foreach (SectorBuildPiece piece in pieces)
+            {
+                if (piece == null || piece.Destroyed ||
+                    piece.Kind != SectorBuildKind.Foundation)
+                    continue;
+
+                Vector3 candidate = FoundationEdge(
+                    piece.transform.position, angle);
+                Vector3 d = candidate - target;
+                float sqr = d.x * d.x + d.z * d.z;
+                if (sqr >= bestSqr) continue;
+                bestSqr = sqr;
+                snapped = candidate;
+                found = true;
+            }
+            return found;
         }
 
         bool TryFindRoofSupport(Vector3 position, out float top)
