@@ -208,6 +208,24 @@ namespace DeadSector
                 return false;
 
             Quaternion rot = Quaternion.Euler(0f, rotation, 0f);
+
+            // Forbid structures that would hang off a steep slope or clip
+            // through a hill. Snap placement to the actual streamed ground.
+            float centerGround = SurfaceHeight(position.x, position.z);
+            float tolerance = plan.Kind == SectorBuildKind.Foundation
+                ? .55f : 1.25f;
+            for (int sx = -1; sx <= 1; sx += 2)
+                for (int sz = -1; sz <= 1; sz += 2)
+                {
+                    Vector3 offset = rot * new Vector3(
+                        sx * plan.Dimensions.x * .4f, 0f,
+                        sz * plan.Dimensions.z * .4f);
+                    float corner = SurfaceHeight(
+                        position.x + offset.x, position.z + offset.z);
+                    if (Mathf.Abs(corner - centerGround) > tolerance)
+                        return false;
+                }
+
             Collider[] blockers = Physics.OverlapBox(
                 center, plan.Dimensions * .5f * .92f,
                 rot, ~(1 << 2), QueryTriggerInteraction.Ignore);
@@ -319,6 +337,10 @@ namespace DeadSector
                     !ids.Add(state.id) ||
                     !SectorBuildCatalog.IsValid(state.kind) ||
                     state.health <= 0f ||
+                    float.IsNaN(state.health) ||
+                    float.IsInfinity(state.health) ||
+                    float.IsNaN(state.angle) ||
+                    float.IsInfinity(state.angle) ||
                     float.IsNaN(state.position.x) ||
                     float.IsNaN(state.position.y) ||
                     float.IsNaN(state.position.z) ||
