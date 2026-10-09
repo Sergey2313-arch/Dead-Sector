@@ -22,6 +22,9 @@ namespace DeadSector
         public float cameraHeight = 1.62f;
         public float cameraCollisionRadius = .18f;
         public float cameraSmooth = 18f;
+        [Header("Look Smoothing")]
+        [Tooltip("Exponential turn damping. Higher values react faster; 0 disables smoothing.")]
+        [Min(0f)] public float lookSmooth = 24f;
         public float thirdPersonFov = 68f;
         public float firstPersonFov = 75f;
 
@@ -42,6 +45,9 @@ namespace DeadSector
         Animator animator;
         Transform headBone;
         float pitch = 12f;
+        float targetPitch = 12f;
+        float targetYaw;
+        bool lookInitialized;
         float vertical = -2f;
         float groundedAt = -10f;
         float jumpAt = -10f;
@@ -64,6 +70,7 @@ namespace DeadSector
         {
             body = GetComponent<CharacterController>();
             BindVisual(visual);
+            ResetLookSmoothing();
             SetCursor(true);
         }
 
@@ -127,8 +134,19 @@ namespace DeadSector
             }
 
             Vector2 look = SectorInput.Look;
-            transform.Rotate(0, look.x, 0);
-            pitch = Mathf.Clamp(pitch - look.y, -75f, 75f);
+            if (!lookInitialized)
+                ResetLookSmoothing();
+
+            targetYaw += look.x;
+            targetPitch = Mathf.Clamp(targetPitch - look.y, -75f, 75f);
+
+            // A single damping model drives both the character heading and
+            // the view direction, instead of abruptly rotating the body while
+            // the third-person camera position lags behind it.
+            float blend = TurnBlend(lookSmooth, Time.deltaTime);
+            float yaw = Mathf.LerpAngle(transform.eulerAngles.y, targetYaw, blend);
+            transform.rotation = Quaternion.Euler(0f, yaw, 0f);
+            pitch = Mathf.Lerp(pitch, targetPitch, blend);
 
             bool groundedBeforeMove = body.isGrounded;
 
@@ -348,6 +366,7 @@ namespace DeadSector
             IsSprinting = false;
             Health = 100f;
             cameraInitialized = false;
+            ResetLookSmoothing();
 
             PrimeAnimation();
             CalibrateBodyMesh();
@@ -379,6 +398,22 @@ namespace DeadSector
             }
 
             return SectorLayout.Height(position.x, position.z);
+        }
+
+        // Public deterministic helper so damping is regression-testable.
+        // The exponential coefficient is frame-rate independent.
+        public static float TurnBlend(float sharpness, float deltaTime)
+        {
+            if (sharpness <= 0f) return 1f;
+            if (deltaTime <= 0f) return 0f;
+            return 1f - Mathf.Exp(-sharpness * deltaTime);
+        }
+
+        void ResetLookSmoothing()
+        {
+            targetYaw = transform.eulerAngles.y;
+            targetPitch = pitch;
+            lookInitialized = true;
         }
 
         public static float CameraAboveSurface(
@@ -622,6 +657,7 @@ namespace DeadSector
             body.enabled = true;
             vertical = -2f;
             cameraInitialized = false;
+            ResetLookSmoothing();
             Physics.SyncTransforms();
         }
 
