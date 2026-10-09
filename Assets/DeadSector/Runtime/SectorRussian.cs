@@ -28,7 +28,12 @@ namespace DeadSector
             { "cotton_shirt", "Хлопковая рубашка" },
             { "cotton_pants", "Хлопковые брюки" },
             { "cotton_boots", "Тканевые обмотки" },
-            { "cotton_bag", "Хлопковый рюкзак" }
+            { "cotton_bag", "Хлопковый рюкзак" },
+            { "build_foundation", "Комплект основания" },
+            { "build_wall", "Комплект стены" },
+            { "build_barricade", "Комплект баррикады" },
+            { "build_storage", "Комплект хранилища" },
+            { "build_door", "Комплект двери" }
         };
 
         static readonly Dictionary<string, string> Recipes = new Dictionary<string, string>(StringComparer.Ordinal)
@@ -49,7 +54,12 @@ namespace DeadSector
             { "cotton_bag", "Хлопковый рюкзак" },
             { "bandage", "Изготовить бинт" },
             { "medkit", "Собрать аптечку" },
-            { "hatchet", "Металлический топорик" }
+            { "hatchet", "Металлический топорик" },
+            { "build_foundation", "Собрать деревянное основание" },
+            { "build_wall", "Собрать деревянную стену" },
+            { "build_barricade", "Собрать баррикаду" },
+            { "build_storage", "Собрать ящик для хранения" },
+            { "build_door", "Собрать дверь на петлях" }
         };
 
         public static string ItemName(string id, string fallback = "")
