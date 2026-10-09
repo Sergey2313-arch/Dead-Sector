@@ -19,9 +19,9 @@ namespace DeadSector
             slot >= LegacySlot && slot <= MaxProfileSlot;
 
         public static string Name(int slot) =>
-            slot == LegacySlot ? "LEGACY / OLD SAVE" :
-            IsValidSlot(slot) ? "PROFILE " + slot.ToString("00") :
-            "INVALID";
+            slot == LegacySlot ? "СТАРОЕ СОХРАНЕНИЕ" :
+            IsValidSlot(slot) ? "ПРОФИЛЬ " + slot.ToString("00") :
+            "НЕВЕРНЫЙ";
 
         public static string FilePath(string directory, int slot)
         {
@@ -169,17 +169,17 @@ namespace DeadSector
         public static string Description(string directory, int slot)
         {
             if (!IsValidSlot(slot))
-                return "INVALID SLOT";
+                return "НЕВЕРНЫЙ СЛОТ";
             if (!Exists(directory, slot))
                 return slot == LegacySlot
-                    ? "NO LEGACY SAVE" : "EMPTY / NEW GAME";
+                    ? "НЕТ СТАРОГО СОХРАНЕНИЯ" : "ПУСТО / НОВАЯ ИГРА";
 
             if (!TryRead(directory, slot, out SectorGameSave save))
-                return "UNREADABLE / PRESERVED";
+                return "ПОВРЕЖДЕНО / СОХРАНЕНО";
 
-            return "DAY " + (Math.Max(0, save.daysSurvived) + 1).ToString("00") +
-                "   " + Mathf.Repeat(save.hourOfDay, 24f).ToString("00.0") + " H" +
-                "   HP " + Mathf.Clamp(save.health, 0f, 100f).ToString("0");
+            return "ДЕНЬ " + (Math.Max(0, save.daysSurvived) + 1).ToString("00") +
+                "   " + Mathf.Repeat(save.hourOfDay, 24f).ToString("00.0") + " Ч" +
+                "   ЗДОРОВЬЕ " + Mathf.Clamp(save.health, 0f, 100f).ToString("0");
         }
     }
 }
