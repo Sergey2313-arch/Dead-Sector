@@ -53,10 +53,15 @@ namespace DeadSector
         {
             var go = new GameObject(name); go.transform.SetParent(parent, false); go.transform.localPosition = position; return go.transform;
         }
-        public static void SetActorLayer(Transform root)
+        public const int PlayerVisualLayer = 2;
+        public const int EnemyVisualLayer = 0;
+
+        // Only the player must be hidden by the first-person camera.
+        // Infecteds belong to Default and remain visible in BOTH viewpoints.
+        public static void SetActorLayer(Transform root, int layer = PlayerVisualLayer)
         {
-            root.gameObject.layer = 2;
-            foreach (Transform child in root) SetActorLayer(child);
+            root.gameObject.layer = layer;
+            foreach (Transform child in root) SetActorLayer(child, layer);
         }
         public void Dispose() { foreach (var material in materials.Values) Object.Destroy(material); materials.Clear(); }
     }
