@@ -41,6 +41,7 @@ namespace DeadSector
         Text fovValue;
         Text qualityValue;
         Text menuSubtitle;
+        GameObject backButton;
         bool pendingTitle = true;
         bool open;
         bool settings;
@@ -185,9 +186,10 @@ namespace DeadSector
             qualityValue = Label(settingsPage.transform, "QualityName",
                 "", 432f, 242f, 161f, 35f, 12, Accent,
                 FontStyle.Bold, TextAnchor.MiddleRight);
-            MakeButton(left, "BackButton", "НАЗАД",
+            backButton = MakeButton(left, "BackButton", "НАЗАД",
                 39f, 632f, 136f, 32f, PanelLight, White,
-                () => ShowHome());
+                () => ShowHome()).gameObject;
+            backButton.SetActive(false);
             settingsPage.SetActive(false);
             canvasObject.SetActive(false);
         }
@@ -274,6 +276,7 @@ namespace DeadSector
             settings = false;
             homePage.SetActive(true);
             settingsPage.SetActive(false);
+            backButton.SetActive(false);
             UpdateSettingsLabels();
         }
 
@@ -282,6 +285,7 @@ namespace DeadSector
             settings = true;
             homePage.SetActive(false);
             settingsPage.SetActive(true);
+            backButton.SetActive(true);
             UpdateSettingsLabels();
         }
 
