@@ -19,7 +19,8 @@ namespace DeadSector
         public bool IsStorage => Kind == SectorBuildKind.Storage;
 
         SectorInventory storage;
-        Material material;
+        SectorDoor hingedDoor;
+        NavMeshObstacle doorObstacle;
 
         public void Configure(SectorBuildSnapshot snapshot,
             Material woodMaterial, Material metalMaterial)
@@ -38,7 +39,6 @@ namespace DeadSector
             transform.SetPositionAndRotation(snapshot.position,
                 Quaternion.Euler(0f, snapshot.angle, 0f));
 
-            material = woodMaterial;
             switch (Kind)
             {
                 case SectorBuildKind.Foundation:
@@ -65,9 +65,46 @@ namespace DeadSector
                     storage = new SectorInventory(12, 60f);
                     storage.Import(snapshot.storage);
                     break;
+                case SectorBuildKind.Door:
+                    Cube("LeftPost", new Vector3(-1.38f, 1.3f, 0f),
+                        new Vector3(.24f, 2.6f, .4f), woodMaterial);
+                    Cube("RightPost", new Vector3(1.38f, 1.3f, 0f),
+                        new Vector3(.24f, 2.6f, .4f), woodMaterial);
+                    Cube("CrossBeam", new Vector3(0f, 2.48f, 0f),
+                        new Vector3(3f, .24f, .4f), woodMaterial);
+
+                    var pivot = new GameObject("HingedDoor_Pivot");
+                    pivot.transform.SetParent(transform, false);
+                    pivot.transform.localPosition =
+                        new Vector3(-1.22f, 0f, 0f);
+                    hingedDoor = pivot.AddComponent<SectorDoor>();
+
+                    GameObject slab = GameObject.CreatePrimitive(
+                        PrimitiveType.Cube);
+                    slab.name = "Door_Slab";
+                    slab.transform.SetParent(pivot.transform, false);
+                    slab.transform.localPosition =
+                        new Vector3(1.13f, 1.16f, 0f);
+                    slab.transform.localScale =
+                        new Vector3(2.25f, 2.3f, .19f);
+                    slab.GetComponent<Renderer>().sharedMaterial =
+                        woodMaterial;
+
+                    doorObstacle = pivot.AddComponent<NavMeshObstacle>();
+                    doorObstacle.shape = NavMeshObstacleShape.Box;
+                    doorObstacle.size =
+                        new Vector3(2.25f, 2.3f, .19f);
+                    doorObstacle.center =
+                        new Vector3(1.13f, 1.16f, 0f);
+                    doorObstacle.carving = true;
+                    doorObstacle.carveOnlyStationary = true;
+                    if (snapshot.doorOpen)
+                        hingedDoor.Toggle();
+                    break;
             }
 
-            if (Kind != SectorBuildKind.Foundation)
+            if (Kind != SectorBuildKind.Foundation &&
+                Kind != SectorBuildKind.Door)
             {
                 NavMeshObstacle obstacle =
                     gameObject.AddComponent<NavMeshObstacle>();
@@ -77,6 +114,12 @@ namespace DeadSector
                 obstacle.carving = true;
                 obstacle.carveOnlyStationary = true;
             }
+        }
+
+        void Update()
+        {
+            if (doorObstacle != null && hingedDoor != null)
+                doorObstacle.enabled = !hingedDoor.IsOpen;
         }
 
         void Cube(string label, Vector3 localPosition,
@@ -110,6 +153,7 @@ namespace DeadSector
                 position = transform.position,
                 angle = transform.eulerAngles.y,
                 health = Health,
+                doorOpen = hingedDoor != null && hingedDoor.IsOpen,
                 storage = storage != null
                     ? storage.Export()
                     : new List<SectorItemStack>()
