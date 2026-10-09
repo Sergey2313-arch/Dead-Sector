@@ -5,6 +5,10 @@ namespace DeadSector
     [RequireComponent(typeof(CharacterController))]
     public sealed class SectorPlayer : MonoBehaviour
     {
+        // Real-world metres. Shared by fallback CharacterController creation
+        // and procedural mannequin sizing; imported humanoid FBX assets stay intact.
+        public const float StandingHeight = 1.78f;
+        public const float StandingRadius = .28f;
         [Header("Movement")]
         public float walkSpeed = 4f;
         public float runSpeed = 7f;
