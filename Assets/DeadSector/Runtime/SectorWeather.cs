@@ -25,6 +25,7 @@ namespace DeadSector
 
         ParticleSystem rain;
         Material rainMaterial;
+        public bool ModernUiEnabled { get; set; }
         SectorWeatherKind lastWeather = (SectorWeatherKind)(-1);
         readonly Color weatherFog = new Color(.29f, .34f, .37f);
 
@@ -140,7 +141,8 @@ namespace DeadSector
 
         void OnGUI()
         {
-            if (clock == null || player == null || !player.Ready)
+            if (ModernUiEnabled || clock == null ||
+                player == null || !player.Ready)
                 return;
 
             GUI.Label(new Rect(14f, 202f, 250f, 24f),
