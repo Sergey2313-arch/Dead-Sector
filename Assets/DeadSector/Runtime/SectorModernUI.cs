@@ -44,6 +44,7 @@ namespace DeadSector
         GameObject modalRoot;
         GameObject inventoryPage;
         GameObject craftingPage;
+        GameObject journalPage;
         GameObject hintRoot;
         GameObject messageRoot;
 
@@ -88,11 +89,18 @@ namespace DeadSector
         Text dragGhostText;
         Button useButton;
         Button equipButton;
+        Button splitButton;
+        readonly Text[] journalStatuses = new Text[8];
+        readonly Image[] journalIndicators = new Image[8];
+        Text journalCompleted;
+        Text journalPosition;
         RectTransform bodyPanel;
         string selectedId = "";
+        int selectedStackIndex = -1;
         float refreshTime;
         bool lastInventory;
         bool lastCrafting;
+        bool lastJournal;
 
         sealed class CompassTick
         {
@@ -132,6 +140,8 @@ namespace DeadSector
             {
                 Build();
                 gameplay.ModernUiEnabled = true;
+                if (gameplay.Journal != null)
+                    gameplay.Journal.ModernUiEnabled = true;
                 if (minimap != null)
                     minimap.SetCanvasHudActive(true);
                 if (compass != null)
@@ -577,22 +587,28 @@ namespace DeadSector
                 30f, 44f, 430f, 18f, 11, Muted);
 
             MakeButton(panel, "TAB_INVENTORY",
-                "INVENTORY  [I]", 792f, 22f, 167f, 43f,
-                Cell, Accent, () => gameplay.ShowInventory());
+                "INVENTORY  [I]", 638f, 22f, 155f, 43f,
+                Cell, Accent, OpenInventoryTab);
             MakeButton(panel, "TAB_CRAFT",
-                "CRAFTING  [C]", 965f, 22f, 164f, 43f,
-                Cell, Accent, () => gameplay.ShowCrafting());
+                "CRAFTING  [C]", 802f, 22f, 155f, 43f,
+                Cell, Accent, OpenCraftingTab);
+            MakeButton(panel, "TAB_JOURNAL",
+                "JOURNAL  [J]", 966f, 22f, 155f, 43f,
+                Cell, Accent, OpenJournalTab);
             MakeButton(panel, "CLOSE", "X", 1169f, 22f, 57f, 43f,
                 new Color(.26f, .12f, .12f, 1f), White,
-                () => gameplay.CloseInventoryPanels());
+                CloseActiveTab);
 
             inventoryPage = RectAt(panel, "Inventory_Content",
                 0f, 84f, 1260f, 654f, Color.clear).gameObject;
             craftingPage = RectAt(panel, "Crafting_Content",
                 0f, 84f, 1260f, 654f, Color.clear).gameObject;
+            journalPage = RectAt(panel, "Journal_Content",
+                0f, 84f, 1260f, 654f, Color.clear).gameObject;
 
             BuildInventory(inventoryPage.transform);
             BuildCrafting(craftingPage.transform);
+            BuildJournal(journalPage.transform);
             modalRoot.SetActive(false);
         }
 
@@ -692,13 +708,16 @@ namespace DeadSector
             selectedDetails = Label(details, "ItemMeta", "",
                 15f, 139f, 222f, 200f, 13, Muted);
             useButton = MakeButton(details, "UseItem", "USE",
-                13f, 365f, 226f, 43f,
+                13f, 365f, 108f, 43f,
                 new Color(.18f, .28f, .19f, 1f), White,
                 () => gameplay.UseInventoryItem(selectedId));
             equipButton = MakeButton(details, "EquipItem", "EQUIP",
-                13f, 416f, 226f, 43f,
+                131f, 365f, 108f, 43f,
                 new Color(.18f, .28f, .19f, 1f), White,
                 () => gameplay.EquipInventoryItem(selectedId));
+            splitButton = MakeButton(details, "SplitStack",
+                "SPLIT STACK IN HALF", 13f, 418f, 226f, 42f,
+                Cell, Accent, SplitSelectedStack);
 
             RectTransform footer = RectAt(right, "Inventory_Hint",
                 14f, 531f, 844f, 79f,
@@ -706,8 +725,11 @@ namespace DeadSector
             Label(footer, "Help", "CLICK AN ITEM TO INSPECT",
                 14f, 11f, 620f, 24f, 12, Accent, FontStyle.Bold);
             Label(footer, "HelpSecondary",
-                "DRAG ARMOR TO GEAR SLOT    /    CLICK TO INSPECT    /    USE OR EQUIP ACTIONS",
+                "DRAG ARMOR TO GEAR SLOT    /    CLICK TO INSPECT    /    SORT AND SPLIT STACKS",
                 14f, 43f, 815f, 22f, 11, Muted);
+            MakeButton(footer, "SortInventory", "SORT BACKPACK",
+                670f, 7f, 159f, 31f, Panel, Accent,
+                SortBackpack);
         }
 
         void BuildCrafting(Transform root)
@@ -790,6 +812,7 @@ namespace DeadSector
                 return;
 
             refreshTime = Time.unscaledTime + .12f;
+            HandleJournalShortcut();
             bool atlasOpen = minimap != null && minimap.TacticalOpen;
             if (mainCanvas != null)
                 mainCanvas.enabled = !atlasOpen;
@@ -858,28 +881,35 @@ namespace DeadSector
         {
             bool inventory = gameplay.InventoryOpen;
             bool crafting = gameplay.CraftingOpen;
-            bool active = inventory || crafting;
+            bool journal = gameplay.Journal != null &&
+                gameplay.Journal.Visible;
+            bool active = inventory || crafting || journal;
             if (modalRoot.activeSelf != active)
                 modalRoot.SetActive(active);
 
             if (!active)
             {
-                lastInventory = lastCrafting = false;
+                lastInventory = lastCrafting = lastJournal = false;
                 return;
             }
 
-            if (lastInventory != inventory || lastCrafting != crafting)
+            if (lastInventory != inventory || lastCrafting != crafting ||
+                lastJournal != journal)
             {
                 inventoryPage.SetActive(inventory);
                 craftingPage.SetActive(crafting);
+                journalPage.SetActive(journal);
                 lastInventory = inventory;
                 lastCrafting = crafting;
+                lastJournal = journal;
             }
 
             if (inventory)
                 RefreshInventory();
             else if (crafting)
                 RefreshCrafting();
+            else if (journal)
+                RefreshJournal();
         }
 
         public string InventoryItemAt(int slot)
@@ -948,6 +978,7 @@ namespace DeadSector
                 slot >= gameplay.Inventory.Stacks.Count)
                 return;
 
+            selectedStackIndex = slot;
             selectedId = gameplay.Inventory.Stacks[slot].id;
             RefreshInventory();
         }
@@ -960,9 +991,24 @@ namespace DeadSector
                 inventory.Weight.ToString("0.0") + " / " +
                 inventory.MaxWeight.ToString("0.0") + " KG";
 
-            if (inventory.Count(selectedId) == 0)
-                selectedId = inventory.Stacks.Count > 0
-                    ? inventory.Stacks[0].id : "";
+            if (selectedStackIndex < 0 ||
+                selectedStackIndex >= inventory.Stacks.Count ||
+                inventory.Stacks[selectedStackIndex].id != selectedId)
+            {
+                selectedStackIndex = -1;
+                for (int i = 0; i < inventory.Stacks.Count; i++)
+                {
+                    if (inventory.Stacks[i].id != selectedId)
+                        continue;
+                    selectedStackIndex = i;
+                    break;
+                }
+                if (selectedStackIndex < 0 && inventory.Stacks.Count > 0)
+                    selectedStackIndex = 0;
+            }
+
+            selectedId = selectedStackIndex >= 0
+                ? inventory.Stacks[selectedStackIndex].id : "";
 
             for (int i = 0; i < bagTexts.Length; i++)
             {
@@ -974,7 +1020,7 @@ namespace DeadSector
                         " ×" + stack.count;
                     bagIcons[i].enabled = true;
                     bagIcons[i].sprite = SectorItemIcons.Get(stack.id);
-                    bagBackgrounds[i].color = selectedId == stack.id
+                    bagBackgrounds[i].color = selectedStackIndex == i
                         ? new Color(.20f, .32f, .24f, 1f) : Cell;
                     bagCategoryStripes[i].color = CategoryColor(item.Kind);
                 }
@@ -1009,7 +1055,9 @@ namespace DeadSector
                 selectedIcon.sprite = SectorItemIcons.Get(selected.Id);
                 selectedDetails.text = selected.Kind + "\n\n" +
                     "WEIGHT   " + selected.Weight.ToString("0.00") + " KG\n" +
-                    "STACK   " + inventory.Count(selected.Id) + "\n\n" +
+                    "STACK   " + (selectedStackIndex >= 0
+                        ? inventory.Stacks[selectedStackIndex].count : 0) +
+                    "\nTOTAL   " + inventory.Count(selected.Id) + "\n\n" +
                     (selected.Kind == SectorItemKind.Melee ||
                      selected.Kind == SectorItemKind.Firearm
                         ? "DAMAGE   " + selected.Damage.ToString("0") :
@@ -1021,6 +1069,10 @@ namespace DeadSector
                     selected.Kind == SectorItemKind.Armor ||
                     selected.Kind == SectorItemKind.Melee ||
                     selected.Kind == SectorItemKind.Firearm;
+                splitButton.interactable = selectedStackIndex >= 0 &&
+                    inventory.UsedSlots < inventory.SlotLimit &&
+                    inventory.Stacks[selectedStackIndex].count > 1 &&
+                    selected.MaxStack > 1;
             }
             else
             {
@@ -1029,6 +1081,7 @@ namespace DeadSector
                 selectedDetails.text = "Choose an item from your backpack.";
                 useButton.interactable = false;
                 equipButton.interactable = false;
+                splitButton.interactable = false;
             }
         }
 
@@ -1187,7 +1240,14 @@ namespace DeadSector
         void OnDestroy()
         {
             if (gameplay != null)
+            {
                 gameplay.ModernUiEnabled = false;
+                if (gameplay.Journal != null)
+                {
+                    gameplay.SetJournalOpen(false);
+                    gameplay.Journal.ModernUiEnabled = false;
+                }
+            }
             if (minimap != null)
                 minimap.SetCanvasHudActive(false);
             if (compass != null)
