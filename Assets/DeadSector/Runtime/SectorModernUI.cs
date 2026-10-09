@@ -1130,7 +1130,7 @@ namespace DeadSector
                     SectorBuildCatalog.CostLabel(plan) + "\n" +
                     SectorBuildCatalog.MissingLabel(gameplay.Inventory, plan) +
                     (construction.CanPlace ? "  /  МОЖНО СТАВИТЬ" :
-                        "  /  МЕСТО ЗАНЯТО ИЛИ НЕТ РЕСУРСОВ");
+                        "  /  " + construction.PlacementIssue);
                 buildingCost.color = construction.CanPlace
                     ? Accent : new Color(.87f, .40f, .36f);
                 buildingHelp.text =
