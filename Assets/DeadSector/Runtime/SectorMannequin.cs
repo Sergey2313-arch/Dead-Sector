@@ -4,7 +4,7 @@ namespace DeadSector
 {
     // Procedural prototype pose controller until Humanoid/Mixamo animation
     // controllers are installed. Weapon type affects relaxed arm/torso pose.
-    public enum SectorCarryPose { Unarmed, Tool, Pistol, Rifle }
+    public enum SectorCarryPose { Unarmed, Tool, Pistol, Rifle, Infected }
 
     public sealed class SectorMannequin : MonoBehaviour
     {
@@ -37,6 +37,10 @@ namespace DeadSector
                 case SectorCarryPose.Rifle:
                     return right ? new Vector3(-62f, -21f, -16f)
                         : new Vector3(-51f, 18f, 26f);
+                case SectorCarryPose.Infected:
+                    // Arms reaching out, asymmetric shoulders, no T-pose.
+                    return right ? new Vector3(-57f, -13f, -13f)
+                        : new Vector3(-48f, 16f, 20f);
                 default:
                     // Natural relaxed posture, not straight out like a T-pose.
                     return right ? new Vector3(9f, 0f, 12f)
