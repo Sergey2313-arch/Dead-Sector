@@ -52,30 +52,70 @@ namespace DeadSector
 #endif
             }
         }
+#if ENABLE_INPUT_SYSTEM
+        // One authoritative key map for the New Input System. All gameplay
+        // hotkeys (including construction) must go through this table.
+        // Previously unmapped B/Q/4/5 silently returned false, so a
+        // crafted build kit could never be placed in PlayMode.
+        static Key MapKey(KeyCode key)
+        {
+            switch (key)
+            {
+                case KeyCode.Space: return Key.Space;
+                case KeyCode.V: return Key.V;
+                case KeyCode.Escape: return Key.Escape;
+                case KeyCode.R: return Key.R;
+                case KeyCode.M: return Key.M;
+                case KeyCode.I: return Key.I;
+                case KeyCode.C: return Key.C;
+                case KeyCode.J: return Key.J;
+                case KeyCode.B: return Key.B;
+                case KeyCode.Q: return Key.Q;
+                case KeyCode.E: return Key.E;
+                case KeyCode.Alpha1: return Key.Digit1;
+                case KeyCode.Alpha2: return Key.Digit2;
+                case KeyCode.Alpha3: return Key.Digit3;
+                case KeyCode.Alpha4: return Key.Digit4;
+                case KeyCode.Alpha5: return Key.Digit5;
+                case KeyCode.F3: return Key.F3;
+                case KeyCode.F5: return Key.F5;
+                case KeyCode.F9: return Key.F9;
+                default: return Key.None;
+            }
+        }
+#endif
+
+        // Testable mapping probe: no keyboard device required in EditMode.
+        public static bool HasNewInputBinding(KeyCode key)
+        {
+#if ENABLE_INPUT_SYSTEM
+            return MapKey(key) != Key.None;
+#else
+            // Legacy Input.GetKeyDown accepts these KeyCodes natively.
+            switch (key)
+            {
+                case KeyCode.B:
+                case KeyCode.Q:
+                case KeyCode.E:
+                case KeyCode.Alpha1:
+                case KeyCode.Alpha2:
+                case KeyCode.Alpha3:
+                case KeyCode.Alpha4:
+                case KeyCode.Alpha5:
+                    return true;
+                default:
+                    return false;
+            }
+#endif
+        }
+
         public static bool Pressed(KeyCode key)
         {
 #if ENABLE_INPUT_SYSTEM
-            var k = Keyboard.current;
-            if (k == null) return false;
-            switch (key)
-            {
-                case KeyCode.Space: return k.spaceKey.wasPressedThisFrame;
-                case KeyCode.V: return k.vKey.wasPressedThisFrame;
-                case KeyCode.Escape: return k.escapeKey.wasPressedThisFrame;
-                case KeyCode.R: return k.rKey.wasPressedThisFrame;
-                case KeyCode.M: return k.mKey.wasPressedThisFrame;
-                case KeyCode.I: return k.iKey.wasPressedThisFrame;
-                case KeyCode.C: return k.cKey.wasPressedThisFrame;
-                case KeyCode.J: return k.jKey.wasPressedThisFrame;
-                case KeyCode.E: return k.eKey.wasPressedThisFrame;
-                case KeyCode.Alpha1: return k.digit1Key.wasPressedThisFrame;
-                case KeyCode.Alpha2: return k.digit2Key.wasPressedThisFrame;
-                case KeyCode.Alpha3: return k.digit3Key.wasPressedThisFrame;
-                case KeyCode.F3: return k.f3Key.wasPressedThisFrame;
-                case KeyCode.F5: return k.f5Key.wasPressedThisFrame;
-                case KeyCode.F9: return k.f9Key.wasPressedThisFrame;
-                default: return false;
-            }
+            Keyboard keyboard = Keyboard.current;
+            if (keyboard == null) return false;
+            Key mapped = MapKey(key);
+            return mapped != Key.None && keyboard[mapped].wasPressedThisFrame;
 #else
             return Input.GetKeyDown(key);
 #endif
