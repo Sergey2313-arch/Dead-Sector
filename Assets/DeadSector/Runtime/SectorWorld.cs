@@ -305,7 +305,17 @@ namespace DeadSector
             };
 
             int[,] density = new int[GrassResolution, GrassResolution];
-            float stride = SectorLayout.TileSize / (float)GrassResolution;
+            // Expensive full-world road/water queries are sampled once per
+            // 16m coarse cell, then reused by sixteen adjacent detail cells.
+            const int coarseResolution = 64;
+            bool[,] grow = new bool[coarseResolution, coarseResolution];
+            float coarseStride = SectorLayout.TileSize / (float)coarseResolution;
+            for (int z = 0; z < coarseResolution; z++)
+                for (int x = 0; x < coarseResolution; x++)
+                    grow[z, x] = CanGrowGrass(
+                        origin.x + (x + .5f) * coarseStride,
+                        origin.z + (z + .5f) * coarseStride);
+
             for (int z = 0; z < GrassResolution; z++)
             {
                 for (int x = 0; x < GrassResolution; x++)
@@ -319,9 +329,7 @@ namespace DeadSector
                     if ((hash & 3u) == 0u)
                         continue;
 
-                    float wx = origin.x + (x + .5f) * stride;
-                    float wz = origin.z + (z + .5f) * stride;
-                    if (!CanGrowGrass(wx, wz))
+                    if (!grow[z / 4, x / 4])
                         continue;
 
                     density[z, x] = (hash & 4u) == 0u ? 1 : 2;
