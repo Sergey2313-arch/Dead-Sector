@@ -15,7 +15,8 @@ namespace DeadSector
             { "stick", "Сухая палка" }, { "plant_fiber", "Растительные волокна" },
             { "cotton", "Хлопок" }, { "cord", "Верёвка" },
             { "knife", "Полевой нож" }, { "stone_knife", "Каменный нож" },
-            { "stone_axe", "Каменный топор" }, { "wood_club", "Дубина" },
+            { "stone_axe", "Каменный топор" },
+            { "stone_pickaxe", "Каменная кирка" }, { "wood_club", "Дубина" },
             { "axe", "Топорик" }, { "spear", "Самодельное копьё" },
             { "torch", "Факел" }, { "pistol", "Пистолет" },
             { "rifle", "Винтовка" }, { "9mm", "Патроны 9 мм" },
@@ -33,7 +34,9 @@ namespace DeadSector
         static readonly Dictionary<string, string> Recipes = new Dictionary<string, string>(StringComparer.Ordinal)
         {
             { "cord", "Скрутить верёвку" }, { "stone_knife", "Каменный нож" },
-            { "stone_axe", "Каменный топор" }, { "wood_club", "Деревянная дубина" },
+            { "stone_axe", "Каменный топор" },
+            { "stone_pickaxe", "Каменная кирка" },
+            { "wood_club", "Деревянная дубина" },
             { "spear", "Деревянное копьё" }, { "torch", "Факел" },
             { "wood_helmet", "Деревянный шлем" },
             { "wood_vest", "Деревянный нагрудник" },
