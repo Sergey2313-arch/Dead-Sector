@@ -59,6 +59,11 @@ namespace DeadSector
         const float InteractRange = 3.5f;
         public SectorPlayer player;
 
+        // Called before a harvested node is destroyed. The gameplay layer
+        // persists uncarried material in an on-ground loot cache. Returning
+        // false leaves the node and inventory untouched.
+        public Func<SectorResourceNode, List<SectorItemStack>, bool> StoreOverflow;
+
         readonly Dictionary<string, SectorResourceNode> active =
             new Dictionary<string, SectorResourceNode>(StringComparer.Ordinal);
         readonly HashSet<string> harvested =
@@ -386,9 +391,78 @@ namespace DeadSector
                     "Осталось ударов: " + remaining;
                 return true;
             }
-            if (!HarvestInternal(node, inventory, out label))
-                warning = "Не хватает свободного места в рюкзаке";
+            if (!HarvestToolNode(node, inventory, out label))
+                warning = "Не удалось оставить добычу на земле";
             return true;
+        }
+
+        // Tree/ore harvest is not blocked when the bag cannot hold the
+        // entire yield. Store extra in a persistent ground cache and collect
+        // only what fits. All-or-nothing E pickup remains unchanged.
+        public bool HarvestToolNode(
+            SectorResourceNode node, SectorInventory inventory,
+            out string label)
+        {
+            label = string.Empty;
+            if (node == null || inventory == null ||
+                !RequiresTool(node.Type) ||
+                (!active.ContainsKey(node.Id) && !worldTrees.ContainsKey(node.Id)) ||
+                harvested.Contains(node.Id))
+                return false;
+
+            var trial = new SectorInventory(inventory.SlotLimit, inventory.MaxWeight);
+            trial.Import(inventory.Export());
+            var leftovers = new List<SectorItemStack>(2);
+            int primaryFit = AddAsMuchAsFits(trial, node.ItemId, node.Count);
+            if (primaryFit < node.Count)
+                leftovers.Add(new SectorItemStack(
+                    node.ItemId, node.Count - primaryFit));
+            int secondaryFit = 0;
+            if (!string.IsNullOrEmpty(node.SecondaryId) && node.SecondaryCount > 0)
+            {
+                secondaryFit = AddAsMuchAsFits(
+                    trial, node.SecondaryId, node.SecondaryCount);
+                if (secondaryFit < node.SecondaryCount)
+                    leftovers.Add(new SectorItemStack(
+                        node.SecondaryId, node.SecondaryCount - secondaryFit));
+            }
+
+            // Commit ground cache before mutating player's inventory.
+            if (leftovers.Count > 0 &&
+                (StoreOverflow == null || !StoreOverflow(node, leftovers)))
+                return false;
+
+            if (primaryFit > 0)
+                inventory.Add(node.ItemId, primaryFit);
+            if (secondaryFit > 0)
+                inventory.Add(node.SecondaryId, secondaryFit);
+
+            label = primaryFit + secondaryFit > 0
+                ? SectorItems.Get(node.ItemId).Label + " ×" + primaryFit
+                : "Добыча оставлена на земле";
+            if (leftovers.Count > 0)
+                label += " | На земле: " +
+                    SectorItems.Get(leftovers[0].id).Label +
+                    " ×" + leftovers[0].count;
+
+            harvested.Add(node.Id);
+            active.Remove(node.Id);
+            worldTrees.Remove(node.Id);
+            Destroy(node.gameObject);
+            return true;
+        }
+
+        static int AddAsMuchAsFits(
+            SectorInventory inventory, string itemId, int requested)
+        {
+            int count = 0;
+            while (count < requested && inventory.CanAdd(itemId, 1))
+            {
+                if (!inventory.Add(itemId, 1))
+                    break;
+                count++;
+            }
+            return count;
         }
 
         public bool Harvest(
