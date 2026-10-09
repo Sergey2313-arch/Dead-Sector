@@ -27,6 +27,9 @@ namespace DeadSector
 
         public bool Ready { get; set; }
         public bool InputBlockedByUI { get; set; }
+        // Modern main/pause menu owns Escape and pointer lock.
+        // Remains false in the legacy IMGUI fallback.
+        public bool EscapeHandledByUi { get; set; }
         public float Health { get; private set; } = 100f;
         public float Speed { get; private set; }
         public bool IsSprinting { get; private set; }
@@ -93,13 +96,14 @@ namespace DeadSector
 
         void Update()
         {
-            if (SectorInput.Pressed(KeyCode.Escape))
+            if (!EscapeHandledByUi &&
+                SectorInput.Pressed(KeyCode.Escape))
                 SetCursor(false);
 
             if (SectorInput.Click && Health > 0 && !InputBlockedByUI)
                 SetCursor(true);
 
-            if (SectorInput.Pressed(KeyCode.R))
+            if (SectorInput.Pressed(KeyCode.R) && !InputBlockedByUI)
                 Respawn();
 
             if (!Ready || Health <= 0 || InputBlockedByUI ||
