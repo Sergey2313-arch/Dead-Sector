@@ -139,6 +139,59 @@ namespace DeadSector.Tests
         }
 
         [Test]
+        public void RoofHasTwoSlopesAndCampfireEmitsLight()
+        {
+            GameObject roofRoot = new GameObject("TestRoof");
+            GameObject campfireRoot = new GameObject("TestCampfire");
+            Material surface = null;
+            try
+            {
+                Shader shader = Shader.Find("Universal Render Pipeline/Lit");
+                if (shader == null) shader = Shader.Find("Standard");
+                Assert.IsNotNull(shader);
+                surface = new Material(shader);
+                SectorBuildSpecification roofPlan = SectorBuildCatalog.At(
+                    (int)SectorBuildKind.Roof);
+                var roof = roofRoot.AddComponent<SectorBuildPiece>();
+                roof.Configure(new SectorBuildSnapshot
+                {
+                    id = "roof_t",
+                    kind = SectorBuildKind.Roof,
+                    health = roofPlan.Health,
+                    position = Vector3.zero
+                }, surface, surface);
+                Assert.IsNotNull(roofRoot.transform.Find("Roof_Slope_Left"));
+                Assert.IsNotNull(roofRoot.transform.Find("Roof_Slope_Right"));
+                Assert.IsNotNull(roofRoot.transform.Find("Ridge_Beam"));
+
+                SectorBuildSpecification firePlan = SectorBuildCatalog.At(
+                    (int)SectorBuildKind.Campfire);
+                var fire = campfireRoot.AddComponent<SectorBuildPiece>();
+                fire.Configure(new SectorBuildSnapshot
+                {
+                    id = "fire_t",
+                    kind = SectorBuildKind.Campfire,
+                    health = firePlan.Health,
+                    position = new Vector3(7f, 0f, 0f)
+                }, surface, surface);
+                Transform core = campfireRoot.transform.Find("Fire_Core");
+                Assert.IsNotNull(core);
+                Light light = core.GetComponent<Light>();
+                Assert.IsNotNull(light);
+                Assert.AreEqual(LightType.Point, light.type);
+                Assert.Greater(light.range, 3f);
+                Assert.AreEqual(LightShadows.None, light.shadows);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(roofRoot);
+                UnityEngine.Object.DestroyImmediate(campfireRoot);
+                if (surface != null)
+                    UnityEngine.Object.DestroyImmediate(surface);
+            }
+        }
+
+        [Test]
         public void RoofAndCampfireHaveSeparateStableBlueprintIds()
         {
             SectorBuildSpecification roof = SectorBuildCatalog.At(
