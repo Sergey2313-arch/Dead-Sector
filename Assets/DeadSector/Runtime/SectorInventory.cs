@@ -25,7 +25,7 @@ namespace DeadSector
             float weight, int maxStack, float hunger = 0f,
             float thirst = 0f, float health = 0f, float damage = 0f)
         {
-            Id = id; Label = label; Kind = kind;
+            Id = id; Label = SectorRussian.ItemName(id, label); Kind = kind;
             Weight = weight; MaxStack = maxStack;
             HungerRestore = hunger; ThirstRestore = thirst;
             HealthRestore = health; Damage = damage;
