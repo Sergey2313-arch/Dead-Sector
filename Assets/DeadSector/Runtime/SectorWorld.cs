@@ -29,8 +29,12 @@ namespace DeadSector
     {
         // Metres. A standing player is ~1.78m; homes should read as
         // single-storey buildings, not warehouse-height boxes.
-        public const float ResidentialDoorWidth = 1.65f;
-        public const float ResidentialDoorHeight = 2.22f;
+        // A normal entrance: 1.15m wide and 2.12m CLEAR ABOVE THE FINISHED FLOOR.
+        // The old code measured the opening from terrain zero and lost 42cm
+        // to the raised floor, leaving a 1.8m crawl-sized opening.
+        public const float ResidentialDoorWidth = 1.15f;
+        public const float ResidentialDoorHeight = 2.12f;
+        public const float ResidentialFloorTop = .42f;
         public const float ResidentialStepTop = .20f;
         public const float ResidentialPorchTop = .44f;
         public SectorPlayer player;
@@ -465,6 +469,7 @@ namespace DeadSector
             const float wall = .28f;
             const float doorWidth = ResidentialDoorWidth;
             const float doorHeight = ResidentialDoorHeight;
+            float doorLintelY = ResidentialFloorTop + doorHeight;
             float frontZ = -depth * .5f;
             float backZ = depth * .5f;
 
@@ -530,9 +535,9 @@ namespace DeadSector
                 "Door_Lintel",
                 new Vector3(
                     0,
-                    doorHeight + (height - doorHeight) * .5f,
+                    doorLintelY + (height - doorLintelY) * .5f,
                     frontZ),
-                new Vector3(doorWidth, height - doorHeight, wall),
+                new Vector3(doorWidth, height - doorLintelY, wall),
                 wallColor);
 
             // A real hinged door with a collider; E opens/closes it.
@@ -549,7 +554,7 @@ namespace DeadSector
             var leaf = Art.Shape(
                 hinge.transform, "FrontDoor_Slab", PrimitiveType.Cube,
                 new Vector3(-doorWidth * .5f + .08f,
-                    doorHeight * .5f + .04f, 0f),
+                    ResidentialPorchTop + doorHeight * .5f, 0f),
                 new Vector3(doorWidth - .16f, doorHeight - .08f, .10f),
                 woodColor);
 
