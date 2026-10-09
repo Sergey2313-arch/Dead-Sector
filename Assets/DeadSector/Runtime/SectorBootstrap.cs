@@ -261,36 +261,36 @@ namespace DeadSector
             if (!world.Ready)
                 GUI.Box(new Rect(Screen.width / 2 - 140,
                     Screen.height / 2 - 25, 280, 50),
-                    "Preparing map, please wait...");
+                    "Создаём карту, подождите...");
 
             if (player.Health <= 0 &&
                 (!useModernUi ||
                  FindFirstObjectByType<SectorDeathUI>() == null))
                 GUI.Box(new Rect(Screen.width / 2 - 140,
                     Screen.height / 2 - 25, 280, 50),
-                    "You died. Press R to respawn.");
+                    "Вы погибли. Нажмите R для возрождения.");
 
             if (!debugOverlay)
                 return;
 
             // Keep the top of the screen free for the azimuth compass.
             float hudY = Mathf.Max(12f, Screen.height - 235f);
-            GUI.Box(new Rect(12, hudY, 370, 222), "DEAD SECTOR / 8 x 8 km prototype");
-            GUI.Label(new Rect(24, hudY + 30f, 325, 24), "WASD | Shift | Space | V view | M map | I inventory");
-            GUI.Label(new Rect(24, hudY + 53f, 325, 24), "E gather | LMB weak/RMB strong | C craft | J journal");
-            GUI.Label(new Rect(24, hudY + 76f, 325, 24), "HP " + player.Health.ToString("0") + " | Terrain: " + world.LoadedTiles + "/64 | Zombies: " + navigation.ZombieCount);
-            GUI.Label(new Rect(24, hudY + 99f, 325, 24), "World: " + world.Status + " | AI: " + navigation.Status);
-            GUI.Label(new Rect(24, hudY + 122f, 325, 24), "Position: " + player.transform.position.ToString("F0"));
+            GUI.Box(new Rect(12, hudY, 370, 222), "DEAD SECTOR / прототип 8 × 8 км");
+            GUI.Label(new Rect(24, hudY + 30f, 325, 24), "WASD ходьба | Shift бег | Space прыжок | V вид");
+            GUI.Label(new Rect(24, hudY + 53f, 325, 24), "E собрать | ЛКМ/ПКМ удар | C крафт | J журнал");
+            GUI.Label(new Rect(24, hudY + 76f, 325, 24), "Здоровье " + player.Health.ToString("0") + " | Карта: " + world.LoadedTiles + "/64 | Zombies: " + navigation.ZombieCount);
+            GUI.Label(new Rect(24, hudY + 99f, 325, 24), "Мир: " + world.Status + " | ИИ: " + navigation.Status);
+            GUI.Label(new Rect(24, hudY + 122f, 325, 24), "Позиция: " + player.transform.position.ToString("F0"));
             GUI.Label(new Rect(24, hudY + 145f, 325, 24),
-                "Anim: " + player.AnimationState +
-                " | Grounded: " + player.IsGrounded);
+                "Анимация: " + player.AnimationState +
+                " | На земле: " + player.IsGrounded);
             GUI.Label(new Rect(24, hudY + 167f, 345, 24),
-                "Feet Y: " + player.transform.position.y.ToString("F2") +
-                " | Terrain Y: " + player.TerrainUnderPlayer.ToString("F2") +
-                " | Sprint: " + (player.IsSprinting ? "ON" : "OFF"));
+                "Ноги Y: " + player.transform.position.y.ToString("F2") +
+                " | Земля Y: " + player.TerrainUnderPlayer.ToString("F2") +
+                " | Бег: " + (player.IsSprinting ? "ДА" : "НЕТ"));
             GUI.Label(new Rect(24, hudY + 190f, 335, 24),
                 "FPS: " + displayedFps.ToString("F0") +
-                " | Frame: " + displayedFrameMs.ToString("F1") + " ms");
+                " | Кадр: " + displayedFrameMs.ToString("F1") + " мс");
 
         }
 
