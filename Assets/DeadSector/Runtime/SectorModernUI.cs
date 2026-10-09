@@ -111,13 +111,14 @@ namespace DeadSector
             uiFont = Font.CreateDynamicFontFromOSFont(
                 new[] { "Segoe UI", "Arial", "Liberation Sans" }, 16);
 
-            canvasObject = new GameObject("DeadSector_UI_Canvas");
+            canvasObject = new GameObject("DeadSector_UI_Canvas",
+                typeof(RectTransform), typeof(Canvas),
+                typeof(CanvasScaler), typeof(GraphicRaycaster));
             canvasObject.transform.SetParent(transform, false);
-            Canvas canvas = canvasObject.AddComponent<Canvas>();
+            Canvas canvas = canvasObject.GetComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
             canvas.sortingOrder = 300;
-            canvasObject.AddComponent<GraphicRaycaster>();
-            CanvasScaler scaler = canvasObject.AddComponent<CanvasScaler>();
+            CanvasScaler scaler = canvasObject.GetComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(1600, 900);
             scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
@@ -125,8 +126,6 @@ namespace DeadSector
             EnsureEventSystem();
 
             RectTransform root = canvasObject.GetComponent<RectTransform>();
-            if (root == null)
-                root = canvasObject.AddComponent<RectTransform>();
 
             BuildHud(root);
             BuildModal(root);
