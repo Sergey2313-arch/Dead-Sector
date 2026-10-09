@@ -258,16 +258,20 @@ namespace DeadSector
 
                 if (biome == SectorBiome.ConiferForest)
                 {
-                    // Overlapping tapered crowns read as conifer rather than
-                    // an enormous featureless black sphere at night.
                     for (int crownIndex = 0; crownIndex < 3; crownIndex++)
                     {
                         float tier = crownIndex;
-                        Art.Shape(tree.transform,
-                            "Pine_Boughs_" + crownIndex, PrimitiveType.Cylinder,
-                            Vector3.up * (size * (.52f + tier * .17f)),
-                            new Vector3(1.8f - tier * .42f, .77f, 1.8f - tier * .42f),
-                            new Color(.11f + tier * .015f, .24f, .15f), false);
+                        GameObject crown = new GameObject("Pine_Boughs_" + crownIndex);
+                        crown.transform.SetParent(tree.transform, false);
+                        crown.transform.localPosition =
+                            Vector3.up * (size * (.36f + tier * .17f));
+                        crown.transform.localScale = new Vector3(
+                            size * (.58f - tier * .13f),
+                            size * (.40f - tier * .065f),
+                            size * (.58f - tier * .13f));
+                        crown.AddComponent<MeshFilter>().sharedMesh = pineConeMesh;
+                        crown.AddComponent<MeshRenderer>().sharedMaterial =
+                            Art.Material(new Color(.11f + tier * .014f, .24f, .15f));
                     }
                 }
                 else
