@@ -30,7 +30,8 @@ namespace DeadSector
         {
             Id = id;
             Name = SectorRussian.RecipeName(id, name);
-            Tier = id.StartsWith("cotton_") || id == "cloth_cotton" ? 2 :
+            Tier = id.StartsWith("build_", StringComparison.Ordinal) ? 3 :
+                id.StartsWith("cotton_") || id == "cloth_cotton" ? 2 :
                 id.StartsWith("wood_") || id == "hatchet" ? 1 : 0;
             OutputId = outputId;
             OutputCount = outputCount;
@@ -44,6 +45,24 @@ namespace DeadSector
         // spin fiber into bindings, then unlock wooden or cotton gear.
         static readonly SectorRecipe[] RecipesInternal =
         {
+            // Construction is deliberately FIRST in the scroll list.
+            // Prices mirror SectorBuildCatalog, allowing a kit to be
+            // assembled via C before installing it in B.
+            new SectorRecipe("build_foundation", "Foundation Kit", "build_foundation", 1,
+                new SectorIngredient("wood", 4),
+                new SectorIngredient("stick", 2)),
+            new SectorRecipe("build_wall", "Wall Kit", "build_wall", 1,
+                new SectorIngredient("wood", 5),
+                new SectorIngredient("stick", 2)),
+            new SectorRecipe("build_barricade", "Barricade Kit", "build_barricade", 1,
+                new SectorIngredient("wood", 3),
+                new SectorIngredient("stone", 2)),
+            new SectorRecipe("build_storage", "Storage Kit", "build_storage", 1,
+                new SectorIngredient("wood", 3),
+                new SectorIngredient("stick", 1)),
+            new SectorRecipe("build_door", "Door Kit", "build_door", 1,
+                new SectorIngredient("wood", 4),
+                new SectorIngredient("stick", 2)),
             new SectorRecipe("cord", "Twist Plant Cord", "cord", 1,
                 new SectorIngredient("plant_fiber", 3)),
             new SectorRecipe("stone_knife", "Stone Knife", "stone_knife", 1,
