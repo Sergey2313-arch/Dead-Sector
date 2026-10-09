@@ -10,7 +10,9 @@ namespace DeadSector
         Wall,
         Barricade,
         Storage,
-        Door
+        Door,
+        Roof,
+        Campfire
     }
 
     [Serializable]
@@ -77,7 +79,15 @@ namespace DeadSector
             new SectorBuildSpecification(
                 SectorBuildKind.Door, "Дверь на петлях",
                 new Vector3(3f, 2.6f, .4f), 120f,
-                new[] { "wood", "stick" }, new[] { 4, 2 })
+                new[] { "wood", "stick" }, new[] { 4, 2 }),
+            new SectorBuildSpecification(
+                SectorBuildKind.Roof, "Скатная крыша",
+                new Vector3(3f, 1.0f, 3f), 115f,
+                new[] { "wood", "stick" }, new[] { 5, 2 }),
+            new SectorBuildSpecification(
+                SectorBuildKind.Campfire, "Костёр",
+                new Vector3(1.3f, .7f, 1.3f), 65f,
+                new[] { "stone", "stick" }, new[] { 4, 4 })
         };
 
         public static int Count => Plans.Length;
@@ -97,6 +107,8 @@ namespace DeadSector
                 case SectorBuildKind.Barricade: return "build_barricade";
                 case SectorBuildKind.Storage: return "build_storage";
                 case SectorBuildKind.Door: return "build_door";
+                case SectorBuildKind.Roof: return "build_roof";
+                case SectorBuildKind.Campfire: return "build_campfire";
                 default: return "";
             }
         }
