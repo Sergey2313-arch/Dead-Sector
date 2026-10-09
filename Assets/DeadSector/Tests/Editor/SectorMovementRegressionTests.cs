@@ -79,6 +79,29 @@ namespace DeadSector.Tests
         }
 
         [Test]
+        public void TurnDampingIsSmoothAndFrameRateIndependent()
+        {
+            float oneStep = SectorPlayer.TurnBlend(24f, 1f / 60f);
+            float halfStep = SectorPlayer.TurnBlend(24f, 1f / 120f);
+            float twoHalfSteps = 1f - (1f - halfStep) * (1f - halfStep);
+
+            Assert.Greater(oneStep, 0f);
+            Assert.Less(oneStep, 1f, "Turning should not snap at normal frame rates.");
+            Assert.AreEqual(oneStep, twoHalfSteps, .0001f);
+            Assert.AreEqual(0f, SectorPlayer.TurnBlend(24f, 0f));
+            Assert.AreEqual(1f, SectorPlayer.TurnBlend(0f, .016f));
+        }
+
+        [Test]
+        public void SmoothedYawUsesShortestPathAcrossZero()
+        {
+            float yaw = Mathf.LerpAngle(359f, 1f,
+                SectorPlayer.TurnBlend(24f, 1f / 60f));
+            Assert.Less(Mathf.DeltaAngle(359f, yaw), 2.1f);
+            Assert.Greater(Mathf.DeltaAngle(359f, yaw), 0f);
+        }
+
+        [Test]
         public void SprintLockRequiresFoodAndWater()
         {
             var obj = new GameObject("SprintNeedsTests");
