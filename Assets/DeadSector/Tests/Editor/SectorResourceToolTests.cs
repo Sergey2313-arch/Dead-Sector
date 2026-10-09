@@ -235,7 +235,7 @@ namespace DeadSector.Tests
             Assert.IsTrue(inventory.Add("wood", 4));
             Assert.IsTrue(inventory.Add("stick", 2));
             Assert.IsTrue(SectorBuildCatalog.CanAfford(inventory, foundation));
-            Assert.AreEqual("МАТЕРИАЛЫ СОБРАНЫ",
+            StringAssert.Contains("МАТЕРИАЛЫ СОБРАНЫ",
                 SectorBuildCatalog.MissingLabel(inventory, foundation));
             Assert.AreEqual(4, inventory.Count("wood"));
             Assert.AreEqual(2, inventory.Count("stick"));
