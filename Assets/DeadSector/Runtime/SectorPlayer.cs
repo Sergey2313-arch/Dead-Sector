@@ -41,6 +41,8 @@ namespace DeadSector
         public string AnimationState { get; private set; } = "None";
 
         CharacterController body;
+        SectorSurvival cachedSurvival;
+        Terrain cachedGroundTerrain;
         SectorMannequin rig;
         Animator animator;
         Transform headBone;
@@ -69,6 +71,7 @@ namespace DeadSector
         void Awake()
         {
             body = GetComponent<CharacterController>();
+            cachedSurvival = GetComponent<SectorSurvival>();
             BindVisual(visual);
             ResetLookSmoothing();
             SetCursor(true);
@@ -160,7 +163,11 @@ namespace DeadSector
             if (SectorInput.Pressed(KeyCode.Space))
                 jumpAt = Time.time;
 
-            SectorSurvival needs = GetComponent<SectorSurvival>();
+            // SectorSurvival may be added by bootstrap after SectorPlayer.Awake.
+            // Once found, reuse it instead of GetComponent every frame.
+            if (cachedSurvival == null)
+                cachedSurvival = GetComponent<SectorSurvival>();
+            SectorSurvival needs = cachedSurvival;
             if (Time.time - groundedAt < .12f && Time.time - jumpAt < .12f &&
                 (needs == null || needs.CanJump))
             {
@@ -351,6 +358,7 @@ namespace DeadSector
                 body = GetComponent<CharacterController>();
 
             body.enabled = false;
+            cachedGroundTerrain = null;
             Vector3 spawn = SectorLayout.Spawn;
             spawn.y = GroundHeightAt(spawn) + .16f;
             transform.position = spawn;
@@ -377,27 +385,47 @@ namespace DeadSector
         // Resolve against the terrain actually generated/loaded in the
         // scene. This avoids placing the controller under an altered terrain
         // tile even when the static design height differs slightly.
-        static float GroundHeightAt(Vector3 position)
+        float GroundHeightAt(Vector3 position)
         {
-            // Prefer the *rendered* heightmap. The analytic function may
-            // differ by a fraction of a metre between sampled vertices.
-            // Taking max(analytic, sampled) made the controller float and
-            // encouraged repeated jump/grounding corrections.
-            foreach (Terrain terrain in Terrain.activeTerrains)
+            // The camera, body and rescue logic query ground height several
+            // times per frame. Reuse the current tile until we cross its bounds.
+            // This also avoids repeatedly obtaining Unity's activeTerrain array.
+            Terrain terrain = cachedGroundTerrain;
+            if (terrain == null || !terrain.isActiveAndEnabled ||
+                terrain.terrainData == null ||
+                !IsInsideTerrainXZ(terrain.transform.position,
+                    terrain.terrainData.size, position))
             {
-                if (terrain == null || terrain.terrainData == null)
-                    continue;
+                cachedGroundTerrain = null;
+                foreach (Terrain candidate in Terrain.activeTerrains)
+                {
+                    if (candidate == null || !candidate.isActiveAndEnabled ||
+                        candidate.terrainData == null)
+                        continue;
+                    if (!IsInsideTerrainXZ(candidate.transform.position,
+                            candidate.terrainData.size, position))
+                        continue;
 
-                Vector3 origin = terrain.transform.position;
-                Vector3 size = terrain.terrainData.size;
-                if (position.x < origin.x || position.x > origin.x + size.x ||
-                    position.z < origin.z || position.z > origin.z + size.z)
-                    continue;
-
-                return terrain.SampleHeight(position) + origin.y;
+                    cachedGroundTerrain = candidate;
+                    break;
+                }
+                terrain = cachedGroundTerrain;
             }
 
+            if (terrain != null)
+                return terrain.SampleHeight(position) + terrain.transform.position.y;
+
+            // No streamed terrain at this position: use the analytic fallback.
             return SectorLayout.Height(position.x, position.z);
+        }
+
+        public static bool IsInsideTerrainXZ(
+            Vector3 tileOrigin, Vector3 tileSize, Vector3 point)
+        {
+            return point.x >= tileOrigin.x &&
+                   point.x <= tileOrigin.x + tileSize.x &&
+                   point.z >= tileOrigin.z &&
+                   point.z <= tileOrigin.z + tileSize.z;
         }
 
         // Public deterministic helper so damping is regression-testable.
@@ -654,6 +682,7 @@ namespace DeadSector
 
             body.enabled = false;
             transform.position = position;
+            cachedGroundTerrain = null;
             body.enabled = true;
             vertical = -2f;
             cameraInitialized = false;
