@@ -11,6 +11,7 @@ namespace DeadSector
     {
         SectorGameplay gameplay;
         SectorPlayer player;
+        SectorMenuUI frontEnd;
         GameObject root;
         Button restoreButton;
         Text status;
@@ -27,6 +28,7 @@ namespace DeadSector
 
             gameplay = source;
             player = avatar;
+            frontEnd = FindFirstObjectByType<SectorMenuUI>();
             try
             {
                 Build();
@@ -119,7 +121,10 @@ namespace DeadSector
                 !player.Ready || !gameplay.HasLoadedInitialSave)
                 return;
 
-            if (!visible && player.Health <= 0f)
+            // On startup, let the player choose another save profile
+            // before showing the death report for a dead legacy checkpoint.
+            if (!visible && player.Health <= 0f &&
+                (frontEnd == null || !frontEnd.IsOpen))
                 ShowDeath();
         }
 
