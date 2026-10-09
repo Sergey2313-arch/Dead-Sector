@@ -440,11 +440,23 @@ namespace DeadSector
         public static void Release()
         {
             foreach (Sprite sprite in Sprites.Values)
-                if (sprite != null) UnityEngine.Object.Destroy(sprite);
+            {
+                if (sprite == null) continue;
+                if (Application.isPlaying)
+                    UnityEngine.Object.Destroy(sprite);
+                else
+                    UnityEngine.Object.DestroyImmediate(sprite);
+            }
             Sprites.Clear();
 
             foreach (Texture2D texture in Textures.Values)
-                if (texture != null) UnityEngine.Object.Destroy(texture);
+            {
+                if (texture == null) continue;
+                if (Application.isPlaying)
+                    UnityEngine.Object.Destroy(texture);
+                else
+                    UnityEngine.Object.DestroyImmediate(texture);
+            }
             Textures.Clear();
         }
     }
