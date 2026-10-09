@@ -874,6 +874,7 @@ namespace DeadSector
             if (firearm)
             {
                 EquipmentVisuals?.PlayMuzzleFlash();
+                Sounds?.PlayGunshot();
                 player.ApplyCombatRecoil(id == "rifle" ? 1.0f : .75f);
             }
             else
