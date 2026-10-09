@@ -33,6 +33,36 @@ namespace DeadSector
                 return;
             }
 
+            // Interior loot is location-themed and persistent. Once the
+            // cabinet is emptied, saved contents suppress re-rolling.
+            if (containerId.StartsWith("interior_", System.StringComparison.Ordinal))
+            {
+                if (containerId.Contains("Clinic"))
+                {
+                    AddInitial(new SectorItemStack("bandage", 3));
+                    AddInitial(new SectorItemStack("medkit", 1));
+                    AddInitial(new SectorItemStack("cloth", 2));
+                }
+                else if (containerId.Contains("Garage") ||
+                         containerId.Contains("Factory") ||
+                         containerId.Contains("Industrial"))
+                {
+                    AddInitial(new SectorItemStack("scrap", 4));
+                    AddInitial(new SectorItemStack("stone_pickaxe", 1));
+                }
+                else if (containerId.Contains("FuelShop"))
+                {
+                    AddInitial(new SectorItemStack("food", 3));
+                    AddInitial(new SectorItemStack("water", 2));
+                }
+                else
+                {
+                    AddInitial(new SectorItemStack("food", 1));
+                    AddInitial(new SectorItemStack("cloth", 2));
+                }
+                return;
+            }
+
             // Guaranteed equipment discoveries to exercise each weapon slot.
             if (containerId == "poi_factory")
             {
