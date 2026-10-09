@@ -52,6 +52,7 @@ namespace DeadSector
         Text buildingTitle;
         Text buildingCost;
         Text buildingHelp;
+        Text buildingCatalog;
         Text weatherReadout;
 
         readonly Image[] meterFill = new Image[4];
@@ -281,20 +282,28 @@ namespace DeadSector
             buildingRoot = Rect(root, "Construction_Control",
                 new Vector2(0f, 0f), new Vector2(0f, 0f),
                 new Vector2(0f, 0f), new Vector2(24f, 115f),
-                new Vector2(402f, 137f)).gameObject;
+                new Vector2(490f, 270f)).gameObject;
             Paint(buildingRoot.GetComponent<RectTransform>(),
                 new Color(.02f, .03f, .028f, .92f));
             RectAt(buildingRoot.transform, "Accent", 0f, 0f,
-                4f, 137f, Accent);
+                4f, 270f, Accent);
             buildingTitle = Label(buildingRoot.transform,
                 "ConstructionTitle", "СТРОИТЕЛЬСТВО",
-                17f, 9f, 365f, 28f, 16, White, FontStyle.Bold);
+                17f, 9f, 450f, 28f, 16, White, FontStyle.Bold);
             buildingCost = Label(buildingRoot.transform,
-                "Requirements", "", 17f, 43f,
-                374f, 40f, 12, Accent);
+                "Requirements", "", 17f, 42f,
+                457f, 66f, 12, Accent);
             buildingHelp = Label(buildingRoot.transform,
-                "Controls", "", 17f, 89f,
-                372f, 37f, 11, Muted);
+                "Controls", "", 17f, 111f,
+                459f, 34f, 11, Muted);
+            buildingCatalog = Label(buildingRoot.transform,
+                "FivePlans", "", 17f, 153f,
+                453f, 107f, 12, White, FontStyle.Bold);
+            buildingCatalog.text =
+                "1  ОСНОВАНИЕ       2  СТЕНА       3  БАРРИКАДА\\n" +
+                "4  ХРАНИЛИЩЕ         5  ДВЕРЬ\\n" +
+                "Материалы: дерево и палки.\\n" +
+                "Топор — рубить деревья, кирка — добывать руду.";
             buildingRoot.SetActive(false);
 
             weatherReadout = Label(dayPanel, "Weather",
@@ -1011,10 +1020,19 @@ namespace DeadSector
             Label(right, "Title", "ПУТЬ ВЫЖИВАНИЯ", 17f, 10f, 295f, 25f,
                 16, White, FontStyle.Bold);
             Label(right, "Hint",
-                "01  ПРИРОДА\n\nСобирайте камни, палки и волокна.\n\n" +
-                "02  РЕМЕСЛО\n\nСоздавайте инструменты и броню.\n\n" +
-                "03  ТКАНИ\n\nСоздавайте одежду, рюкзак и бинты.",
-                17f, 64f, 301f, 385f, 14, Muted);
+                "СБОР РЕСУРСОВ\\n" +
+                "E — камни, ветки и хлопок\\n" +
+                "ЛКМ + топор — рубить дерево\\n" +
+                "ЛКМ + кирка — добывать руду\\n\\n" +
+                "ПОСТРОЙКИ  [B]\\n" +
+                "1  Деревянное основание\\n" +
+                "2  Деревянная стена\\n" +
+                "3  Баррикада\\n" +
+                "4  Ящик для хранения\\n" +
+                "5  Дверь на петлях\\n\\n" +
+                "Откройте B и поставьте выбранную постройку. " +
+                "Нужны только материалы из рюкзака.",
+                17f, 64f, 301f, 385f, 13, Muted);
             RectTransform summaryPanel = RectAt(right, "Resources",
                 17f, 486f, 305f, 111f,
                 new Color(.037f, .049f, .047f, 1f));
@@ -1102,8 +1120,11 @@ namespace DeadSector
             {
                 SectorBuildSpecification plan = construction.SelectedPlan;
                 buildingTitle.text = "СТРОЙКА  /  " + plan.Label.ToUpperInvariant();
-                buildingCost.text = SectorBuildCatalog.CostLabel(plan) +
-                    (construction.CanPlace ? "   /   ГОТОВО" : "   /   НЕЛЬЗЯ");
+                buildingCost.text = "НУЖНО: " +
+                    SectorBuildCatalog.CostLabel(plan) + "\\n" +
+                    SectorBuildCatalog.MissingLabel(gameplay.Inventory, plan) +
+                    (construction.CanPlace ? "  /  МОЖНО СТАВИТЬ" :
+                        "  /  МЕСТО ЗАНЯТО ИЛИ НЕТ РЕСУРСОВ");
                 buildingCost.color = construction.CanPlace
                     ? Accent : new Color(.87f, .40f, .36f);
                 buildingHelp.text =
