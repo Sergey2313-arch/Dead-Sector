@@ -88,12 +88,30 @@ namespace DeadSector
         public static bool IsValid(SectorBuildKind kind) =>
             (int)kind >= 0 && (int)kind < Plans.Length;
 
+        public static string KitId(SectorBuildKind kind)
+        {
+            switch (kind)
+            {
+                case SectorBuildKind.Foundation: return "build_foundation";
+                case SectorBuildKind.Wall: return "build_wall";
+                case SectorBuildKind.Barricade: return "build_barricade";
+                case SectorBuildKind.Storage: return "build_storage";
+                case SectorBuildKind.Door: return "build_door";
+                default: return "";
+            }
+        }
+
         public static bool CanAfford(
             SectorInventory inventory, SectorBuildSpecification plan)
         {
             if (inventory == null)
                 return false;
+            // Installing a pre-crafted kit never costs materials again.
+            if (inventory.Count(KitId(plan.Kind)) > 0)
+                return true;
 
+            // Backward compatible: old saves may still build from raw
+            // materials without crafting a kit beforehand.
             for (int i = 0; i < plan.ItemIds.Length; i++)
                 if (inventory.Count(plan.ItemIds[i]) < plan.Counts[i])
                     return false;
@@ -106,6 +124,10 @@ namespace DeadSector
             if (!CanAfford(inventory, plan))
                 return false;
 
+            string kit = KitId(plan.Kind);
+            if (inventory.Count(kit) > 0)
+                return inventory.Remove(kit, 1);
+
             // All counts checked before the first removal.
             for (int i = 0; i < plan.ItemIds.Length; i++)
                 inventory.Remove(plan.ItemIds[i], plan.Counts[i]);
@@ -117,6 +139,9 @@ namespace DeadSector
             SectorInventory backpack, SectorBuildSpecification plan)
         {
             if (backpack == null) return "РЮКЗАК НЕДОСТУПЕН";
+            string kit = KitId(plan.Kind);
+            if (backpack.Count(kit) > 0)
+                return "ГОТОВЫЙ КОМПЛЕКТ ×" + backpack.Count(kit);
             string missing = "";
             for (int i = 0; i < plan.ItemIds.Length; i++)
             {
@@ -127,7 +152,8 @@ namespace DeadSector
                     " ×" + lack;
             }
             return missing.Length == 0
-                ? "МАТЕРИАЛЫ СОБРАНЫ" : "НЕ ХВАТАЕТ: " + missing;
+                ? "МАТЕРИАЛЫ СОБРАНЫ — МОЖНО СОБРАТЬ В C"
+                : "НЕ ХВАТАЕТ: " + missing + "  /  КРАФТ: C";
         }
 
         public static string CostLabel(SectorBuildSpecification plan)
