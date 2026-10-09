@@ -256,25 +256,40 @@ namespace DeadSector
             UpdateAnimationStateName();
         }
 
+        public const float CrouchingHeight = 1.16f;
+        static readonly Collider[] StandClearanceHits = new Collider[32];
+
         void UpdateCrouch(bool requested)
         {
             if (body == null || !body.enabled)
                 return;
-            // Do not stand through a low ceiling: stay crouched until
-            // the full-height capsule can fit.
+            // Test the standing capsule while ignoring our OWN controller.
+            // CheckCapsule erroneously collides with the root player capsule
+            // and permanently locks the character in crouch after Ctrl.
             if (!requested && IsCrouching)
             {
-                Vector3 bottom = transform.position + Vector3.up * StandingRadius;
-                Vector3 top = transform.position + Vector3.up *
-                    (StandingHeight - StandingRadius);
-                if (Physics.CheckCapsule(bottom, top,
-                        StandingRadius * .92f, ~(1 << 2),
-                        QueryTriggerInteraction.Ignore))
-                    return;
+                Vector3 bottom = transform.position +
+                    Vector3.up * StandingRadius;
+                Vector3 top = transform.position +
+                    Vector3.up * (StandingHeight - StandingRadius);
+                int count = Physics.OverlapCapsuleNonAlloc(
+                    bottom, top, StandingRadius * .92f,
+                    StandClearanceHits, ~(1 << 2),
+                    QueryTriggerInteraction.Ignore);
+                if (count >= StandClearanceHits.Length)
+                    return; // Conservative if query buffer is exhausted.
+                for (int i = 0; i < count; i++)
+                {
+                    Collider hit = StandClearanceHits[i];
+                    if (hit != null && hit != body &&
+                        !hit.transform.IsChildOf(transform) &&
+                        !(hit is TerrainCollider))
+                        return;
+                }
             }
             if (IsCrouching == requested) return;
             IsCrouching = requested;
-            body.height = requested ? 1.16f : StandingHeight;
+            body.height = requested ? CrouchingHeight : StandingHeight;
             body.center = Vector3.up * body.height * .5f;
             cameraInitialized = false;
         }
