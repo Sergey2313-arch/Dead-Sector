@@ -414,6 +414,23 @@ namespace DeadSector
             return part;
         }
 
+        // Fires are inexpensive local points of rest, not dynamic
+        // 200-instance light searches. Reuse the existing structure registry.
+        public bool IsNearCampfire(Vector3 worldPosition, float range = 5.5f)
+        {
+            float sqrRange = range * range;
+            foreach (SectorBuildPiece piece in pieces)
+            {
+                if (piece == null || piece.Destroyed ||
+                    piece.Kind != SectorBuildKind.Campfire)
+                    continue;
+                if ((piece.transform.position - worldPosition).sqrMagnitude
+                    <= sqrRange)
+                    return true;
+            }
+            return false;
+        }
+
         public SectorBuildPiece NearbyStorage()
         {
             if (player == null)
