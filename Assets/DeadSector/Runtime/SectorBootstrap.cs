@@ -214,6 +214,11 @@ namespace DeadSector
                     if (!menu.Configure(gameplay, player, minimap))
                         Debug.LogWarning("[Dead Sector] Modern front-end " +
                             "was unavailable; gameplay HUD remains active.");
+                    var death = new GameObject("DeadSector_DeathState")
+                        .AddComponent<SectorDeathUI>();
+                    if (!death.Configure(gameplay, player))
+                        Debug.LogWarning("[Dead Sector] Death overlay unavailable; " +
+                            "legacy R respawn still works.");
                 }
             }
         }
@@ -234,7 +239,9 @@ namespace DeadSector
                     Screen.height / 2 - 25, 280, 50),
                     "Preparing map, please wait...");
 
-            if (player.Health <= 0)
+            if (player.Health <= 0 &&
+                (!useModernUi ||
+                 FindFirstObjectByType<SectorDeathUI>() == null))
                 GUI.Box(new Rect(Screen.width / 2 - 140,
                     Screen.height / 2 - 25, 280, 50),
                     "You died. Press R to respawn.");
