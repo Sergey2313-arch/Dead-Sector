@@ -497,7 +497,7 @@ namespace DeadSector
                 int index = QualitySettings.GetQualityLevel();
                 string[] names = QualitySettings.names;
                 qualityValue.text = index >= 0 && index < names.Length
-                    ? names[index] : "ПО УМОЛЧАНИЮ";
+                    ? SectorRussian.Quality(names[index]) : "ПО УМОЛЧАНИЮ";
             }
         }
 
