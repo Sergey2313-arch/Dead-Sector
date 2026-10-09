@@ -78,7 +78,9 @@ namespace DeadSector
                 { "build_wall", new SectorItemDefinition("build_wall", "Wall Kit", SectorItemKind.Material, 3.0f, 5) },
                 { "build_barricade", new SectorItemDefinition("build_barricade", "Barricade Kit", SectorItemKind.Material, 2.0f, 5) },
                 { "build_storage", new SectorItemDefinition("build_storage", "Storage Kit", SectorItemKind.Material, 2.0f, 5) },
-                { "build_door", new SectorItemDefinition("build_door", "Door Kit", SectorItemKind.Material, 2.7f, 5) }
+                { "build_door", new SectorItemDefinition("build_door", "Door Kit", SectorItemKind.Material, 2.7f, 5) },
+                { "build_roof", new SectorItemDefinition("build_roof", "Roof Kit", SectorItemKind.Material, 2.8f, 5) },
+                { "build_campfire", new SectorItemDefinition("build_campfire", "Campfire Kit", SectorItemKind.Material, 1.6f, 5) }
             };
 
         public static bool TryGet(string id, out SectorItemDefinition item) =>
