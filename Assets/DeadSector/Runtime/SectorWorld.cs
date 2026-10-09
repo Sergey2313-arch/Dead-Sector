@@ -204,8 +204,8 @@ namespace DeadSector
             var terrain = go.GetComponent<Terrain>(); terrain.materialTemplate = terrainMaterial; terrain.heightmapPixelError = 8;
             terrain.basemapDistance = 800; terrain.drawInstanced = true;
             terrain.drawTreesAndFoliage = true;
-            terrain.detailObjectDistance = 65f;
-            terrain.detailObjectDensity = .8f;
+            terrain.detailObjectDistance = 75f;
+            terrain.detailObjectDensity = .70f;
             var random = new System.Random(key.x * 7919 + key.y * 104729 + 2026);
             for (int i = 0; i < 80; i++)
             {
@@ -407,10 +407,13 @@ namespace DeadSector
                     if (!grow[z / 4, x / 4])
                         continue;
 
+                    // Previously just 1-2 billboards per ~4m square
+                    // were practically invisible in third person.
+                    // A few clumps remain within the 75m draw radius.
                     if (dry[z / 4, x / 4])
-                        dryDensity[z, x] = (hash & 4u) == 0u ? 1 : 2;
+                        dryDensity[z, x] = (hash & 4u) == 0u ? 3 : 5;
                     else
-                        density[z, x] = (hash & 4u) == 0u ? 1 : 2;
+                        density[z, x] = (hash & 4u) == 0u ? 5 : 8;
                 }
             }
 
