@@ -67,17 +67,17 @@ namespace DeadSector
                 new Color(.45f, .73f, .64f, 1f));
 
             GUI.Label(new Rect(24f, 14f, width - 26f, 20f),
-                "SURVIVOR  /  DEAD SECTOR", label);
+                "ВЫЖИВШИЙ  /  DEAD SECTOR", label);
 
-            DrawBar(24f, 38f, width - 26f, "HP", player.Health,
+            DrawBar(24f, 38f, width - 26f, "ЗДОРОВЬЕ", player.Health,
                 new Color(.86f, .29f, .27f));
-            DrawBar(24f, 67f, width - 26f, "STAMINA",
+            DrawBar(24f, 67f, width - 26f, "ВЫНОСЛИВОСТЬ",
                 needs != null ? needs.stamina : 100f,
                 new Color(.42f, .81f, .49f));
-            DrawBar(24f, 96f, width - 26f, "HUNGER",
+            DrawBar(24f, 96f, width - 26f, "СЫТОСТЬ",
                 needs != null ? needs.hunger : 100f,
                 new Color(.85f, .68f, .33f));
-            DrawBar(24f, 125f, width - 26f, "THIRST",
+            DrawBar(24f, 125f, width - 26f, "ЖАЖДА",
                 needs != null ? needs.thirst : 100f,
                 new Color(.34f, .64f, .96f));
 
@@ -87,9 +87,9 @@ namespace DeadSector
             int minute = Mathf.Clamp(
                 Mathf.FloorToInt((hr - hour) * 60f), 0, 59);
             GUI.Label(new Rect(24f, 153f, width - 26f, 20f),
-                "DAY " + day + "   " + hour.ToString("00") +
+                "ДЕНЬ " + day + "   " + hour.ToString("00") +
                 ":" + minute.ToString("00") +
-                "   ARMOR " + Mathf.RoundToInt(
+                "   БРОНЯ " + Mathf.RoundToInt(
                     (1f - (equipment != null ? equipment.DamageMultiplier : 1f)) * 100f) + "%",
                 small);
         }
