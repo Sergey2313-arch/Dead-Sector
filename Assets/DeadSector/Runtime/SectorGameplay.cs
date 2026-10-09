@@ -304,6 +304,9 @@ namespace DeadSector
             {
                 refreshAt = Time.time + .75f;
                 RefreshContainers();
+                if (Building != null && Needs != null &&
+                    Building.IsNearCampfire(player.transform.position))
+                    Needs.RestNearCampfire(.75f);
             }
 
             if (!externalUiBlocking && !inventoryOpen &&
