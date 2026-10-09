@@ -109,8 +109,9 @@ namespace DeadSector
                 new Vector2(.5f, .5f), new Vector2(.5f, .5f),
                 new Vector2(.5f, .5f), Vector2.zero,
                 new Vector2(1090f, 680f));
-            Background(left, "LeftBar", Vector2.zero, Vector2.zero,
-                new Vector2(0f, 1f), new Vector2(0f, 0f),
+            Background(left, "LeftBar",
+                new Vector2(0f, 1f), new Vector2(0f, 1f),
+                new Vector2(0f, 1f), Vector2.zero,
                 new Vector2(5f, 680f), Accent);
             Label(left, "SmallBrand", "DEAD SECTOR    /    SURVIVAL PROTOCOL",
                 34f, 24f, 550f, 22f, 15, Accent, FontStyle.Bold);
