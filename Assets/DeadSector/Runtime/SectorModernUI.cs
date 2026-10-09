@@ -866,6 +866,7 @@ namespace DeadSector
 
         void OpenInventoryTab()
         {
+            gameplay.SuppressPanelHotkeysThisFrame();
             if (gameplay.Journal != null && gameplay.Journal.Visible)
                 gameplay.SetJournalOpen(false);
             gameplay.ShowInventory();
@@ -873,6 +874,7 @@ namespace DeadSector
 
         void OpenCraftingTab()
         {
+            gameplay.SuppressPanelHotkeysThisFrame();
             if (gameplay.Journal != null && gameplay.Journal.Visible)
                 gameplay.SetJournalOpen(false);
             gameplay.ShowCrafting();
