@@ -85,8 +85,10 @@ namespace DeadSector
                     break;
                 case "stone_axe":
                 case "axe":
-                case "stone_pickaxe":
                     Axe(p);
+                    break;
+                case "stone_pickaxe":
+                    Pickaxe(p);
                     break;
                 case "spear":
                     Spear(p);
@@ -223,6 +225,16 @@ namespace DeadSector
             Box(p, 24, 25, 43, 39, Metal);
             Box(p, 38, 25, 44, 39, Ink);
             Line(p, 12, 8, 17, 16, Shadow, 2);
+        }
+
+        static void Pickaxe(Color32[] p)
+        {
+            // Broad horizontal stone head and contrasting wooden shaft.
+            Line(p, 19, 7, 30, 38, Warm, 5);
+            Line(p, 7, 34, 40, 34, Metal, 6);
+            Line(p, 7, 36, 14, 39, Shadow, 2);
+            Line(p, 34, 37, 41, 32, Shadow, 2);
+            Box(p, 20, 29, 27, 38, Ink);
         }
 
         static void Spear(Color32[] p)
