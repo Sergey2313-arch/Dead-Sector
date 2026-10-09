@@ -295,16 +295,36 @@ namespace DeadSector
         public void Import(IEnumerable<SectorItemStack> saved)
         {
             stacks.Clear();
-            if (saved == null) return;
+            if (saved == null)
+                return;
+
+            float carriedWeight = 0f;
 
             foreach (SectorItemStack stack in saved)
             {
-                if (stack == null || !SectorItems.TryGet(stack.id, out _) ||
+                if (stack == null ||
+                    !SectorItems.TryGet(stack.id,
+                        out SectorItemDefinition item) ||
                     stack.count <= 0)
                     continue;
 
-                // Import through the same rules to reject manipulated / stale saves.
-                Add(stack.id, stack.count);
+                // Preserve separate stacks as authored by the player.
+                // Using Add here merges split stacks on F5/F9 load.
+                // At the same time reject malformed, overweight or
+                // over-capacity save data before it enters the inventory.
+                int remaining = stack.count;
+                while (remaining > 0 && stacks.Count < SlotLimit)
+                {
+                    int batch = Mathf.Min(remaining, item.MaxStack);
+                    float weight = item.Weight * batch;
+
+                    if (carriedWeight + weight > MaxWeight + .0001f)
+                        break;
+
+                    stacks.Add(new SectorItemStack(stack.id, batch));
+                    carriedWeight += weight;
+                    remaining -= batch;
+                }
             }
         }
     }
