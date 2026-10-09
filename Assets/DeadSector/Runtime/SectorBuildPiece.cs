@@ -205,7 +205,15 @@ namespace DeadSector
 
             Health = Mathf.Max(0f, Health - amount);
             if (Destroyed)
+            {
+                // Prevent one more zombie strike against a deferred corpse,
+                // remove it from exported save and persist the destroyed base.
+                gameObject.SetActive(false);
+                SectorBaseBuilding owner = GetComponentInParent<SectorBaseBuilding>();
+                if (owner != null)
+                    owner.RecordDestroyedPiece(this);
                 Destroy(gameObject);
+            }
         }
 
         public SectorBuildSnapshot Export()
