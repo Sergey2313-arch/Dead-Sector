@@ -41,6 +41,10 @@ namespace DeadSector
         Text fovValue;
         Text qualityValue;
         Text menuSubtitle;
+        Text profileHelp;
+        readonly Button[] profileButtons = new Button[4];
+        readonly Text[] profileLabels = new Text[4];
+        readonly Text[] profileStatuses = new Text[4];
         GameObject backButton;
         bool pendingTitle = true;
         bool open;
@@ -127,21 +131,37 @@ namespace DeadSector
 
             // Decorative operational status — keeps title screen from
             // feeling like a default stock Unity dialog.
-            RectTransform status = At(left, "DeploymentInfo",
+            RectTransform status = At(left, "ProfileSelection",
                 693f, 70f, 369f, 462f, Panel);
             At(status, "SignalLine", 0f, 0f, 369f, 3f, Accent);
-            Label(status, "StatusHeader", "FIELD OPERATIONS",
-                22f, 20f, 315f, 30f, 19, White, FontStyle.Bold);
-            Label(status, "Signal",
-                "SECTOR     08 x 08 KM\n\n" +
-                "LOCATION   UNKNOWN\n\n" +
-                "THREAT      INFECTED\n\n" +
-                "ACCESS      RESTRICTED\n\n" +
-                "MODE        SINGLE PLAYER",
-                22f, 75f, 320f, 290f, 17, Muted);
-            Label(status, "Footnote",
-                "PROTOTYPE  /  BUILD IN PROGRESS",
-                22f, 408f, 327f, 29f, 12, Accent);
+            Label(status, "StatusHeader", "SAVE PROFILES",
+                19f, 13f, 335f, 31f, 19, White, FontStyle.Bold);
+            Label(status, "ProfileHint",
+                "SELECT TO LOAD  /  EMPTY = NEW GAME",
+                19f, 44f, 333f, 19f, 11, Muted);
+
+            for (int i = 0; i < profileButtons.Length; i++)
+            {
+                int slot = i;
+                Button choice = MakeButton(status,
+                    "Profile_" + slot, "",
+                    14f, 73f + i * 77f, 341f, 68f,
+                    PanelLight, White, () => SelectProfile(slot));
+                profileButtons[i] = choice;
+                Text label = choice.GetComponentInChildren<Text>();
+                label.rectTransform.anchoredPosition =
+                    new Vector2(12f, -7f);
+                label.rectTransform.sizeDelta = new Vector2(306f, 25f);
+                label.fontSize = 15;
+                profileLabels[i] = label;
+                profileStatuses[i] = Label(choice.transform,
+                    "ProfileStatus", "", 15f, 32f, 315f, 26f,
+                    11, Muted);
+            }
+
+            profileHelp = Label(status, "ProfileMessage",
+                "LEGACY SAVE IS KEPT SEPARATE.",
+                18f, 395f, 332f, 61f, 11, Accent);
 
             homePage = At(left, "HomeActions", 22f, 363f,
                 640f, 294f, Color.clear).gameObject;
@@ -258,7 +278,7 @@ namespace DeadSector
 
             canvasObject.SetActive(true);
             menuSubtitle.text = initialTitle
-                ? "ИГРА ЗАГРУЖЕНА  /  НАЖМИ CONTINUE"
+                ? "ВЫБЕРИ ПРОФИЛЬ  /  НАЖМИ CONTINUE"
                 : "ESC  —  ПРОДОЛЖИТЬ";
             ShowHome();
         }
@@ -284,6 +304,7 @@ namespace DeadSector
             homePage.SetActive(true);
             settingsPage.SetActive(false);
             backButton.SetActive(false);
+            RefreshProfiles();
             UpdateSettingsLabels();
         }
 
@@ -300,7 +321,90 @@ namespace DeadSector
         {
             if (gameplay == null || !gameplay.HasLoadedInitialSave)
                 return;
-            gameplay.SaveGame();
+            if (gameplay.TrySaveGame())
+                profileHelp.text = "SAVED TO " + gameplay.ActiveProfileName;
+            else
+                profileHelp.text = "SAVE FAILED — CHECK CONSOLE";
+            RefreshProfiles();
+        }
+
+        void RefreshProfiles()
+        {
+            if (gameplay == null || profileButtons[0] == null)
+                return;
+
+            for (int slot = 0; slot < profileButtons.Length; slot++)
+            {
+                bool occupied = SectorSaveProfiles.Exists(
+                    Application.persistentDataPath, slot);
+                bool valid = occupied && SectorSaveProfiles.TryRead(
+                    Application.persistentDataPath, slot,
+                    out SectorGameSave _);
+                bool active = slot == gameplay.ActiveSaveSlot;
+
+                profileButtons[slot].interactable =
+                    (valid || (!occupied && slot > 0) ||
+                     (slot == 0 && active));
+                profileLabels[slot].text =
+                    SectorSaveProfiles.Name(slot) +
+                    (active ? "    ● ACTIVE" : "");
+                profileStatuses[slot].text =
+                    gameplay.ProfileStatus(slot);
+            }
+        }
+
+        void SelectProfile(int slot)
+        {
+            if (gameplay == null || !gameplay.HasLoadedInitialSave ||
+                !SectorSaveProfiles.IsValidSlot(slot))
+                return;
+
+            if (slot == gameplay.ActiveSaveSlot)
+            {
+                profileHelp.text = "ALREADY ACTIVE: " +
+                    gameplay.ActiveProfileName;
+                return;
+            }
+
+            // Once gameplay has begun, persist current progress BEFORE
+            // switching. Never overwrite an unreadable profile.
+            if (!initialTitle)
+            {
+                bool currentExists = SectorSaveProfiles.Exists(
+                    Application.persistentDataPath,
+                    gameplay.ActiveSaveSlot);
+                if (currentExists && !SectorSaveProfiles.TryRead(
+                    Application.persistentDataPath,
+                    gameplay.ActiveSaveSlot, out SectorGameSave _))
+                {
+                    profileHelp.text =
+                        "CURRENT SAVE UNREADABLE — SWITCH BLOCKED";
+                    return;
+                }
+
+                if (!gameplay.TrySaveGame(true))
+                {
+                    profileHelp.text =
+                        "CURRENT PROFILE SAVE FAILED — SWITCH BLOCKED";
+                    return;
+                }
+            }
+
+            bool exists = SectorSaveProfiles.Exists(
+                Application.persistentDataPath, slot);
+
+            bool success = exists
+                ? gameplay.LoadProfile(slot)
+                : gameplay.CreateNewProfile(slot);
+
+            if (success)
+                profileHelp.text = "READY: " + gameplay.ActiveProfileName;
+            else
+                profileHelp.text = exists
+                    ? "CANNOT LOAD — SAVE LEFT UNCHANGED"
+                    : "CANNOT CREATE — SLOT LEFT UNCHANGED";
+
+            RefreshProfiles();
         }
 
         static void ExitGame()
