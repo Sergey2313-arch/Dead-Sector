@@ -217,7 +217,8 @@ namespace DeadSector
             SectorEscapeAction action = SectorMenuRules.OnEscape(
                 open, settings,
                 gameplay.InventoryOpen, gameplay.CraftingOpen,
-                minimap != null && minimap.TacticalOpen);
+                minimap != null && minimap.TacticalOpen,
+                gameplay.Journal != null && gameplay.Journal.Visible);
 
             switch (action)
             {
@@ -229,6 +230,9 @@ namespace DeadSector
                     break;
                 case SectorEscapeAction.CloseInventory:
                     gameplay.CloseInventoryPanels();
+                    break;
+                case SectorEscapeAction.CloseJournal:
+                    gameplay.SetJournalOpen(false);
                     break;
                 case SectorEscapeAction.CloseAtlas:
                     if (minimap != null)
