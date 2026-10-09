@@ -38,6 +38,7 @@ namespace DeadSector
         public const float ResidentialStepTop = .20f;
         public const float ResidentialPorchTop = .44f;
         public SectorPlayer player;
+        public SectorResources resources;
         public bool Ready { get; private set; }
         public IReadOnlyList<SectorPointOfInterest> PointsOfInterest => pointsOfInterest;
         public int LoadedTiles => tiles.Count;
@@ -205,11 +206,19 @@ namespace DeadSector
 
                 if (nearLandmark)
                     continue;
+                // Stable per-tile ID persists chopping through terrain streaming.
+                string treeId = "pine_" + key.x + "_" + key.y + "_" + i;
+                if (resources != null && resources.WasHarvested(treeId))
+                    continue;
+
                 float h = data.GetInterpolatedHeight(x / 1000, z / 1000);
                 var tree = new GameObject("Pine"); tree.transform.SetParent(root.transform, false); tree.transform.localPosition = new Vector3(x, h, z);
                 float size = 6 + (float)random.NextDouble() * 5;
                 Art.Shape(tree.transform, "Trunk", PrimitiveType.Cylinder, Vector3.up * size * .25f, new Vector3(.5f, size * .25f, .5f), new Color(.2f, .14f, .09f));
                 Art.Shape(tree.transform, "Crown", PrimitiveType.Sphere, Vector3.up * size * .7f, new Vector3(size * .5f, size * .8f, size * .5f), new Color(.1f, .19f, .12f), false);
+                var harvestable = tree.AddComponent<SectorResourceNode>();
+                harvestable.Configure(treeId, SectorResourceType.Tree, "wood", 5);
+                resources?.RegisterWorldTree(harvestable);
             }
             SectorLandscapeBuilder.Build(
                 root.transform, origin, roadMaterial, waterMaterial);
