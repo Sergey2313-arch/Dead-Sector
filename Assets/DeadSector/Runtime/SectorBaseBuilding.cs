@@ -216,7 +216,7 @@ namespace DeadSector
             {
                 if (collider == null ||
                     collider is TerrainCollider ||
-                    collider.transform.IsChildOf(transform))
+                    collider.gameObject.layer == 2)
                     continue;
 
                 return false;
