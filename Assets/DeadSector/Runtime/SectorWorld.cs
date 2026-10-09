@@ -212,6 +212,12 @@ namespace DeadSector
 
                 if (nearLandmark)
                     continue;
+
+                SectorBiome biome = SectorBiomeRules.At(wx, wz);
+                if ((float)random.NextDouble() >
+                    SectorBiomeRules.TreeDensity(biome))
+                    continue;
+
                 // Stable per-tile ID persists chopping through terrain streaming.
                 string treeId = "pine_" + key.x + "_" + key.y + "_" + i;
                 if (resources != null && resources.WasHarvested(treeId))
@@ -219,9 +225,36 @@ namespace DeadSector
 
                 float h = data.GetInterpolatedHeight(x / 1000, z / 1000);
                 var tree = new GameObject("Pine"); tree.transform.SetParent(root.transform, false); tree.transform.localPosition = new Vector3(x, h, z);
-                float size = 6 + (float)random.NextDouble() * 5;
-                Art.Shape(tree.transform, "Trunk", PrimitiveType.Cylinder, Vector3.up * size * .25f, new Vector3(.5f, size * .25f, .5f), new Color(.2f, .14f, .09f));
-                Art.Shape(tree.transform, "Crown", PrimitiveType.Sphere, Vector3.up * size * .7f, new Vector3(size * .5f, size * .8f, size * .5f), new Color(.1f, .19f, .12f), false);
+                float size = 5.5f + (float)random.NextDouble() * 4f;
+                Art.Shape(tree.transform, "Trunk", PrimitiveType.Cylinder,
+                    Vector3.up * size * .38f,
+                    new Vector3(.30f, size * .38f, .30f),
+                    new Color(.23f, .16f, .11f));
+
+                if (biome == SectorBiome.ConiferForest)
+                {
+                    // Overlapping tapered crowns read as conifer rather than
+                    // an enormous featureless black sphere at night.
+                    for (int crownIndex = 0; crownIndex < 3; crownIndex++)
+                    {
+                        float tier = crownIndex;
+                        Art.Shape(tree.transform,
+                            "Pine_Boughs_" + crownIndex, PrimitiveType.Cylinder,
+                            Vector3.up * (size * (.52f + tier * .17f)),
+                            new Vector3(1.8f - tier * .42f, .77f, 1.8f - tier * .42f),
+                            new Color(.11f + tier * .015f, .24f, .15f), false);
+                    }
+                }
+                else
+                {
+                    // Natural broad crown for mixed woods and sparse fields.
+                    Art.Shape(tree.transform, "Broadleaf_Crown",
+                        PrimitiveType.Sphere, Vector3.up * size * .83f,
+                        new Vector3(size * .30f, size * .31f, size * .30f),
+                        biome == SectorBiome.DrySteppe
+                            ? new Color(.39f, .36f, .19f)
+                            : new Color(.20f, .36f, .18f), false);
+                }
                 var harvestable = tree.AddComponent<SectorResourceNode>();
                 harvestable.Configure(treeId, SectorResourceType.Tree, "wood", 5);
                 resources?.RegisterWorldTree(harvestable);
