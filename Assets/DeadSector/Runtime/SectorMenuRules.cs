@@ -5,6 +5,7 @@ namespace DeadSector
         CloseSettings,
         Resume,
         CloseInventory,
+        CloseJournal,
         CloseAtlas,
         OpenPause
     }
@@ -18,12 +19,16 @@ namespace DeadSector
     {
         public static SectorEscapeAction OnEscape(
             bool menuOpen, bool settingsOpen,
-            bool inventoryOpen, bool craftingOpen, bool atlasOpen)
+            bool inventoryOpen, bool craftingOpen, bool atlasOpen,
+            bool journalOpen = false)
         {
             if (menuOpen)
                 return settingsOpen
                     ? SectorEscapeAction.CloseSettings
                     : SectorEscapeAction.Resume;
+
+            if (journalOpen)
+                return SectorEscapeAction.CloseJournal;
 
             if (inventoryOpen || craftingOpen)
                 return SectorEscapeAction.CloseInventory;
