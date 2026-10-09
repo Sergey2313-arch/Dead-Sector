@@ -56,7 +56,8 @@ namespace DeadSector
 
             GameObject obj = new GameObject("Local_Weather_Rain");
             obj.transform.SetParent(transform, false);
-            obj.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
+            // Keep the horizontal X/Z emission area aligned with the ground.
+            obj.transform.rotation = Quaternion.identity;
 
             rain = obj.AddComponent<ParticleSystem>();
             rain.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
@@ -64,10 +65,10 @@ namespace DeadSector
             ParticleSystem.MainModule main = rain.main;
             main.loop = true;
             main.duration = 2f;
-            main.startLifetime = 1.15f;
-            main.startSpeed = 21f;
-            main.startSize = .018f;
-            main.maxParticles = 650;
+            main.startLifetime = .85f;
+            main.startSpeed = 0f;
+            main.startSize = .025f;
+            main.maxParticles = 680;
             main.simulationSpace = ParticleSystemSimulationSpace.World;
             main.startColor = new Color(.7f, .8f, .92f, .26f);
 
@@ -76,14 +77,22 @@ namespace DeadSector
 
             ParticleSystem.ShapeModule shape = rain.shape;
             shape.shapeType = ParticleSystemShapeType.Box;
-            shape.scale = new Vector3(34f, 1f, 34f);
+            shape.scale = new Vector3(30f, 1f, 30f);
+
+            // Rain falls straight down in world space, independently of
+            // emitter orientation and player camera movement.
+            ParticleSystem.VelocityOverLifetimeModule velocity =
+                rain.velocityOverLifetime;
+            velocity.enabled = true;
+            velocity.space = ParticleSystemSimulationSpace.World;
+            velocity.y = new ParticleSystem.MinMaxCurve(-17f);
 
             ParticleSystemRenderer renderer =
                 obj.GetComponent<ParticleSystemRenderer>();
             renderer.renderMode = ParticleSystemRenderMode.Stretch;
             // Original stretched streaks appeared as metre-long white poles.
-            renderer.lengthScale = .42f;
-            renderer.velocityScale = .01f;
+            renderer.lengthScale = .14f;
+            renderer.velocityScale = .015f;
             renderer.shadowCastingMode =
                 UnityEngine.Rendering.ShadowCastingMode.Off;
 
@@ -126,7 +135,7 @@ namespace DeadSector
 
                 ParticleSystem.EmissionModule emission = rain.emission;
                 emission.rateOverTime =
-                    Weather == SectorWeatherKind.Rain ? 210f : 0f;
+                    Weather == SectorWeatherKind.Rain ? 500f : 0f;
 
                 if (Weather != SectorWeatherKind.Rain)
                     rain.Clear();
@@ -134,7 +143,7 @@ namespace DeadSector
 
             Transform rainTransform = rain.transform;
             rainTransform.position =
-                player.transform.position + Vector3.up * 19f;
+                player.transform.position + Vector3.up * 12f;
 
             // The world clock owns time-of-day fog. Apply atmospheric
             // weather modifiers after the clock changes its values.
