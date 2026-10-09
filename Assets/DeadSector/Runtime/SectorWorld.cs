@@ -334,20 +334,39 @@ namespace DeadSector
                     minHeight = .25f,
                     maxHeight = .55f,
                     noiseSpread = .55f
+                },
+                new DetailPrototype
+                {
+                    prototypeTexture = grassTexture,
+                    renderMode = DetailRenderMode.GrassBillboard,
+                    healthyColor = new Color(.66f, .52f, .28f),
+                    dryColor = new Color(.65f, .53f, .28f),
+                    minWidth = .35f,
+                    maxWidth = .75f,
+                    minHeight = .20f,
+                    maxHeight = .48f,
+                    noiseSpread = .62f
                 }
             };
 
             int[,] density = new int[GrassResolution, GrassResolution];
+            int[,] dryDensity = new int[GrassResolution, GrassResolution];
             // Expensive full-world road/water queries are sampled once per
             // 16m coarse cell, then reused by sixteen adjacent detail cells.
             const int coarseResolution = 64;
             bool[,] grow = new bool[coarseResolution, coarseResolution];
+            bool[,] dry = new bool[coarseResolution, coarseResolution];
             float coarseStride = SectorLayout.TileSize / (float)coarseResolution;
             for (int z = 0; z < coarseResolution; z++)
                 for (int x = 0; x < coarseResolution; x++)
-                    grow[z, x] = CanGrowGrass(
-                        origin.x + (x + .5f) * coarseStride,
-                        origin.z + (z + .5f) * coarseStride);
+                {
+                    float wx = origin.x + (x + .5f) * coarseStride;
+                    float wz = origin.z + (z + .5f) * coarseStride;
+                    grow[z, x] = CanGrowGrass(wx, wz);
+                    SectorBiome biome = SectorBiomeRules.At(wx, wz);
+                    dry[z, x] = biome == SectorBiome.DrySteppe ||
+                        biome == SectorBiome.RockyHighland;
+                }
 
             for (int z = 0; z < GrassResolution; z++)
             {
@@ -365,11 +384,15 @@ namespace DeadSector
                     if (!grow[z / 4, x / 4])
                         continue;
 
-                    density[z, x] = (hash & 4u) == 0u ? 1 : 2;
+                    if (dry[z / 4, x / 4])
+                        dryDensity[z, x] = (hash & 4u) == 0u ? 1 : 2;
+                    else
+                        density[z, x] = (hash & 4u) == 0u ? 1 : 2;
                 }
             }
 
             data.SetDetailLayer(0, 0, 0, density);
+            data.SetDetailLayer(0, 0, 1, dryDensity);
         }
 
         TerrainLayer Layer(Color color)
