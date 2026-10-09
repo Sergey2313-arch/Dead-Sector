@@ -1101,7 +1101,7 @@ namespace DeadSector
                 buildingCost.color = construction.CanPlace
                     ? Accent : new Color(.87f, .40f, .36f);
                 buildingHelp.text =
-                    "1-4 SELECT  |  Q/E ROTATE  |  LMB PLACE\n" +
+                    "1-5 SELECT  |  Q/E ROTATE  |  LMB PLACE\n" +
                     "B/RMB EXIT   |   MAX 200 PIECES";
             }
 
