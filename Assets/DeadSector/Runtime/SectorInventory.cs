@@ -71,7 +71,14 @@ namespace DeadSector
                 { "cotton_shirt", new SectorItemDefinition("cotton_shirt", "Cotton Shirt", SectorItemKind.Armor, .7f, 1) },
                 { "cotton_pants", new SectorItemDefinition("cotton_pants", "Cotton Trousers", SectorItemKind.Armor, .65f, 1) },
                 { "cotton_boots", new SectorItemDefinition("cotton_boots", "Cotton Footwraps", SectorItemKind.Armor, .4f, 1) },
-                { "cotton_bag", new SectorItemDefinition("cotton_bag", "Cotton Backpack", SectorItemKind.Armor, 1.25f, 1) }
+                { "cotton_bag", new SectorItemDefinition("cotton_bag", "Cotton Backpack", SectorItemKind.Armor, 1.25f, 1) },
+                // Pre-fabricated building kits are regular saved item IDs.
+                // Their mass is intentionally below the raw lumber weight.
+                { "build_foundation", new SectorItemDefinition("build_foundation", "Foundation Kit", SectorItemKind.Material, 2.6f, 5) },
+                { "build_wall", new SectorItemDefinition("build_wall", "Wall Kit", SectorItemKind.Material, 3.0f, 5) },
+                { "build_barricade", new SectorItemDefinition("build_barricade", "Barricade Kit", SectorItemKind.Material, 2.0f, 5) },
+                { "build_storage", new SectorItemDefinition("build_storage", "Storage Kit", SectorItemKind.Material, 2.0f, 5) },
+                { "build_door", new SectorItemDefinition("build_door", "Door Kit", SectorItemKind.Material, 2.7f, 5) }
             };
 
         public static bool TryGet(string id, out SectorItemDefinition item) =>
