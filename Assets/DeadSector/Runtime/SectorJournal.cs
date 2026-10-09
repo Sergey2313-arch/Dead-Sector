@@ -159,30 +159,30 @@ namespace DeadSector
             float y = 186f;
 
             GUI.Box(new Rect(x, y, width, height),
-                "DEAD SECTOR  /  FIELD JOURNAL [J]");
+                "DEAD SECTOR  /  ЖУРНАЛ [J]");
 
             float rowY = y + 32f;
 
-            Entry(x, ref rowY, "Scout the village [B3]",
+            Entry(x, ref rowY, "Разведать деревню [B3]",
                 HasVisited("village") ? "DONE" : "GO TO B3");
-            Entry(x, ref rowY, "Find the medical clinic [E3]",
+            Entry(x, ref rowY, "Найти клинику [E3]",
                 HasVisited("clinic") ? "DONE" : "GO TO E3");
-            Entry(x, ref rowY, "Search the industrial factory [D4]",
+            Entry(x, ref rowY, "Найти завод [D4]",
                 HasVisited("factory") ? "DONE" : "GO TO D4");
-            Entry(x, ref rowY, "Trace the radio signal [E1]",
+            Entry(x, ref rowY, "Найти радиосигнал [E1]",
                 HasVisited("radio_station") ? "DONE" : "GO TO E1");
 
-            Entry(x, ref rowY, "Collect supplies",
+            Entry(x, ref rowY, "Собрать припасы",
                 Math.Min(3, state.suppliesTaken) + " / 3");
-            Entry(x, ref rowY, "Gather field resources",
+            Entry(x, ref rowY, "Добыть ресурсы",
                 Math.Min(5, state.resourceNodesHarvested) + " / 5");
-            Entry(x, ref rowY, "Craft equipment or medicine",
+            Entry(x, ref rowY, "Создать снаряжение или лекарства",
                 Math.Min(2, state.itemsCrafted) + " / 2");
-            Entry(x, ref rowY, "Eliminate infected",
+            Entry(x, ref rowY, "Уничтожить заражённых",
                 Math.Min(3, state.zombiesKilled) + " / 3");
 
             GUI.Label(new Rect(x + 13f, y + height - 25f, width - 22f, 20f),
-                "OBJECTIVES  " + CompletedCount + " / 8  |  NO QUEST TELEPORT");
+                "ЗАДАЧИ  " + CompletedCount + " / 8  |  БЕЗ ТЕЛЕПОРТА");
         }
 
         void Entry(float x, ref float y, string name, string progress)
