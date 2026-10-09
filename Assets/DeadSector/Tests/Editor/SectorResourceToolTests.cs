@@ -79,6 +79,46 @@ namespace DeadSector.Tests
         }
 
         [Test]
+        public void WorldPineCanBeChoppedWithAxeFacingTheTrunk()
+        {
+            var playerRoot = new GameObject("HarvestPlayer");
+            var treeRoot = new GameObject("PineForChopping");
+            var registryRoot = new GameObject("HarvestSystem");
+            try
+            {
+                // No gameplay Update or camera needed for deterministic test.
+                playerRoot.SetActive(false);
+                playerRoot.AddComponent<CharacterController>();
+                var player = playerRoot.AddComponent<SectorPlayer>();
+                treeRoot.transform.position = new Vector3(0f, 0f, 2f);
+                var tree = treeRoot.AddComponent<SectorResourceNode>();
+                tree.Configure("pine_4_4_19", SectorResourceType.Tree,
+                    "wood", 5);
+                var resources = registryRoot.AddComponent<SectorResources>();
+                resources.player = player;
+                resources.RegisterWorldTree(tree);
+                var bag = new SectorInventory();
+
+                Assert.AreSame(tree,
+                    resources.NearbyToolNode(Vector3.forward));
+
+                string collected, warning;
+                Assert.IsTrue(resources.StrikeNearest(
+                    "stone_axe", bag, Vector3.forward,
+                    out collected, out warning));
+                Assert.AreEqual(2, tree.ToolHitsRemaining);
+                StringAssert.Contains("Рубим дерево", warning);
+                Assert.AreEqual(0, bag.Count("wood"));
+            }
+            finally
+            {
+                Object.DestroyImmediate(registryRoot);
+                Object.DestroyImmediate(treeRoot);
+                Object.DestroyImmediate(playerRoot);
+            }
+        }
+
+        [Test]
         public void StonePickaxeCanBeCraftedAndEquippedAsMelee()
         {
             var inventory = new SectorInventory();
