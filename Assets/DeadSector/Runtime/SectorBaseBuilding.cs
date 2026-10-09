@@ -323,8 +323,15 @@ namespace DeadSector
         {
             ExitBuildMode();
             foreach (SectorBuildPiece p in pieces)
-                if (p != null)
-                    Destroy(p.gameObject);
+            {
+                if (p == null) continue;
+
+                // Destroy() is deferred until end-of-frame. Deactivate first
+                // so previous save-slot colliders and NavMesh obstacles do not
+                // interfere with the newly imported structures in this frame.
+                p.gameObject.SetActive(false);
+                Destroy(p.gameObject);
+            }
             pieces.Clear();
 
             if (saved == null)
