@@ -70,6 +70,7 @@ namespace DeadSector
                 case KeyCode.C: return Key.C;
                 case KeyCode.J: return Key.J;
                 case KeyCode.B: return Key.B;
+                case KeyCode.H: return Key.H;
                 case KeyCode.Q: return Key.Q;
                 case KeyCode.E: return Key.E;
                 case KeyCode.Alpha1: return Key.Digit1;
@@ -77,6 +78,8 @@ namespace DeadSector
                 case KeyCode.Alpha3: return Key.Digit3;
                 case KeyCode.Alpha4: return Key.Digit4;
                 case KeyCode.Alpha5: return Key.Digit5;
+                case KeyCode.Alpha6: return Key.Digit6;
+                case KeyCode.Alpha7: return Key.Digit7;
                 case KeyCode.F3: return Key.F3;
                 case KeyCode.F5: return Key.F5;
                 case KeyCode.F9: return Key.F9;
@@ -95,6 +98,7 @@ namespace DeadSector
             switch (key)
             {
                 case KeyCode.B:
+                case KeyCode.H:
                 case KeyCode.Q:
                 case KeyCode.E:
                 case KeyCode.Alpha1:
@@ -102,6 +106,8 @@ namespace DeadSector
                 case KeyCode.Alpha3:
                 case KeyCode.Alpha4:
                 case KeyCode.Alpha5:
+                case KeyCode.Alpha6:
+                case KeyCode.Alpha7:
                     return true;
                 default:
                     return false;
