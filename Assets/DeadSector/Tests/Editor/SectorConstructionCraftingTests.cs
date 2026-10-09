@@ -8,6 +8,23 @@ namespace DeadSector.Tests
     public sealed class SectorConstructionCraftingTests
     {
         [Test]
+        public void NewInputSystemRecognizesAllConstructionHotkeys()
+        {
+            // Regression: New Input System used to silently drop B/Q/4/5
+            // even while C crafting and 1-3 weapon slots worked.
+            Assert.IsTrue(SectorInput.HasNewInputBinding(KeyCode.B),
+                "B must open construction mode.");
+            Assert.IsTrue(SectorInput.HasNewInputBinding(KeyCode.Q),
+                "Q must rotate placement.");
+            Assert.IsTrue(SectorInput.HasNewInputBinding(KeyCode.E),
+                "E must rotate placement.");
+            for (int i = 0; i < SectorBuildCatalog.Count; i++)
+                Assert.IsTrue(SectorInput.HasNewInputBinding(
+                    KeyCode.Alpha1 + i),
+                    "Every construction plan needs a working 1-5 hotkey.");
+        }
+
+        [Test]
         public void AllFivePlansHaveVisibleRussianCraftableKitsAtTop()
         {
             Assert.AreEqual(5, SectorBuildCatalog.Count);
