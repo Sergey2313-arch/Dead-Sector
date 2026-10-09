@@ -287,7 +287,7 @@ namespace DeadSector
             RectAt(buildingRoot.transform, "Accent", 0f, 0f,
                 4f, 137f, Accent);
             buildingTitle = Label(buildingRoot.transform,
-                "ConstructionTitle", "CONSTRUCTION",
+                "ConstructionTitle", "СТРОИТЕЛЬСТВО",
                 17f, 9f, 365f, 28f, 16, White, FontStyle.Bold);
             buildingCost = Label(buildingRoot.transform,
                 "Requirements", "", 17f, 43f,
@@ -624,7 +624,7 @@ namespace DeadSector
             MakeButton(panel, "TAB_JOURNAL",
                 "ЖУРНАЛ  [J]", 966f, 22f, 155f, 43f,
                 Cell, Accent, OpenJournalTab);
-            MakeButton(panel, "CLOSE", "X", 1169f, 22f, 57f, 43f,
+            MakeButton(panel, "ЗАКРЫТЬ", "X", 1169f, 22f, 57f, 43f,
                 new Color(.26f, .12f, .12f, 1f), White,
                 CloseActiveTab);
 
@@ -662,7 +662,7 @@ namespace DeadSector
             Label(bodyPanel, "SilhouetteLabel", "ТЕЛО  /  БРОНЯ",
                 10f, 174f, 110f, 20f, 10, Muted);
 
-            string[] names = { "HEAD", "CHEST", "LEGS", "FEET", "BACKPACK" };
+            string[] names = { "ГОЛОВА", "ТОРС", "НОГИ", "СТУПНИ", "РЮКЗАК" };
             for (int i = 0; i < 5; i++)
             {
                 int gearIndex = i;
