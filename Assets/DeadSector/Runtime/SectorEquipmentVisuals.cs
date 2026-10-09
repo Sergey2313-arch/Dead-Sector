@@ -68,7 +68,7 @@ namespace DeadSector
                     rightHand = handMount.transform;
                 }
                 if (back == null) back = mannequin.torso;
-                if (hip == null) hip = player.visual;
+                if (hip == null) hip = mannequin.torso;
                 if (leftLeg == null) leftLeg = mannequin.leftLeg;
             }
 
