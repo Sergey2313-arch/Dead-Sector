@@ -49,8 +49,13 @@ namespace DeadSector
             try
             {
                 string json = File.ReadAllText(FilePath(directory, slot));
-                if (string.IsNullOrWhiteSpace(json))
+                if (string.IsNullOrWhiteSpace(json) ||
+                    !json.Contains("\"version\"") ||
+                    !json.Contains("\"position\"") ||
+                    !json.Contains("\"inventory\"") ||
+                    !json.Contains("\"containers\""))
                     return false;
+
                 SectorGameSave candidate =
                     JsonUtility.FromJson<SectorGameSave>(json);
 
@@ -60,7 +65,13 @@ namespace DeadSector
                     float.IsNaN(candidate.health) ||
                     float.IsInfinity(candidate.health) ||
                     float.IsNaN(candidate.hourOfDay) ||
-                    float.IsInfinity(candidate.hourOfDay))
+                    float.IsInfinity(candidate.hourOfDay) ||
+                    float.IsNaN(candidate.position.x) ||
+                    float.IsInfinity(candidate.position.x) ||
+                    float.IsNaN(candidate.position.y) ||
+                    float.IsInfinity(candidate.position.y) ||
+                    float.IsNaN(candidate.position.z) ||
+                    float.IsInfinity(candidate.position.z))
                     return false;
 
                 saved = candidate;
