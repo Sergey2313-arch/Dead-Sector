@@ -50,6 +50,35 @@ namespace DeadSector.Tests
         }
 
         [Test]
+        public void WorldPineCanBeRegisteredForAxeHarvesting()
+        {
+            var root = new GameObject("TilePine");
+            var registry = new GameObject("HarvestRegistry");
+            try
+            {
+                var node = root.AddComponent<SectorResourceNode>();
+                node.Configure("pine_4_4_27", SectorResourceType.Tree,
+                    "wood", 5);
+                var resources = registry.AddComponent<SectorResources>();
+                resources.RegisterWorldTree(node);
+
+                Assert.IsTrue(SectorResources.CorrectTool(
+                    node.Type, "stone_axe"));
+                Assert.IsFalse(SectorResources.CorrectTool(
+                    node.Type, "stone_knife"));
+                Assert.AreEqual(3, node.ToolHitsRemaining);
+                Assert.IsFalse(resources.WasHarvested(node.Id));
+                Assert.AreEqual("pine_4_4_27", node.Id);
+                Assert.AreEqual("wood", node.ItemId);
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+                Object.DestroyImmediate(registry);
+            }
+        }
+
+        [Test]
         public void StonePickaxeCanBeCraftedAndEquippedAsMelee()
         {
             var inventory = new SectorInventory();
