@@ -117,13 +117,13 @@ namespace DeadSector
                 new Vector2(0f, 1f), new Vector2(0f, 1f),
                 new Vector2(0f, 1f), Vector2.zero,
                 new Vector2(5f, 680f), Accent);
-            Label(left, "SmallBrand", "DEAD SECTOR    /    SURVIVAL PROTOCOL",
+            Label(left, "SmallBrand", "DEAD SECTOR    /    ПРОТОКОЛ ВЫЖИВАНИЯ",
                 34f, 24f, 550f, 22f, 15, Accent, FontStyle.Bold);
             Label(left, "Title1", "DEAD", 25f, 72f,
                 780f, 122f, 88, White, FontStyle.Bold);
             Label(left, "Title2", "SECTOR", 25f, 171f,
                 840f, 125f, 86, White, FontStyle.Bold);
-            Label(left, "Tagline", "NO SIGNAL. NO RESCUE. SURVIVE.",
+            Label(left, "Tagline", "НЕТ СИГНАЛА. НЕТ ПОМОЩИ. ВЫЖИВАЙ.",
                 34f, 303f, 630f, 24f, 16, Muted);
             Background(left, "Divider", new Vector2(0f, 1f),
                 new Vector2(0f, 1f), new Vector2(0f, 1f),
@@ -134,10 +134,10 @@ namespace DeadSector
             RectTransform status = At(left, "ProfileSelection",
                 693f, 70f, 369f, 462f, Panel);
             At(status, "SignalLine", 0f, 0f, 369f, 3f, Accent);
-            Label(status, "StatusHeader", "SAVE PROFILES",
+            Label(status, "StatusHeader", "СЛОТЫ СОХРАНЕНИЙ",
                 19f, 13f, 335f, 31f, 19, White, FontStyle.Bold);
             Label(status, "ProfileHint",
-                "SELECT TO LOAD  /  EMPTY = NEW GAME",
+                "ВЫБЕРИ СЛОТ  /  ПУСТОЙ — НОВАЯ ИГРА",
                 19f, 44f, 333f, 19f, 11, Muted);
 
             for (int i = 0; i < profileButtons.Length; i++)
@@ -160,17 +160,17 @@ namespace DeadSector
             }
 
             profileHelp = Label(status, "ProfileMessage",
-                "LEGACY SAVE IS KEPT SEPARATE.",
+                "СТАРЫЙ СЛОТ ХРАНИТСЯ ОТДЕЛЬНО.",
                 18f, 395f, 332f, 61f, 11, Accent);
 
             homePage = At(left, "HomeActions", 22f, 363f,
                 640f, 294f, Color.clear).gameObject;
             MakeButton(homePage.transform, "ResumeButton",
-                "ВОЙТИ В СЕКТОР   /   CONTINUE",
+                "НАЧАТЬ ИГРУ   /   ПРОДОЛЖИТЬ",
                 14f, 0f, 590f, 62f, PanelLight, Accent,
                 () => Resume());
             MakeButton(homePage.transform, "SettingsButton",
-                "НАСТРОЙКИ   /   SETTINGS",
+                "НАСТРОЙКИ",
                 14f, 73f, 590f, 52f, Panel, White,
                 () => ShowSettings());
             MakeButton(homePage.transform, "SaveButton",
@@ -189,19 +189,19 @@ namespace DeadSector
             settingsPage = At(left, "SettingsPage", 22f, 363f,
                 640f, 299f, Color.clear).gameObject;
             Label(settingsPage.transform, "SettingsTitle",
-                "SYSTEM CONFIGURATION",
+                "НАСТРОЙКИ ИГРЫ",
                 14f, 1f, 590f, 31f, 20, White, FontStyle.Bold);
             volumeSlider = MakeSlider(settingsPage.transform,
-                "MASTER VOLUME", 44f, 0f, 1f, out volumeValue,
+                "ОБЩАЯ ГРОМКОСТЬ", 44f, 0f, 1f, out volumeValue,
                 v => ChangeVolume(v));
             mouseSlider = MakeSlider(settingsPage.transform,
-                "MOUSE SENSITIVITY", 109f, .35f, 2.5f,
+                "ЧУВСТВИТЕЛЬНОСТЬ МЫШИ", 109f, .35f, 2.5f,
                 out mouseValue, v => ChangeMouse(v));
             fovSlider = MakeSlider(settingsPage.transform,
-                "FIELD OF VIEW", 174f, 60f, 100f,
+                "ПОЛЕ ЗРЕНИЯ", 174f, 60f, 100f,
                 out fovValue, v => ChangeFov(v));
             MakeButton(settingsPage.transform, "QualityButton",
-                "GRAPHICS QUALITY  < CHANGE >", 14f, 239f,
+                "КАЧЕСТВО ГРАФИКИ  < СМЕНИТЬ >", 14f, 239f,
                 405f, 40f, PanelLight, White,
                 () => CycleQuality());
             qualityValue = Label(settingsPage.transform, "QualityName",
@@ -281,7 +281,7 @@ namespace DeadSector
 
             canvasObject.SetActive(true);
             menuSubtitle.text = initialTitle
-                ? "ВЫБЕРИ ПРОФИЛЬ  /  НАЖМИ CONTINUE"
+                ? "ВЫБЕРИ СОХРАНЕНИЕ  /  ПРОДОЛЖИТЬ"
                 : "ESC  —  ПРОДОЛЖИТЬ";
             ShowHome();
         }
@@ -325,9 +325,9 @@ namespace DeadSector
             if (gameplay == null || !gameplay.HasLoadedInitialSave)
                 return;
             if (gameplay.TrySaveGame())
-                profileHelp.text = "SAVED TO " + gameplay.ActiveProfileName;
+                profileHelp.text = "СОХРАНЕНО: " + gameplay.ActiveProfileName;
             else
-                profileHelp.text = "SAVE FAILED — CHECK CONSOLE";
+                profileHelp.text = "ОШИБКА СОХРАНЕНИЯ — СМОТРИ КОНСОЛЬ";
             RefreshProfiles();
         }
 
@@ -350,7 +350,7 @@ namespace DeadSector
                      (slot == 0 && active));
                 profileLabels[slot].text =
                     SectorSaveProfiles.Name(slot) +
-                    (active ? "    ● ACTIVE" : "");
+                    (active ? "    ● АКТИВНЫЙ" : "");
                 profileStatuses[slot].text =
                     gameplay.ProfileStatus(slot);
             }
@@ -364,7 +364,7 @@ namespace DeadSector
 
             if (slot == gameplay.ActiveSaveSlot)
             {
-                profileHelp.text = "ALREADY ACTIVE: " +
+                profileHelp.text = "УЖЕ ВЫБРАН: " +
                     gameplay.ActiveProfileName;
                 return;
             }
@@ -381,14 +381,14 @@ namespace DeadSector
                     gameplay.ActiveSaveSlot, out SectorGameSave _))
                 {
                     profileHelp.text =
-                        "CURRENT SAVE UNREADABLE — SWITCH BLOCKED";
+                        "ТЕКУЩЕЕ СОХРАНЕНИЕ ПОВРЕЖДЕНО — СМЕНА ОТМЕНЕНА";
                     return;
                 }
 
                 if (!gameplay.TrySaveGame(true))
                 {
                     profileHelp.text =
-                        "CURRENT PROFILE SAVE FAILED — SWITCH BLOCKED";
+                        "НЕ УДАЛОСЬ СОХРАНИТЬ — СМЕНА ОТМЕНЕНА";
                     return;
                 }
             }
@@ -401,11 +401,11 @@ namespace DeadSector
                 : gameplay.CreateNewProfile(slot);
 
             if (success)
-                profileHelp.text = "READY: " + gameplay.ActiveProfileName;
+                profileHelp.text = "ГОТОВО: " + gameplay.ActiveProfileName;
             else
                 profileHelp.text = exists
-                    ? "CANNOT LOAD — SAVE LEFT UNCHANGED"
-                    : "CANNOT CREATE — SLOT LEFT UNCHANGED";
+                    ? "ОШИБКА ЗАГРУЗКИ — СОХРАНЕНИЕ НЕ ИЗМЕНЕНО"
+                    : "НЕ УДАЛОСЬ СОЗДАТЬ СЛОТ";
 
             RefreshProfiles();
         }
@@ -497,7 +497,7 @@ namespace DeadSector
                 int index = QualitySettings.GetQualityLevel();
                 string[] names = QualitySettings.names;
                 qualityValue.text = index >= 0 && index < names.Length
-                    ? names[index] : "DEFAULT";
+                    ? names[index] : "ПО УМОЛЧАНИЮ";
             }
         }
 
