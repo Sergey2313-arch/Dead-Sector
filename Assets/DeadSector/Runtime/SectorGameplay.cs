@@ -5,6 +5,35 @@ using UnityEngine;
 
 namespace DeadSector
 {
+    public static class SectorZombieLootTable
+    {
+        // Prototype baseline: predictable rewards can be balanced later.
+        // This function never creates scene objects or edits inventory.
+        public static List<SectorItemStack> For(SectorZombieKind kind)
+        {
+            switch (kind)
+            {
+                case SectorZombieKind.Brute:
+                    return new List<SectorItemStack>
+                    {
+                        new SectorItemStack("scrap", 2),
+                        new SectorItemStack("bandage", 1)
+                    };
+                case SectorZombieKind.Runner:
+                    return new List<SectorItemStack>
+                    {
+                        new SectorItemStack("9mm", 4),
+                        new SectorItemStack("cloth", 1)
+                    };
+                default:
+                    return new List<SectorItemStack>
+                    {
+                        new SectorItemStack("cloth", 1)
+                    };
+            }
+        }
+    }
+
     [Serializable]
     public sealed class SectorGameSave
     {
@@ -103,21 +132,7 @@ namespace DeadSector
         public bool AddZombieLoot(SectorZombieKind kind, Vector3 position)
         {
             string id = "corpse_" + Guid.NewGuid().ToString("N");
-            var loot = new List<SectorItemStack>();
-            switch (kind)
-            {
-                case SectorZombieKind.Brute:
-                    loot.Add(new SectorItemStack("scrap", 2));
-                    loot.Add(new SectorItemStack("bandage", 1));
-                    break;
-                case SectorZombieKind.Runner:
-                    loot.Add(new SectorItemStack("9mm", 4));
-                    loot.Add(new SectorItemStack("cloth", 1));
-                    break;
-                default:
-                    loot.Add(new SectorItemStack("cloth", 1));
-                    break;
-            }
+            List<SectorItemStack> loot = SectorZombieLootTable.For(kind);
             harvestCacheLocations[id] = new Vector2(position.x, position.z);
             persistent[id] = loot;
             refreshAt = 0f;
