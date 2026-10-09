@@ -1490,6 +1490,8 @@ namespace DeadSector
                 minimap.SetCanvasHudActive(false);
             if (compass != null)
                 compass.enabled = true;
+            if (weather != null)
+                weather.ModernUiEnabled = false;
             if (mapTexture != null)
                 Destroy(mapTexture);
             SectorItemIcons.Release();
