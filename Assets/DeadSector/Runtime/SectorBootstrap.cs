@@ -10,6 +10,10 @@ namespace DeadSector
         SectorNavigation navigation;
         SectorArt actorArt;
         bool debugOverlay;
+        float frameTimeSum;
+        int sampleFrames;
+        float displayedFps;
+        float displayedFrameMs;
 
         [Header("UI")]
         [Tooltip("Disable to restore the legacy IMGUI during UI testing.")]
@@ -225,6 +229,23 @@ namespace DeadSector
 
         void Update()
         {
+            // Collect a small rolling sample without allocations. F3 is a
+            // lightweight performance check, not a replacement for Profiler.
+            float dt = Time.unscaledDeltaTime;
+            if (dt > 0f && dt < .5f)
+            {
+                frameTimeSum += dt;
+                sampleFrames++;
+            }
+
+            if (frameTimeSum >= .5f && sampleFrames > 0)
+            {
+                displayedFps = sampleFrames / frameTimeSum;
+                displayedFrameMs = frameTimeSum * 1000f / sampleFrames;
+                frameTimeSum = 0f;
+                sampleFrames = 0;
+            }
+
             if (SectorInput.Pressed(KeyCode.F3))
                 debugOverlay = !debugOverlay;
         }
@@ -250,8 +271,8 @@ namespace DeadSector
                 return;
 
             // Keep the top of the screen free for the azimuth compass.
-            float hudY = Mathf.Max(12f, Screen.height - 211f);
-            GUI.Box(new Rect(12, hudY, 370, 198), "DEAD SECTOR / 8 x 8 km prototype");
+            float hudY = Mathf.Max(12f, Screen.height - 235f);
+            GUI.Box(new Rect(12, hudY, 370, 222), "DEAD SECTOR / 8 x 8 km prototype");
             GUI.Label(new Rect(24, hudY + 30f, 325, 24), "WASD | Shift | Space | V view | M map | I inventory");
             GUI.Label(new Rect(24, hudY + 53f, 325, 24), "E gather | LMB weak/RMB strong | C craft | J journal");
             GUI.Label(new Rect(24, hudY + 76f, 325, 24), "HP " + player.Health.ToString("0") + " | Terrain: " + world.LoadedTiles + "/64 | Zombies: " + navigation.ZombieCount);
@@ -264,6 +285,9 @@ namespace DeadSector
                 "Feet Y: " + player.transform.position.y.ToString("F2") +
                 " | Terrain Y: " + player.TerrainUnderPlayer.ToString("F2") +
                 " | Sprint: " + (player.IsSprinting ? "ON" : "OFF"));
+            GUI.Label(new Rect(24, hudY + 190f, 335, 24),
+                "FPS: " + displayedFps.ToString("F0") +
+                " | Frame: " + displayedFrameMs.ToString("F1") + " ms");
 
         }
 
