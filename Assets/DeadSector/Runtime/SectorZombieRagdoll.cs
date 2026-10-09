@@ -4,9 +4,11 @@ using UnityEngine;
 namespace DeadSector
 {
     /// <summary>
-    /// Runtime Humanoid ragdoll for killed infected (Mixamo X Bot).
-    /// Physics components are constructed ONLY when a zombie dies:
-    /// living AI keeps its lightweight Animator/NavMeshAgent movement.
+    /// Dynamic ragdoll ONLY for imported Humanoid rigs (Mixamo X Bot).
+    /// Procedural mannequins have no compatible articulated skeleton and
+    /// must fall as a single visual via SectorZombieReaction: adding physics
+    /// to their nested limb transforms makes them fly apart on death.
+    /// Physics components are constructed only after fatal damage.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class SectorZombieRagdoll : MonoBehaviour
@@ -112,12 +114,10 @@ namespace DeadSector
                     animator.avatar == null || !animator.avatar.isValid ||
                     !animator.avatar.isHuman)
                 {
-                    return mannequin != null &&
-                        mannequin.torso != null &&
-                        mannequin.leftArm != null &&
-                        mannequin.rightArm != null &&
-                        mannequin.leftLeg != null &&
-                        mannequin.rightLeg != null;
+                    // Primitive mannequin limbs are nested animation joints,
+                    // NOT stable connected rigid bodies. Never construct
+                    // fallback physics; use SectorZombieReaction.Die instead.
+                    return false;
                 }
 
                 // Require the complete minimum Humanoid rig before creating
@@ -141,12 +141,8 @@ namespace DeadSector
             if (!CanActivate)
                 return false;
 
-            if (animator == null || !animator.isHuman ||
-                animator.avatar == null || !animator.avatar.isValid)
-            {
-                return TryActivateMannequin(
-                    hitDirection, hitPosition, startingVelocity);
-            }
+            // CanActivate rejects every non-Humanoid model, including
+            // SectorMannequin, before ANY Rigidbody is added.
 
             Dictionary<HumanBodyBones, Rigidbody> map =
                 new Dictionary<HumanBodyBones, Rigidbody>();
