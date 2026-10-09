@@ -424,7 +424,8 @@ namespace DeadSector.Editor.Player
                         runState,
                         0.10f,
                         false,
-                        C(AnimatorConditionMode.If, 0f, "IsRunning"));
+                        C(AnimatorConditionMode.If, 0f, "IsRunning"),
+                        C(AnimatorConditionMode.If, 0f, "Grounded"));
 
                     AddTransition(
                         runState,
@@ -441,7 +442,8 @@ namespace DeadSector.Editor.Player
                         runState,
                         0.10f,
                         false,
-                        C(AnimatorConditionMode.Greater, 0.10f, "Speed"));
+                        C(AnimatorConditionMode.Greater, 0.10f, "Speed"),
+                        C(AnimatorConditionMode.If, 0f, "Grounded"));
                 }
 
                 AddTransition(
@@ -603,6 +605,21 @@ namespace DeadSector.Editor.Player
                 }
             }
 
+            // If some optional Mixamo clips are missing, do not trap the Animator
+            // in an airborne state after CharacterController lands.
+            if (fallingState == null)
+            {
+                if (jumpState != null)
+                    AddGroundedRecovery(jumpState, idleState, walkState, runState);
+                if (runningJumpState != null)
+                    AddGroundedRecovery(runningJumpState, idleState, walkState, runState);
+            }
+            else if (landingState == null || hardLandingState == null ||
+                     rollLandingState == null)
+            {
+                AddGroundedRecovery(fallingState, idleState, walkState, runState);
+            }
+
             if (landingState != null)
                 AddExitToLocomotion(landingState, idleState, walkState, runState);
 
@@ -611,6 +628,25 @@ namespace DeadSector.Editor.Player
 
             if (rollLandingState != null)
                 AddExitToLocomotion(rollLandingState, idleState, walkState, runState);
+        }
+
+        private static void AddGroundedRecovery(
+            AnimatorState source, AnimatorState idle,
+            AnimatorState walk, AnimatorState run)
+        {
+            AddTransition(source, idle, 0.08f, false,
+                C(AnimatorConditionMode.If, 0f, "Grounded"),
+                C(AnimatorConditionMode.Less, 0.10f, "Speed"));
+            if (walk != null)
+                AddTransition(source, walk, 0.08f, false,
+                    C(AnimatorConditionMode.If, 0f, "Grounded"),
+                    C(AnimatorConditionMode.Greater, 0.10f, "Speed"),
+                    C(AnimatorConditionMode.IfNot, 0f, "IsRunning"));
+            if (run != null)
+                AddTransition(source, run, 0.08f, false,
+                    C(AnimatorConditionMode.If, 0f, "Grounded"),
+                    C(AnimatorConditionMode.Greater, 0.10f, "Speed"),
+                    C(AnimatorConditionMode.If, 0f, "IsRunning"));
         }
 
         private static void AddExitToLocomotion(
