@@ -27,6 +27,9 @@ namespace DeadSector
         public SectorJournalSnapshot journal = new SectorJournalSnapshot();
         public SectorHordeSnapshot horde = new SectorHordeSnapshot();
         public string[] armor = new string[5];
+        // Optional additive field; old V1 files load with no structures.
+        public List<SectorBuildSnapshot> structures =
+            new List<SectorBuildSnapshot>();
     }
 
     /// <summary>
@@ -50,6 +53,8 @@ namespace DeadSector
         public SectorEquipment Armor { get; private set; }
         public SectorArmorVisuals ArmorVisuals { get; private set; }
         public SectorHordeDirector Horde { get; private set; }
+        public SectorBaseBuilding Building { get; private set; }
+        public string StorageDepositItemId { get; private set; } = "";
 
         readonly Dictionary<string, SectorLootContainer> active =
             new Dictionary<string, SectorLootContainer>(StringComparer.Ordinal);
@@ -143,6 +148,11 @@ namespace DeadSector
                 Journal = gameObject.AddComponent<SectorJournal>();
             Journal.Configure(target);
 
+            Building = GetComponent<SectorBaseBuilding>();
+            if (Building == null)
+                Building = gameObject.AddComponent<SectorBaseBuilding>();
+            Building.Configure(target, this, Inventory);
+
             WorldClock = FindFirstObjectByType<SectorWorldClock>();
 
             // Primitive-survival start: fists only, no free weapon.
@@ -186,7 +196,8 @@ namespace DeadSector
                     ToggleCrafting();
             }
 
-            if (!externalUiBlocking)
+            if (!externalUiBlocking &&
+                (Building == null || !Building.BuildMode))
             {
                 if (SectorInput.Pressed(KeyCode.Alpha1)) selectedSlot = 0;
                 if (SectorInput.Pressed(KeyCode.Alpha2)) selectedSlot = 1;
@@ -200,7 +211,9 @@ namespace DeadSector
             }
 
             if (!externalUiBlocking && !inventoryOpen &&
-                !craftingOpen && player.Health > 0f &&
+                !craftingOpen &&
+                (Building == null || !Building.BuildMode) &&
+                player.Health > 0f &&
                 Cursor.lockState == CursorLockMode.Locked)
             {
                 if (SectorInput.Pressed(KeyCode.E))
@@ -320,6 +333,15 @@ namespace DeadSector
             Notify("Backpack sorted");
         }
 
+        public void NotifyConstruction(string description) =>
+            Notify("Built: " + description);
+
+        public void SelectStorageDepositItem(string id)
+        {
+            if (Inventory.Count(id) > 0)
+                StorageDepositItemId = id;
+        }
+
         public void UseInventoryItem(string id) => UseItem(id);
         public void EquipInventoryItem(string id) => EquipItem(id);
 
@@ -356,6 +378,14 @@ namespace DeadSector
             SectorDoor door = NearbyDoor();
             SectorResourceNode resource =
                 Resources != null ? Resources.Nearby() : null;
+            SectorBuildPiece storage =
+                Building != null ? Building.NearbyStorage() : null;
+            if (storage != null)
+                return SectorInput.Sprint
+                    ? "[SHIFT+E]  DEPOSIT SELECTED ITEM"
+                    : "[E]  STORAGE  (" + storage.StorageItemCount + ")";
+            if (Building != null && Building.BuildMode)
+                return Building.ControlHint;
             Vector3 position = player.transform.position;
 
             float resourceDistance = resource != null
@@ -542,6 +572,25 @@ namespace DeadSector
 
         void Interact()
         {
+            SectorBuildPiece storage =
+                Building != null ? Building.NearbyStorage() : null;
+            if (storage != null)
+            {
+                if (SectorInput.Sprint)
+                {
+                    if (storage.TryDeposit(Inventory, StorageDepositItemId))
+                        Notify("Stored " +
+                            SectorItems.Get(StorageDepositItemId).Label);
+                    else
+                        Notify("Select an item in I, or storage is full");
+                }
+                else if (storage.TryWithdraw(Inventory, out string taken))
+                    Notify("Took from storage: " + taken);
+                else
+                    Notify("Storage empty or backpack full");
+                return;
+            }
+
             SectorLootContainer container = NearbyContainer();
             SectorDoor door = NearbyDoor();
             SectorResourceNode resource =
@@ -875,6 +924,8 @@ namespace DeadSector
                 melee = equipment[2],
                 selectedSlot = selectedSlot,
                 inventory = Inventory.Export(),
+                structures = Building != null
+                    ? Building.Export() : new List<SectorBuildSnapshot>(),
                 harvestedResourceIds = Resources != null
                     ? Resources.Export() : new List<string>(),
                 journal = Journal != null
@@ -966,6 +1017,8 @@ namespace DeadSector
                 Horde?.Import(data.horde);
                 Resources?.Import(data.harvestedResourceIds);
                 Journal?.Import(data.journal);
+                Building?.Import(data.structures);
+                StorageDepositItemId = "";
 
                 foreach (SectorLootContainer container in active.Values)
                     if (container != null)
