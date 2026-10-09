@@ -40,6 +40,7 @@ namespace DeadSector
         public float Health { get; private set; } = 100f;
         public float Speed { get; private set; }
         public bool IsSprinting { get; private set; }
+        public bool IsCrouching { get; private set; }
         public bool IsGrounded => body != null && body.isGrounded;
         public float TerrainUnderPlayer => GroundHeightAt(transform.position);
         public string AnimationState { get; private set; } = "None";
@@ -180,16 +181,19 @@ namespace DeadSector
                 groundedAt = jumpAt = -10f;
             }
 
+            UpdateCrouch(SectorInput.Crouch);
+
             Vector2 input = SectorInput.Move;
             Vector3 move = transform.right * input.x + transform.forward * input.y;
-            bool sprinting = SectorInput.Sprint &&
+            bool sprinting = SectorInput.Sprint && !IsCrouching &&
                 input.sqrMagnitude > .01f &&
                 (needs == null || needs.CanSprint);
             IsSprinting = sprinting;
 
             vertical = Mathf.Max(vertical - gravity * Time.deltaTime, -45f);
             float impactVelocity = vertical;
-            float currentSpeed = sprinting ? runSpeed : walkSpeed;
+            float currentSpeed = IsCrouching
+                ? walkSpeed * .53f : sprinting ? runSpeed : walkSpeed;
 
             CollisionFlags flags = body.Move(
                 (move * currentSpeed + Vector3.up * vertical) * Time.deltaTime);
@@ -252,6 +256,29 @@ namespace DeadSector
             UpdateAnimationStateName();
         }
 
+        void UpdateCrouch(bool requested)
+        {
+            if (body == null || !body.enabled)
+                return;
+            // Do not stand through a low ceiling: stay crouched until
+            // the full-height capsule can fit.
+            if (!requested && IsCrouching)
+            {
+                Vector3 bottom = transform.position + Vector3.up * StandingRadius;
+                Vector3 top = transform.position + Vector3.up *
+                    (StandingHeight - StandingRadius);
+                if (Physics.CheckCapsule(bottom, top,
+                        StandingRadius * .92f, ~(1 << 2),
+                        QueryTriggerInteraction.Ignore))
+                    return;
+            }
+            if (IsCrouching == requested) return;
+            IsCrouching = requested;
+            body.height = requested ? 1.16f : StandingHeight;
+            body.center = Vector3.up * body.height * .5f;
+            cameraInitialized = false;
+        }
+
         void LateUpdate()
         {
             if (view == null)
@@ -268,7 +295,7 @@ namespace DeadSector
             // from the CharacterController. Never mount the gameplay camera
             // inside the actual head mesh: it can intersect skin or terrain.
             float eyeHeight = body != null
-                ? Mathf.Clamp(
+                ? IsCrouching ? 1.01f : Mathf.Clamp(
                     body.center.y + body.height * .40f,
                     1.35f, 1.82f)
                 : cameraHeight;
@@ -604,7 +631,10 @@ namespace DeadSector
             bool sprinting)
         {
             if (rig != null)
+            {
+                rig.SetCrouching(IsCrouching);
                 rig.SetMotion(speed, grounded, verticalSpeed);
+            }
 
             if (animator == null)
                 return;
