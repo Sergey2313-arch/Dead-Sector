@@ -959,7 +959,7 @@ namespace DeadSector
             RectTransform left = RectAt(root, "RecipesPanel",
                 24f, 13f, 850f, 626f, new Color(.06f, .076f, .074f, 1f));
             RectAt(left, "Indicator", 0f, 0f, 3f, 40f, Accent);
-            Label(left, "Header", "МАСТЕРСКАЯ  /  РЕЦЕПТЫ",
+            Label(left, "Header", "МАСТЕРСКАЯ  /  СНАЧАЛА СТРОЙКА, ЗАТЕМ СНАРЯЖЕНИЕ",
                 18f, 10f, 660f, 25f, 16, White, FontStyle.Bold);
 
             RectTransform viewport = RectAt(left, "Scroll_Viewport",
@@ -988,8 +988,10 @@ namespace DeadSector
                 RectAt(row, "LeftAccent", 0f, 0f, 3f, 70f,
                     recipe.Tier == 0 ? Accent :
                     recipe.Tier == 1 ? new Color(.87f, .68f, .38f) :
+                    recipe.Tier == 3 ? new Color(.83f, .64f, .37f) :
                     new Color(.53f, .69f, .87f));
-                Label(row, "Tier", "ЭТАП " + recipe.Tier, 14f,
+                Label(row, "Tier", recipe.Tier == 3 ? "СТРОЙКА" :
+                    "ЭТАП " + recipe.Tier, 14f,
                     4f, 75f, 20f, 11, Muted, FontStyle.Bold);
                 // The output is visible before crafting, not just as a text row.
                 // Icons are generated locally from stable item IDs.
@@ -1030,8 +1032,10 @@ namespace DeadSector
                 "3  Баррикада\n" +
                 "4  Ящик для хранения\n" +
                 "5  Дверь на петлях\n\n" +
-                "Откройте B и поставьте выбранную постройку. " +
-                "Нужны только материалы из рюкзака.",
+                "В меню C изготовь строительный комплект. " +
+                "Затем B → 1–5 → ЛКМ для установки.\n" +
+                "Готовый комплект расходуется вместо материалов. " +
+                "Старое строительство напрямую тоже доступно.",
                 17f, 64f, 301f, 385f, 13, Muted);
             RectTransform summaryPanel = RectAt(right, "Resources",
                 17f, 486f, 305f, 111f,
@@ -1120,7 +1124,9 @@ namespace DeadSector
             {
                 SectorBuildSpecification plan = construction.SelectedPlan;
                 buildingTitle.text = "СТРОЙКА  /  " + plan.Label.ToUpperInvariant();
-                buildingCost.text = "НУЖНО: " +
+                buildingCost.text = "КОМПЛЕКТ (КРАФТ C): " +
+                    SectorItems.Get(SectorBuildCatalog.KitId(plan.Kind)).Label +
+                    "\nИЛИ МАТЕРИАЛЫ: " +
                     SectorBuildCatalog.CostLabel(plan) + "\n" +
                     SectorBuildCatalog.MissingLabel(gameplay.Inventory, plan) +
                     (construction.CanPlace ? "  /  МОЖНО СТАВИТЬ" :
