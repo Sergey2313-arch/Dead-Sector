@@ -199,7 +199,17 @@ namespace DeadSector
                 return false;
             }
 
-            gameplay.NotifyConstruction(plan.Label);
+            // Save the committed structure and consumed building kit
+            // together. Players should not lose their house merely because
+            // they leave PlayMode before the 90s periodic autosave or forget F5.
+            // No partial snapshot is written before Spawn/Consume succeeds.
+            bool saved = gameplay != null && gameplay.TrySaveGame(true);
+            if (saved)
+                gameplay.NotifyConstruction(plan.Label + " — сохранено");
+            else
+                gameplay?.NotifyBuildFailure(
+                    "Постройка установлена, но НЕ СОХРАНЕНА. " +
+                    "Нажмите F5 и проверьте Console.");
             canPlace = false;
             return true;
         }
