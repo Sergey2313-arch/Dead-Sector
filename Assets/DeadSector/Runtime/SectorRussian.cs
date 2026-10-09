@@ -61,6 +61,38 @@ namespace DeadSector
                 ? name : fallback;
         }
 
+        public static string Quality(string name)
+        {
+            if (string.IsNullOrEmpty(name)) return "ПО УМОЛЧАНИЮ";
+            switch (name.ToLowerInvariant())
+            {
+                case "very low": return "ОЧЕНЬ НИЗКОЕ";
+                case "low": return "НИЗКОЕ";
+                case "medium": return "СРЕДНЕЕ";
+                case "high": return "ВЫСОКОЕ";
+                case "very high": return "ОЧЕНЬ ВЫСОКОЕ";
+                case "ultra": return "МАКСИМАЛЬНОЕ";
+                default: return name;
+            }
+        }
+
+        public static string DebugStatus(string raw)
+        {
+            if (string.IsNullOrEmpty(raw)) return "";
+            if (raw == "Ready") return "Готово";
+            if (raw.StartsWith("Terrain ", StringComparison.Ordinal))
+                return "Рельеф " + raw.Substring(8);
+            if (raw == "Building paths...") return "Расчёт путей...";
+            if (raw == "Refreshing local zombie navigation")
+                return "Обновление путей зомби";
+            if (raw == "Ready / streamed local NavMesh")
+                return "Готово / пути загружены";
+            if (raw == "No NavMesh agent settings")
+                return "Нет настроек NavMesh";
+            if (raw == "Generating terrain...") return "Генерация рельефа...";
+            return raw;
+        }
+
         public static string Kind(SectorItemKind type)
         {
             switch (type)
