@@ -208,6 +208,7 @@ namespace DeadSector
                     minimap, compass))
                 {
                     hud.enabled = false;
+                    weather.ModernUiEnabled = true;
                     var menu = new GameObject("DeadSector_FrontEnd")
                         .AddComponent<SectorMenuUI>();
                     if (!menu.Configure(gameplay, player, minimap))
