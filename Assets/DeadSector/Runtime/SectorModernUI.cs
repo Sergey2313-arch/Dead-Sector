@@ -60,6 +60,8 @@ namespace DeadSector
         Text craftingSummary;
         Text hintText;
         Text messageText;
+        RectTransform dragGhost;
+        Text dragGhostText;
         Button useButton;
         Button equipButton;
         RectTransform bodyPanel;
@@ -308,6 +310,9 @@ namespace DeadSector
                 tile.GetComponent<Image>().raycastTarget = true;
                 click.onClick.AddListener(() =>
                     gameplay.RemoveGear((SectorEquipment.GearSlot)gearIndex));
+                SectorGearDropTarget drop =
+                    tile.gameObject.AddComponent<SectorGearDropTarget>();
+                drop.Configure(this, gearIndex);
             }
 
             RectTransform right = RectAt(root, "Backpack",
@@ -335,6 +340,9 @@ namespace DeadSector
                 bagTexts[i] = button.GetComponentInChildren<Text>();
                 bagTexts[i].fontSize = 12;
                 bagTexts[i].alignment = TextAnchor.MiddleCenter;
+                SectorBagDragSource drag =
+                    button.gameObject.AddComponent<SectorBagDragSource>();
+                drag.Configure(this, slot);
             }
 
             RectTransform details = RectAt(right, "Selected_Item",
@@ -362,7 +370,7 @@ namespace DeadSector
             Label(footer, "Help", "CLICK AN ITEM TO INSPECT",
                 14f, 11f, 620f, 24f, 12, Accent, FontStyle.Bold);
             Label(footer, "HelpSecondary",
-                "USE: CONSUMABLES    /    EQUIP: GEAR & WEAPONS    /    CLICK GEAR TO REMOVE",
+                "DRAG ARMOR TO GEAR SLOT    /    CLICK TO INSPECT    /    USE OR EQUIP ACTIONS",
                 14f, 43f, 815f, 22f, 11, Muted);
         }
 
@@ -524,6 +532,66 @@ namespace DeadSector
                 RefreshInventory();
             else if (crafting)
                 RefreshCrafting();
+        }
+
+        public string InventoryItemAt(int slot)
+        {
+            if (gameplay == null || slot < 0 ||
+                slot >= gameplay.Inventory.Stacks.Count)
+                return "";
+            return gameplay.Inventory.Stacks[slot].id;
+        }
+
+        public void BeginItemDrag(string id, Vector2 pointerPosition)
+        {
+            if (canvasObject == null || string.IsNullOrEmpty(id))
+                return;
+
+            EndItemDrag();
+            RectTransform canvas = canvasObject.GetComponent<RectTransform>();
+            dragGhost = Rect(canvas, "Dragging_Item",
+                new Vector2(.5f, .5f), new Vector2(.5f, .5f),
+                new Vector2(.5f, .5f), Vector2.zero,
+                new Vector2(192f, 52f));
+            Paint(dragGhost, new Color(.18f, .28f, .21f, .95f));
+            dragGhostText = Label(dragGhost, "DraggedLabel",
+                SectorItems.Get(id).Label,
+                12f, 4f, 168f, 44f, 13, White,
+                FontStyle.Bold, TextAnchor.MiddleCenter);
+            dragGhost.SetAsLastSibling();
+            MoveItemDrag(pointerPosition);
+        }
+
+        public void MoveItemDrag(Vector2 pointerPosition)
+        {
+            if (dragGhost == null || canvasObject == null)
+                return;
+
+            RectTransform canvas = canvasObject.GetComponent<RectTransform>();
+            if (RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                canvas, pointerPosition, null, out Vector2 local))
+                dragGhost.anchoredPosition = local +
+                    new Vector2(45f, 35f);
+        }
+
+        public void EndItemDrag()
+        {
+            if (dragGhost != null)
+                Destroy(dragGhost.gameObject);
+            dragGhost = null;
+            dragGhostText = null;
+        }
+
+        public void EquipDraggedArmor(int targetSlot, string itemId)
+        {
+            SectorEquipment.GearSlot? matching =
+                SectorEquipment.SlotFor(itemId);
+            if (matching == null || (int)matching.Value != targetSlot ||
+                gameplay == null || gameplay.Inventory.Count(itemId) == 0)
+                return;
+
+            gameplay.EquipInventoryItem(itemId);
+            RefreshInventory();
         }
 
         void SelectBagCell(int slot)
@@ -729,4 +797,80 @@ namespace DeadSector
                 Destroy(uiFont);
         }
     }
+
+    /// <summary>Drag an inventory cell onto a matching gear slot.</summary>
+    public sealed class SectorBagDragSource : MonoBehaviour,
+        IBeginDragHandler, IDragHandler, IEndDragHandler
+    {
+        SectorModernUI owner;
+        int slotIndex;
+        Image sourceImage;
+
+        public string ItemId =>
+            owner != null ? owner.InventoryItemAt(slotIndex) : "";
+
+        public void Configure(SectorModernUI ui, int index)
+        {
+            owner = ui;
+            slotIndex = index;
+            sourceImage = GetComponent<Image>();
+        }
+
+        public void OnBeginDrag(PointerEventData data)
+        {
+            if (owner == null || string.IsNullOrEmpty(ItemId))
+                return;
+
+            if (sourceImage != null)
+                sourceImage.raycastTarget = false;
+            owner.BeginItemDrag(ItemId, data.position);
+        }
+
+        public void OnDrag(PointerEventData data)
+        {
+            if (owner != null)
+                owner.MoveItemDrag(data.position);
+        }
+
+        public void OnEndDrag(PointerEventData data)
+        {
+            if (sourceImage != null)
+                sourceImage.raycastTarget = true;
+            if (owner != null)
+                owner.EndItemDrag();
+        }
+
+        void OnDisable()
+        {
+            if (sourceImage != null)
+                sourceImage.raycastTarget = true;
+            if (owner != null)
+                owner.EndItemDrag();
+        }
+    }
+
+    /// <summary>Rejects weapons/materials dropped onto armor slots.</summary>
+    public sealed class SectorGearDropTarget : MonoBehaviour, IDropHandler
+    {
+        SectorModernUI owner;
+        int targetIndex;
+
+        public void Configure(SectorModernUI ui, int slot)
+        {
+            owner = ui;
+            targetIndex = slot;
+        }
+
+        public void OnDrop(PointerEventData data)
+        {
+            if (owner == null || data.pointerDrag == null)
+                return;
+
+            SectorBagDragSource source =
+                data.pointerDrag.GetComponent<SectorBagDragSource>();
+            if (source != null)
+                owner.EquipDraggedArmor(targetIndex, source.ItemId);
+        }
+    }
+
 }
