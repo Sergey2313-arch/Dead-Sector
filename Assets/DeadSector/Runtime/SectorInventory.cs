@@ -55,6 +55,7 @@ namespace DeadSector
                 { "knife", new SectorItemDefinition("knife", "Field Knife", SectorItemKind.Melee, .45f, 1, damage: 25f) },
                 { "stone_knife", new SectorItemDefinition("stone_knife", "Stone Knife", SectorItemKind.Melee, .6f, 1, damage: 19f) },
                 { "stone_axe", new SectorItemDefinition("stone_axe", "Stone Axe", SectorItemKind.Melee, 1.4f, 1, damage: 29f) },
+                { "stone_pickaxe", new SectorItemDefinition("stone_pickaxe", "Stone Pickaxe", SectorItemKind.Melee, 1.65f, 1, damage: 24f) },
                 { "wood_club", new SectorItemDefinition("wood_club", "Wooden Club", SectorItemKind.Melee, 1.25f, 1, damage: 23f) },
                 { "axe", new SectorItemDefinition("axe", "Hatchet", SectorItemKind.Melee, 1.3f, 1, damage: 38f) },
                 { "spear", new SectorItemDefinition("spear", "Improvised Spear", SectorItemKind.Melee, 1.15f, 1, damage: 31f) },
