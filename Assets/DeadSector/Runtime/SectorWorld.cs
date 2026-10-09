@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.AI;
 
 namespace DeadSector
 {
@@ -26,6 +27,12 @@ namespace DeadSector
 
     public sealed class SectorWorld : MonoBehaviour
     {
+        // Metres. A standing player is ~1.78m; homes should read as
+        // single-storey buildings, not warehouse-height boxes.
+        public const float ResidentialDoorWidth = 1.65f;
+        public const float ResidentialDoorHeight = 2.22f;
+        public const float ResidentialStepTop = .20f;
+        public const float ResidentialPorchTop = .44f;
         public SectorPlayer player;
         public bool Ready { get; private set; }
         public IReadOnlyList<SectorPointOfInterest> PointsOfInterest => pointsOfInterest;
@@ -266,30 +273,30 @@ namespace DeadSector
             {
                 House(
                     northHouses[i],
-                    12 + (i % 2) * 2,
-                    16 + (i % 3) * 2,
-                    4.8f + (i % 2) * .4f,
+                    9.5f + (i % 2) * 1f,
+                    11.5f + (i % 3) * .6f,
+                    3.15f + (i % 2) * .18f,
                     i % 2 == 0 ? plaster : plasterWarm,
                     roof,
                     wood,
                     glass,
                     "Village_House_N_" + i,
-                    180f);
+                    0f);
             }
 
             for (int i = 0; i < southHouses.Length; i++)
             {
                 House(
                     southHouses[i],
-                    12 + ((i + 1) % 2) * 2,
-                    15 + (i % 3) * 2,
-                    4.8f + ((i + 1) % 2) * .4f,
+                    9.5f + ((i + 1) % 2) * 1f,
+                    11.5f + (i % 3) * .6f,
+                    3.15f + ((i + 1) % 2) * .18f,
                     i % 2 == 0 ? plasterWarm : plaster,
                     roof,
                     wood,
                     glass,
                     "Village_House_S_" + i,
-                    0f);
+                    180f);
             }
 
             BuildYards(northHouses, southHouses, wood);
@@ -456,8 +463,8 @@ namespace DeadSector
             root.transform.localRotation = Quaternion.Euler(0, yaw, 0);
 
             const float wall = .28f;
-            const float doorWidth = 1.25f;
-            const float doorHeight = 2.25f;
+            const float doorWidth = ResidentialDoorWidth;
+            const float doorHeight = ResidentialDoorHeight;
             float frontZ = -depth * .5f;
             float backZ = depth * .5f;
 
@@ -528,24 +535,45 @@ namespace DeadSector
                 new Vector3(doorWidth, height - doorHeight, wall),
                 wallColor);
 
-            // Open doorway with a visible door swung inward.
-            var door = Art.Shape(
-                root.transform,
-                "Door",
-                PrimitiveType.Cube,
-                new Vector3(-doorWidth * .48f, doorHeight * .5f, frontZ + .65f),
-                new Vector3(.08f, doorHeight, doorWidth),
-                woodColor,
-                false);
+            // A real hinged door with a collider; E opens/closes it.
+            // The hinge is at the right jamb so +105 degrees swings inward.
+            // The door slab starts CLOSED and no longer clips the opening.
+            var hinge = new GameObject("FrontDoor_Hinge");
+            hinge.transform.SetParent(root.transform, false);
+            hinge.transform.localPosition = new Vector3(
+                doorWidth * .5f - .06f, 0f, frontZ - .18f);
+            SectorDoor entrance = hinge.AddComponent<SectorDoor>();
+            entrance.openAngle = 105f;
+            entrance.turnSpeed = 8f;
 
-            door.transform.localRotation = Quaternion.Euler(0, -72f, 0);
+            var leaf = Art.Shape(
+                hinge.transform, "FrontDoor_Slab", PrimitiveType.Cube,
+                new Vector3(-doorWidth * .5f + .08f,
+                    doorHeight * .5f + .04f, 0f),
+                new Vector3(doorWidth - .16f, doorHeight - .08f, .10f),
+                woodColor);
 
+            // Dynamic carving lets AI traverse an opened doorway without
+            // making a permanently impassable portal in the NavMesh.
+            var obstruction = hinge.AddComponent<NavMeshObstacle>();
+            obstruction.shape = NavMeshObstacleShape.Box;
+            obstruction.center = leaf.transform.localPosition;
+            obstruction.size = leaf.transform.localScale;
+            obstruction.carving = true;
+            obstruction.carveOnlyStationary = true;
+
+            // A .44m porch is higher than the player's .30m stepOffset.
+            // Two navigable steps keep the doorway accessible on foot.
             Art.Box(
-                root.transform,
-                "Porch",
-                new Vector3(0, .22f, frontZ - 1.1f),
-                new Vector3(3.4f, .44f, 1.8f),
+                root.transform, "Porch",
+                new Vector3(0f, ResidentialPorchTop * .5f, frontZ - 1.05f),
+                new Vector3(3.0f, ResidentialPorchTop, 1.8f),
                 new Color(.34f, .29f, .22f));
+            Art.Box(
+                root.transform, "Porch_Low_Step",
+                new Vector3(0f, ResidentialStepTop * .5f, frontZ - 2.24f),
+                new Vector3(2.6f, ResidentialStepTop, .72f),
+                new Color(.31f, .27f, .22f));
 
             Window(
                 root.transform,
@@ -655,52 +683,49 @@ namespace DeadSector
             Color fenceColor)
         {
             foreach (Vector3 p in north)
-                YardFence(p + new Vector3(0, 0, 4), 15, 19, fenceColor);
+                YardFence(p, 15, 19, fenceColor, true);
 
             foreach (Vector3 p in south)
-                YardFence(p + new Vector3(0, 0, -4), 15, 19, fenceColor);
+                YardFence(p, 15, 19, fenceColor, false);
         }
 
         void YardFence(
-            Vector3 center,
-            float width,
-            float depth,
-            Color color)
+            Vector3 center, float width, float depth,
+            Color color, bool gateAtNegativeZ)
         {
             float y = center.y + .65f;
+            float frontZ = center.z + (gateAtNegativeZ ? -1f : 1f) * depth * .5f;
+            float rearZ = center.z - (gateAtNegativeZ ? -1f : 1f) * depth * .5f;
+            const float gap = 3.4f;
 
+            // Do not place posts/rails across the entrance to the house.
             for (int i = -2; i <= 2; i++)
             {
                 float x = center.x + i * width / 4f;
-
-                Art.Box(
-                    Settlement,
-                    "Fence_Post",
-                    new Vector3(x, y, center.z - depth * .5f),
-                    new Vector3(.14f, 1.3f, .14f),
-                    color);
-
-                Art.Box(
-                    Settlement,
-                    "Fence_Post",
-                    new Vector3(x, y, center.z + depth * .5f),
-                    new Vector3(.14f, 1.3f, .14f),
-                    color);
+                Art.Box(Settlement, "Fence_Post",
+                    new Vector3(x, y, rearZ), new Vector3(.14f, 1.3f, .14f), color);
+                if (i != 0)
+                    Art.Box(Settlement, "Fence_Post",
+                        new Vector3(x, y, frontZ),
+                        new Vector3(.14f, 1.3f, .14f), color);
             }
 
-            Art.Box(
-                Settlement,
-                "Fence_Rail",
-                new Vector3(center.x, y + .18f, center.z - depth * .5f),
-                new Vector3(width, .12f, .12f),
-                color);
+            for (int side = -1; side <= 1; side += 2)
+            {
+                Art.Box(Settlement, "Fence_Gate_Post",
+                    new Vector3(center.x + side * gap * .5f, y, frontZ),
+                    new Vector3(.14f, 1.3f, .14f), color);
 
-            Art.Box(
-                Settlement,
-                "Fence_Rail",
-                new Vector3(center.x, y + .18f, center.z + depth * .5f),
-                new Vector3(width, .12f, .12f),
-                color);
+                float railWidth = (width - gap) * .5f;
+                Art.Box(Settlement, "Fence_Rail_Front",
+                    new Vector3(center.x + side * (gap + railWidth) * .5f,
+                        y + .18f, frontZ),
+                    new Vector3(railWidth, .12f, .12f), color);
+            }
+
+            Art.Box(Settlement, "Fence_Rail_Rear",
+                new Vector3(center.x, y + .18f, rearZ),
+                new Vector3(width, .12f, .12f), color);
         }
 
         void IndustrialBuilding(
@@ -807,7 +832,7 @@ namespace DeadSector
                 new Vector3(335, 60, -240),
                 8,
                 10,
-                4.2f,
+                3.25f,
                 concrete,
                 new Color(.16f, .17f, .17f),
                 rust,
