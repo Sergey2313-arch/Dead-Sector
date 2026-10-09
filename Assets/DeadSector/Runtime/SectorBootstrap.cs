@@ -61,9 +61,9 @@ namespace DeadSector
                 if (controller == null)
                 {
                     controller = actor.AddComponent<CharacterController>();
-                    controller.height = 1.8f;
-                    controller.radius = .3f;
-                    controller.center = new Vector3(0, .9f, 0);
+                    controller.height = SectorPlayer.StandingHeight;
+                    controller.radius = SectorPlayer.StandingRadius;
+                    controller.center = new Vector3(0, SectorPlayer.StandingHeight * .5f, 0);
                     controller.stepOffset = .3f;
                     controller.slopeLimit = 48;
                 }
@@ -104,13 +104,16 @@ namespace DeadSector
                 actor.layer = 2;
 
                 var controller = actor.AddComponent<CharacterController>();
-                controller.height = 1.8f;
-                controller.radius = .3f;
-                controller.center = new Vector3(0, .9f, 0);
+                controller.height = SectorPlayer.StandingHeight;
+                controller.radius = SectorPlayer.StandingRadius;
+                controller.center = new Vector3(0, SectorPlayer.StandingHeight * .5f, 0);
                 controller.stepOffset = .3f;
                 controller.slopeLimit = 48;
 
                 rig = actorArt.Person(actor.transform, new Color(.18f, .28f, .22f)).transform;
+                // Adjust only our throwaway fallback mannequin, never an
+                // imported FBX or the user's locally edited full-body prefab.
+                rig.localScale *= SectorPlayer.StandingHeight / 1.84f;
 
                 var cameraObject = new GameObject("PlayerCamera");
                 camera = cameraObject.AddComponent<Camera>();
