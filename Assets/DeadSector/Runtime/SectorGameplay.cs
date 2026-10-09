@@ -153,10 +153,10 @@ namespace DeadSector
                 LoadGame(true);
             }
 
-            if (SectorInput.Pressed(KeyCode.F5))
+            if (!externalUiBlocking && SectorInput.Pressed(KeyCode.F5))
                 SaveGame();
 
-            if (SectorInput.Pressed(KeyCode.F9))
+            if (!externalUiBlocking && SectorInput.Pressed(KeyCode.F9))
                 LoadGame(false);
 
             if (!externalUiBlocking && SectorInput.Pressed(KeyCode.I))
@@ -165,9 +165,12 @@ namespace DeadSector
             if (!externalUiBlocking && SectorInput.Pressed(KeyCode.C))
                 ToggleCrafting();
 
-            if (SectorInput.Pressed(KeyCode.Alpha1)) selectedSlot = 0;
-            if (SectorInput.Pressed(KeyCode.Alpha2)) selectedSlot = 1;
-            if (SectorInput.Pressed(KeyCode.Alpha3)) selectedSlot = 2;
+            if (!externalUiBlocking)
+            {
+                if (SectorInput.Pressed(KeyCode.Alpha1)) selectedSlot = 0;
+                if (SectorInput.Pressed(KeyCode.Alpha2)) selectedSlot = 1;
+                if (SectorInput.Pressed(KeyCode.Alpha3)) selectedSlot = 2;
+            }
 
             if (Time.time >= refreshAt)
             {
@@ -217,6 +220,7 @@ namespace DeadSector
         // exactly the same inventory and save rules; no duplicated state.
         public bool ModernUiEnabled { get; set; }
         public bool ExternalUiBlocking => externalUiBlocking;
+        public bool HasLoadedInitialSave => loadedOnce;
 
         public void SetExternalUiBlocking(bool blocked)
         {
