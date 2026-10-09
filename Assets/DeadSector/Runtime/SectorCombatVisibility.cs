@@ -9,6 +9,9 @@ namespace DeadSector
     /// </summary>
     public static class SectorCombatVisibility
     {
+        // Normal shots avoid per-call RaycastAll allocations. Overflow uses the
+        // allocating path to preserve correctness in unusually dense geometry.
+        private static readonly RaycastHit[] HitBuffer = new RaycastHit[64];
         public static bool IsObstructed(
             Vector3 origin, Vector3 hitPoint, SectorZombie intendedTarget)
         {
@@ -38,29 +41,45 @@ namespace DeadSector
 
             // Actor layer 2 is reserved for player visual elements and
             // excludes self camera/model mesh overlap. World props remain.
-            RaycastHit[] hits = Physics.RaycastAll(
-                origin, delta / distance, distance, ~(1 << 2),
+            int hitCount = Physics.RaycastNonAlloc(
+                origin, delta / distance, HitBuffer, distance, ~(1 << 2),
                 QueryTriggerInteraction.Ignore);
 
-            foreach (RaycastHit hit in hits)
+            if (hitCount == HitBuffer.Length)
             {
-                Collider obstacle = hit.collider;
-                if (obstacle == null || !obstacle.enabled ||
-                    hit.distance <= .015f)
-                    continue;
-
-                Transform colliderRoot = obstacle.transform;
-                if (sourceRoot != null &&
-                    colliderRoot.IsChildOf(sourceRoot))
-                    continue;
-
-                if (colliderRoot.IsChildOf(intendedTargetRoot))
-                    continue;
-
-                return true;
+                // A full buffer may have omitted the blocking collider.
+                // Use the complete query rather than allowing wall penetration.
+                RaycastHit[] allHits = Physics.RaycastAll(
+                    origin, delta / distance, distance, ~(1 << 2),
+                    QueryTriggerInteraction.Ignore);
+                foreach (RaycastHit hit in allHits)
+                    if (Blocks(hit, sourceRoot, intendedTargetRoot))
+                        return true;
+                return false;
             }
 
+            for (int i = 0; i < hitCount; i++)
+                if (Blocks(HitBuffer[i], sourceRoot, intendedTargetRoot))
+                    return true;
+
             return false;
+        }
+
+        private static bool Blocks(
+            RaycastHit hit, Transform sourceRoot, Transform intendedTargetRoot)
+        {
+            Collider obstacle = hit.collider;
+            if (obstacle == null || !obstacle.enabled ||
+                hit.distance <= .015f)
+                return false;
+
+            Transform colliderRoot = obstacle.transform;
+            if (sourceRoot != null && colliderRoot.IsChildOf(sourceRoot))
+                return false;
+            if (colliderRoot.IsChildOf(intendedTargetRoot))
+                return false;
+
+            return true;
         }
     }
 }
