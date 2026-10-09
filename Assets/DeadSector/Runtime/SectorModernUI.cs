@@ -244,7 +244,7 @@ namespace DeadSector
                 meterFill[i] = fill.GetComponent<Image>();
             }
 
-            Label(vitalPanel, "Shortcuts", "I РЮКЗАК   C КРАФТ   J ЖУРНАЛ   B СТРОЙКА   H РЕМОНТ",
+            Label(vitalPanel, "Shortcuts", "CTRL ПРИСЕСТЬ  F ФОНАРЬ  I РЮКЗАК  C КРАФТ  B СТРОЙКА",
                 16f, 176f, 230f, 16f, 10, Muted);
 
             RectTransform bar = Rect(root, "Weapon_Hotbar",
