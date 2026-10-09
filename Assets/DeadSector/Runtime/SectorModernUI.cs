@@ -300,9 +300,9 @@ namespace DeadSector
                 "FivePlans", "", 17f, 153f,
                 453f, 107f, 12, White, FontStyle.Bold);
             buildingCatalog.text =
-                "1  ОСНОВАНИЕ       2  СТЕНА       3  БАРРИКАДА\\n" +
-                "4  ХРАНИЛИЩЕ         5  ДВЕРЬ\\n" +
-                "Материалы: дерево и палки.\\n" +
+                "1  ОСНОВАНИЕ       2  СТЕНА       3  БАРРИКАДА\n" +
+                "4  ХРАНИЛИЩЕ         5  ДВЕРЬ\n" +
+                "Материалы: дерево и палки.\n" +
                 "Топор — рубить деревья, кирка — добывать руду.";
             buildingRoot.SetActive(false);
 
@@ -1020,16 +1020,16 @@ namespace DeadSector
             Label(right, "Title", "ПУТЬ ВЫЖИВАНИЯ", 17f, 10f, 295f, 25f,
                 16, White, FontStyle.Bold);
             Label(right, "Hint",
-                "СБОР РЕСУРСОВ\\n" +
-                "E — камни, ветки и хлопок\\n" +
-                "ЛКМ + топор — рубить дерево\\n" +
-                "ЛКМ + кирка — добывать руду\\n\\n" +
-                "ПОСТРОЙКИ  [B]\\n" +
-                "1  Деревянное основание\\n" +
-                "2  Деревянная стена\\n" +
-                "3  Баррикада\\n" +
-                "4  Ящик для хранения\\n" +
-                "5  Дверь на петлях\\n\\n" +
+                "СБОР РЕСУРСОВ\n" +
+                "E — камни, ветки и хлопок\n" +
+                "ЛКМ + топор — рубить дерево\n" +
+                "ЛКМ + кирка — добывать руду\n\n" +
+                "ПОСТРОЙКИ  [B]\n" +
+                "1  Деревянное основание\n" +
+                "2  Деревянная стена\n" +
+                "3  Баррикада\n" +
+                "4  Ящик для хранения\n" +
+                "5  Дверь на петлях\n\n" +
                 "Откройте B и поставьте выбранную постройку. " +
                 "Нужны только материалы из рюкзака.",
                 17f, 64f, 301f, 385f, 13, Muted);
@@ -1121,7 +1121,7 @@ namespace DeadSector
                 SectorBuildSpecification plan = construction.SelectedPlan;
                 buildingTitle.text = "СТРОЙКА  /  " + plan.Label.ToUpperInvariant();
                 buildingCost.text = "НУЖНО: " +
-                    SectorBuildCatalog.CostLabel(plan) + "\\n" +
+                    SectorBuildCatalog.CostLabel(plan) + "\n" +
                     SectorBuildCatalog.MissingLabel(gameplay.Inventory, plan) +
                     (construction.CanPlace ? "  /  МОЖНО СТАВИТЬ" :
                         "  /  МЕСТО ЗАНЯТО ИЛИ НЕТ РЕСУРСОВ");
