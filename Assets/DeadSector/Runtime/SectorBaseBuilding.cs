@@ -41,8 +41,8 @@ namespace DeadSector
         public SectorBuildSpecification SelectedPlan =>
             SectorBuildCatalog.At(selected);
         public string ControlHint => buildMode
-            ? "B EXIT | 1-5 SELECT | Q/E ROTATE | LMB BUILD | RMB CANCEL"
-            : "[B] BUILD";
+            ? "B ВЫХОД | 1–5 ВЫБОР | Q/E ПОВОРОТ | ЛКМ ПОСТРОИТЬ | ПКМ ОТМЕНА"
+            : "[B] СТРОИТЬ";
 
         public void Configure(SectorPlayer target,
             SectorGameplay owner, SectorInventory items)
