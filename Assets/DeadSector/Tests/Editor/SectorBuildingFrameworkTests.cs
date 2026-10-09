@@ -9,7 +9,7 @@ namespace DeadSector.Tests
         [Test]
         public void AllBuildPlansHaveSafeDimensionsAndRealItemCosts()
         {
-            Assert.AreEqual(4, SectorBuildCatalog.Count);
+            Assert.AreEqual(5, SectorBuildCatalog.Count);
 
             for (int i = 0; i < SectorBuildCatalog.Count; i++)
             {
@@ -86,6 +86,14 @@ namespace DeadSector.Tests
                         {
                             new SectorItemStack("water", 2)
                         }
+                    },
+                    new SectorBuildSnapshot
+                    {
+                        id = "camp_door_1",
+                        kind = SectorBuildKind.Door,
+                        position = new Vector3(42f, 60f, 30f),
+                        health = 100f,
+                        doorOpen = true
                     }
                 }
             };
@@ -94,11 +102,12 @@ namespace DeadSector.Tests
             var loaded = JsonUtility.FromJson<SectorGameSave>(json);
 
             Assert.AreEqual(1, loaded.version);
-            Assert.AreEqual(2, loaded.structures.Count);
+            Assert.AreEqual(3, loaded.structures.Count);
             Assert.AreEqual(44f, loaded.structures[0].health, .001f);
             Assert.AreEqual(SectorBuildKind.Storage,
                 loaded.structures[1].kind);
             Assert.AreEqual(2, loaded.structures[1].storage[0].count);
+            Assert.IsTrue(loaded.structures[2].doorOpen);
         }
 
         [Test]
