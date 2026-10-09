@@ -315,7 +315,7 @@ namespace DeadSector
                         h * .035f,
                         180,
                         22),
-                    "MINIMAP   N ↑   [M]");
+                    "МИНИ-КАРТА   С ↑   [M]");
             }
         }
 
