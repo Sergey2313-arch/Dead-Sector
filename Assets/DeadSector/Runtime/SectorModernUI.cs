@@ -50,6 +50,7 @@ namespace DeadSector
         readonly Image[] hotbarAccent = new Image[3];
         readonly Text[] bagTexts = new Text[30];
         readonly Image[] bagBackgrounds = new Image[30];
+        readonly Image[] bagCategoryStripes = new Image[30];
         readonly Text[] gearLabels = new Text[5];
         readonly List<RecipeDisplay> recipeDisplays = new List<RecipeDisplay>();
 
@@ -155,9 +156,9 @@ namespace DeadSector
             RectTransform vitalPanel = Rect(root, "Survivor_Readout",
                 new Vector2(0f, 1f), new Vector2(0f, 1f),
                 new Vector2(0f, 1f), new Vector2(24f, -24f),
-                new Vector2(253f, 187f));
+                new Vector2(253f, 202f));
             Paint(vitalPanel, new Color(.018f, .026f, .028f, .82f));
-            RectAt(vitalPanel, "Accent_Line", 0f, 0f, 3f, 187f, Accent);
+            RectAt(vitalPanel, "Accent_Line", 0f, 0f, 3f, 202f, Accent);
             Label(vitalPanel, "Title", "SURVIVOR   /   01", 16f, 12f,
                 210f, 22f, 15, White, FontStyle.Bold);
             Label(vitalPanel, "Subtitle", "STATUS MONITOR",
@@ -178,6 +179,9 @@ namespace DeadSector
                     16f, y + 17f, 221f, 5f, vitality[i]);
                 meterFill[i] = fill.GetComponent<Image>();
             }
+
+            Label(vitalPanel, "Shortcuts", "I  INVENTORY     C  CRAFTING",
+                16f, 176f, 225f, 16f, 10, Muted);
 
             RectTransform bar = Rect(root, "Weapon_Hotbar",
                 new Vector2(.5f, 0f), new Vector2(.5f, 0f),
@@ -336,6 +340,9 @@ namespace DeadSector
                     "", x, y, 86f, 82f, Cell, White,
                     () => SelectBagCell(slot));
                 bagBackgrounds[i] = button.GetComponent<Image>();
+                bagCategoryStripes[i] = RectAt(button.transform,
+                    "CategoryStripe", 0f, 0f, 3f, 82f, Muted)
+                    .GetComponent<Image>();
                 bagTexts[i] = button.GetComponentInChildren<Text>();
                 bagTexts[i].fontSize = 12;
                 bagTexts[i].alignment = TextAnchor.MiddleCenter;
@@ -624,12 +631,14 @@ namespace DeadSector
                     bagTexts[i].text = item.Label + "\n×" + stack.count;
                     bagBackgrounds[i].color = selectedId == stack.id
                         ? new Color(.20f, .32f, .24f, 1f) : Cell;
+                    bagCategoryStripes[i].color = CategoryColor(item.Kind);
                 }
                 else
                 {
                     bagTexts[i].text = i < inventory.SlotLimit ? "·" : "—";
                     bagBackgrounds[i].color =
                         i < inventory.SlotLimit ? Cell : Panel;
+                    bagCategoryStripes[i].color = Edge;
                 }
             }
 
@@ -667,6 +676,20 @@ namespace DeadSector
                 selectedDetails.text = "Choose an item from your backpack.";
                 useButton.interactable = false;
                 equipButton.interactable = false;
+            }
+        }
+
+        static Color CategoryColor(SectorItemKind kind)
+        {
+            switch (kind)
+            {
+                case SectorItemKind.Medical: return new Color(.70f, .42f, .37f);
+                case SectorItemKind.Food:
+                case SectorItemKind.Drink: return new Color(.55f, .72f, .82f);
+                case SectorItemKind.Armor: return Accent;
+                case SectorItemKind.Firearm:
+                case SectorItemKind.Melee: return new Color(.85f, .69f, .39f);
+                default: return Muted;
             }
         }
 
