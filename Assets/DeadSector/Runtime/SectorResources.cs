@@ -63,6 +63,13 @@ namespace DeadSector
             new Dictionary<string, SectorResourceNode>(StringComparer.Ordinal);
         readonly HashSet<string> harvested =
             new HashSet<string>(StringComparer.Ordinal);
+
+        // Original large trees from SectorWorld are also resource nodes.
+        // They are owned by streamed terrain tiles (NOT by the spawned
+        // small resource collection), and share the same saved harvest IDs.
+        readonly Dictionary<string, SectorResourceNode> worldTrees =
+            new Dictionary<string, SectorResourceNode>(StringComparer.Ordinal);
+        readonly List<string> forgottenWorldTrees = new List<string>();
         // Refresh runs every 1.1s. Reuse scratch containers instead of
         // producing a new HashSet/List on each scan.
         readonly HashSet<string> expected =
@@ -71,6 +78,21 @@ namespace DeadSector
 
         Material[] materials;
         float nextRefresh;
+
+        public bool WasHarvested(string id) =>
+            !string.IsNullOrEmpty(id) && harvested.Contains(id);
+
+        public void RegisterWorldTree(SectorResourceNode node)
+        {
+            if (node == null || string.IsNullOrEmpty(node.Id))
+                return;
+            if (harvested.Contains(node.Id))
+            {
+                Destroy(node.gameObject);
+                return;
+            }
+            worldTrees[node.Id] = node;
+        }
 
         public void Configure(SectorPlayer target)
         {
@@ -121,6 +143,12 @@ namespace DeadSector
             int cellZ = Mathf.FloorToInt((playerPos.z + 4000f) / CellSize);
             expected.Clear();
             unload.Clear();
+            forgottenWorldTrees.Clear();
+            foreach (var pair in worldTrees)
+                if (pair.Value == null)
+                    forgottenWorldTrees.Add(pair.Key);
+            foreach (string id in forgottenWorldTrees)
+                worldTrees.Remove(id);
 
             for (int dx = -3; dx <= 3; dx++)
             {
@@ -271,6 +299,16 @@ namespace DeadSector
                 closest = d;
             }
 
+            foreach (SectorResourceNode node in worldTrees.Values)
+            {
+                if (node == null || harvested.Contains(node.Id)) continue;
+                float d = (player.transform.position -
+                    node.transform.position).sqrMagnitude;
+                if (d >= closest) continue;
+                nearest = node;
+                closest = d;
+            }
+
             return nearest;
         }
 
@@ -298,20 +336,31 @@ namespace DeadSector
             forward.Normalize();
             SectorResourceNode nearest = null;
             float best = InteractRange * InteractRange;
-            foreach (SectorResourceNode node in active.Values)
+            FindToolTarget(active.Values, forward, ref nearest, ref best);
+            FindToolTarget(worldTrees.Values, forward, ref nearest, ref best);
+            return nearest;
+        }
+
+        void FindToolTarget(
+            IEnumerable<SectorResourceNode> candidates,
+            Vector3 forward, ref SectorResourceNode nearest, ref float best)
+        {
+            Vector3 playerPosition = player.transform.position;
+            foreach (SectorResourceNode node in candidates)
             {
-                if (node == null || !RequiresTool(node.Type))
+                if (node == null || harvested.Contains(node.Id) ||
+                    !RequiresTool(node.Type))
                     continue;
-                Vector3 delta = node.transform.position - player.transform.position;
+                Vector3 delta = node.transform.position - playerPosition;
                 delta.y = 0f;
                 float sqr = delta.sqrMagnitude;
-                if (sqr < .01f || sqr >= best) continue;
-                if (Vector3.Dot(forward, delta / Mathf.Sqrt(sqr)) < .45f)
+                if (sqr >= best) continue;
+                if (sqr > 1.4f * 1.4f &&
+                    Vector3.Dot(forward, delta / Mathf.Sqrt(sqr)) < .25f)
                     continue;
                 best = sqr;
                 nearest = node;
             }
-            return nearest;
         }
 
         public bool StrikeNearest(
@@ -356,7 +405,9 @@ namespace DeadSector
         {
             label = string.Empty;
             if (node == null || inventory == null ||
-                !active.ContainsKey(node.Id) || harvested.Contains(node.Id))
+                (!active.ContainsKey(node.Id) &&
+                 !worldTrees.ContainsKey(node.Id)) ||
+                harvested.Contains(node.Id))
                 return false;
 
             // Validate BOTH outputs before changing inventory.
@@ -378,6 +429,7 @@ namespace DeadSector
 
             harvested.Add(node.Id);
             active.Remove(node.Id);
+            worldTrees.Remove(node.Id);
             Destroy(node.gameObject);
             return true;
         }
@@ -396,6 +448,22 @@ namespace DeadSector
                 if (node != null)
                     Destroy(node.gameObject);
             active.Clear();
+
+            // Keep unharvested tile-owned pines. Trees already chopped in
+            // a newly loaded profile must disappear immediately.
+            forgottenWorldTrees.Clear();
+            foreach (var pair in worldTrees)
+            {
+                if (pair.Value == null || harvested.Contains(pair.Key))
+                {
+                    if (pair.Value != null)
+                        Destroy(pair.Value.gameObject);
+                    forgottenWorldTrees.Add(pair.Key);
+                }
+            }
+            foreach (string id in forgottenWorldTrees)
+                worldTrees.Remove(id);
+
             nextRefresh = 0f;
         }
 
