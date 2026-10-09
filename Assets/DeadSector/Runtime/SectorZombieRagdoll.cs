@@ -214,7 +214,7 @@ namespace DeadSector
                     colliders.Add(capsule);
                 }
 
-                SectorArt.SetActorLayer(shape.transform);
+                SectorArt.SetActorLayer(shape.transform, SectorArt.EnemyVisualLayer);
 
                 bodies.Add(body);
                 map.Add(part.Bone, body);
@@ -345,7 +345,7 @@ namespace DeadSector
 
             bodies.Add(body);
             colliders.Add(capsule);
-            SectorArt.SetActorLayer(joint);
+            SectorArt.SetActorLayer(joint, SectorArt.EnemyVisualLayer);
             return body;
         }
 
