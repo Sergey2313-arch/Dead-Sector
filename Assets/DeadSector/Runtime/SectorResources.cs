@@ -24,6 +24,13 @@ namespace DeadSector
         public string SecondaryId { get; private set; }
         public int SecondaryCount { get; private set; }
         public SectorResourceType Type { get; private set; }
+        public int ToolHitsRemaining { get; private set; }
+
+        public int Strike()
+        {
+            ToolHitsRemaining = Mathf.Max(0, ToolHitsRemaining - 1);
+            return ToolHitsRemaining;
+        }
 
         public void Configure(
             string id, SectorResourceType type, string item, int count,
@@ -35,6 +42,8 @@ namespace DeadSector
             Count = Mathf.Clamp(count, 1, 6);
             SecondaryId = secondary ?? string.Empty;
             SecondaryCount = Mathf.Max(0, secondaryCount);
+            ToolHitsRemaining = type == SectorResourceType.Tree ? 3 :
+                type == SectorResourceType.Ore ? 4 : 0;
         }
     }
 
@@ -228,7 +237,10 @@ namespace DeadSector
                 crown.transform.SetParent(node.transform, true);
                 crown.transform.position = node.transform.position +
                     Vector3.up * 1.8f;
-                crown.transform.localScale = new Vector3(2.4f, 2.1f, 2.4f);
+                Vector3 parentScale = node.transform.lossyScale;
+                crown.transform.localScale = new Vector3(
+                    2.4f / parentScale.x, 2.1f / parentScale.y,
+                    2.4f / parentScale.z);
                 crown.GetComponent<Renderer>().sharedMaterial =
                     materials[(int)SectorResourceType.FiberBush];
                 // Only the trunk is targetable; leaves must not block players.
@@ -315,6 +327,14 @@ namespace DeadSector
             {
                 warning = "Нужен инструмент: " + RequiredToolName(node.Type) +
                     ". Создайте его в меню C.";
+                return true;
+            }
+            if (node.ToolHitsRemaining > 1)
+            {
+                int remaining = node.Strike();
+                warning = (node.Type == SectorResourceType.Tree
+                    ? "Рубим дерево. " : "Добываем руду. ") +
+                    "Осталось ударов: " + remaining;
                 return true;
             }
             if (!HarvestInternal(node, inventory, out label))
