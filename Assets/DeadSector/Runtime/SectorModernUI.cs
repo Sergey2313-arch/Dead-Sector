@@ -256,10 +256,10 @@ namespace DeadSector
             Label(panel, "Build", "FIELD OPERATIONS   //   PROTOTYPE",
                 30f, 44f, 430f, 18f, 11, Muted);
 
-            Button inventoryTab = MakeButton(panel, "TAB_INVENTORY",
+            MakeButton(panel, "TAB_INVENTORY",
                 "INVENTORY  [I]", 792f, 22f, 167f, 43f,
                 Cell, Accent, () => gameplay.ShowInventory());
-            Button craftTab = MakeButton(panel, "TAB_CRAFT",
+            MakeButton(panel, "TAB_CRAFT",
                 "CRAFTING  [C]", 965f, 22f, 164f, 43f,
                 Cell, Accent, () => gameplay.ShowCrafting());
             MakeButton(panel, "CLOSE", "X", 1169f, 22f, 57f, 43f,
