@@ -58,6 +58,8 @@ namespace DeadSector
             home = transform.position;
         }
 
+        SectorGameplay soundGameplay;
+
         void Start()
         {
             CacheAnimatorParameters();
@@ -434,6 +436,9 @@ namespace DeadSector
                 return;
 
             Health = Mathf.Max(0f, Health - damage);
+            if (soundGameplay == null)
+                soundGameplay = FindFirstObjectByType<SectorGameplay>();
+            soundGameplay?.Sounds?.PlayHit();
             if (appearance != null)
                 appearance.FlashOnHit();
             if (reaction != null)
