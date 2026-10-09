@@ -62,6 +62,7 @@ namespace DeadSector
         bool inventoryOpen;
         bool craftingOpen;
         bool externalUiBlocking;
+        int suppressedPanelHotkeyFrame = -1;
         bool loadedOnce;
         Vector2 inventoryScroll;
         Vector2 craftingScroll;
@@ -159,11 +160,16 @@ namespace DeadSector
             if (!externalUiBlocking && SectorInput.Pressed(KeyCode.F9))
                 LoadGame(false);
 
-            if (!externalUiBlocking && SectorInput.Pressed(KeyCode.I))
-                ToggleInventory();
-
-            if (!externalUiBlocking && SectorInput.Pressed(KeyCode.C))
-                ToggleCrafting();
+            // A Canvas tab may consume the same key in its own Update.
+            // Avoid double-toggle when script execution order differs.
+            if (!externalUiBlocking &&
+                suppressedPanelHotkeyFrame != Time.frameCount)
+            {
+                if (SectorInput.Pressed(KeyCode.I))
+                    ToggleInventory();
+                if (SectorInput.Pressed(KeyCode.C))
+                    ToggleCrafting();
+            }
 
             if (!externalUiBlocking)
             {
@@ -269,6 +275,11 @@ namespace DeadSector
             inventoryOpen = false;
             craftingOpen = false;
             UpdatePanelInput();
+        }
+
+        public void SuppressPanelHotkeysThisFrame()
+        {
+            suppressedPanelHotkeyFrame = Time.frameCount;
         }
 
         public void SetJournalOpen(bool isOpen)
