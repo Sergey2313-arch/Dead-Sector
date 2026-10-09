@@ -732,6 +732,188 @@ namespace DeadSector
                 SortBackpack);
         }
 
+        void BuildJournal(Transform root)
+        {
+            RectTransform objectives = RectAt(root, "Journal_Objectives",
+                24f, 13f, 837f, 626f,
+                new Color(.06f, .076f, .074f, 1f));
+            RectAt(objectives, "HeaderAccent", 0f, 0f, 3f, 41f, Accent);
+            Label(objectives, "Title", "FIELD JOURNAL  /  OBJECTIVES",
+                20f, 12f, 785f, 30f,
+                17, White, FontStyle.Bold);
+            Label(objectives, "Description",
+                "TRACK PROGRESS  //  EXPLORE, SCAVENGE, SURVIVE",
+                20f, 47f, 775f, 23f, 11, Muted);
+
+            string[] targets =
+            {
+                "01 / SCOUT THE VILLAGE", "02 / FIND THE CLINIC",
+                "03 / LOCATE THE FACTORY", "04 / TRACE RADIO SIGNAL",
+                "05 / COLLECT SUPPLIES", "06 / HARVEST RESOURCES",
+                "07 / CRAFT SURVIVAL GEAR", "08 / ELIMINATE INFECTED"
+            };
+
+            for (int i = 0; i < targets.Length; i++)
+            {
+                RectTransform row = RectAt(objectives, "Objective_" + i,
+                    16f, 83f + i * 65f, 804f, 57f, Cell);
+                journalIndicators[i] = RectAt(row, "Indicator",
+                    0f, 0f, 4f, 57f, Edge).GetComponent<Image>();
+                Label(row, "Description", targets[i],
+                    17f, 5f, 552f, 45f, 14, White, FontStyle.Bold);
+                journalStatuses[i] = Label(row, "Progress", "PENDING",
+                    612f, 5f, 180f, 45f, 13, Muted,
+                    FontStyle.Bold, TextAnchor.MiddleRight);
+            }
+
+            RectTransform overview = RectAt(root, "Journal_Summary",
+                878f, 13f, 356f, 626f,
+                new Color(.06f, .076f, .074f, 1f));
+            RectAt(overview, "HeaderAccent", 0f, 0f, 3f, 41f, Accent);
+            Label(overview, "Title", "MISSION CONTROL",
+                18f, 11f, 318f, 25f,
+                16, White, FontStyle.Bold);
+            Label(overview, "CompletedLabel", "OBJECTIVES COMPLETED",
+                18f, 69f, 317f, 23f, 13, Muted);
+            journalCompleted = Label(overview, "Completed", "00 / 08",
+                18f, 101f, 315f, 82f, 42, Accent, FontStyle.Bold);
+
+            RectAt(overview, "Divider", 17f, 204f, 320f, 2f, Edge);
+            Label(overview, "WorldLocation", "CURRENT POSITION",
+                18f, 237f, 311f, 22f, 13, Muted, FontStyle.Bold);
+            journalPosition = Label(overview, "Coordinates", "",
+                18f, 277f, 315f, 94f, 17, White);
+
+            Label(overview, "JournalInstructions",
+                "TRACKING IS AUTOMATIC.\n\n" +
+                "EXPLORE NAMED LOCATIONS, COLLECT\n" +
+                "SUPPLIES AND ELIMINATE THE INFECTED.\n\n" +
+                "PRESS J OR ESC TO CLOSE.",
+                18f, 407f, 314f, 193f, 13, Muted);
+        }
+
+        void RefreshJournal()
+        {
+            SectorJournal journal = gameplay.Journal;
+            if (journal == null)
+                return;
+
+            string[] locationIds =
+            {
+                "village", "clinic", "factory", "radio_station"
+            };
+            string[] goals =
+            {
+                "VISITED", "VISITED", "VISITED", "VISITED",
+                "3", "5", "2", "3"
+            };
+            int[] counts =
+            {
+                0, 0, 0, 0,
+                journal.SuppliesTaken,
+                journal.ResourcesHarvested,
+                journal.ItemsCrafted,
+                journal.ZombiesKilled
+            };
+
+            for (int i = 0; i < journalStatuses.Length; i++)
+            {
+                bool complete = i < locationIds.Length
+                    ? journal.HasVisited(locationIds[i])
+                    : counts[i] >= int.Parse(goals[i]);
+                journalIndicators[i].color = complete ? Accent : Edge;
+                journalStatuses[i].color = complete ? Accent : Muted;
+                journalStatuses[i].text = complete ? "COMPLETE" :
+                    i < 4 ? "UNDISCOVERED" :
+                    Mathf.Min(counts[i], int.Parse(goals[i])) +
+                    " / " + goals[i];
+            }
+
+            journalCompleted.text =
+                journal.CompletedCount.ToString("00") + " / 08";
+            Vector3 pos = player.transform.position;
+            journalPosition.text =
+                "X    " + Mathf.RoundToInt(pos.x) +
+                "\nZ    " + Mathf.RoundToInt(pos.z) +
+                "\nCELL    " + SectorMapPlan.GridCell(
+                    new Vector2(pos.x, pos.z));
+        }
+
+        void HandleJournalShortcut()
+        {
+            if (gameplay == null || gameplay.Journal == null)
+                return;
+
+            bool journal = gameplay.Journal.Visible;
+            if (SectorInput.Pressed(KeyCode.J))
+            {
+                if (journal)
+                    gameplay.SetJournalOpen(false);
+                else if (!gameplay.ExternalUiBlocking ||
+                    gameplay.InventoryOpen || gameplay.CraftingOpen)
+                    gameplay.SetJournalOpen(true);
+                return;
+            }
+
+            if (!journal)
+                return;
+
+            if (SectorInput.Pressed(KeyCode.I))
+                OpenInventoryTab();
+            else if (SectorInput.Pressed(KeyCode.C))
+                OpenCraftingTab();
+        }
+
+        void OpenInventoryTab()
+        {
+            if (gameplay.Journal != null && gameplay.Journal.Visible)
+                gameplay.SetJournalOpen(false);
+            gameplay.ShowInventory();
+        }
+
+        void OpenCraftingTab()
+        {
+            if (gameplay.Journal != null && gameplay.Journal.Visible)
+                gameplay.SetJournalOpen(false);
+            gameplay.ShowCrafting();
+        }
+
+        void OpenJournalTab()
+        {
+            gameplay.SetJournalOpen(true);
+        }
+
+        void CloseActiveTab()
+        {
+            if (gameplay.Journal != null && gameplay.Journal.Visible)
+                gameplay.SetJournalOpen(false);
+            else
+                gameplay.CloseInventoryPanels();
+        }
+
+        void SortBackpack()
+        {
+            gameplay.SortInventory();
+            selectedStackIndex = -1;
+            RefreshInventory();
+        }
+
+        void SplitSelectedStack()
+        {
+            SectorInventory inventory = gameplay.Inventory;
+            if (selectedStackIndex < 0 ||
+                selectedStackIndex >= inventory.Stacks.Count)
+                return;
+
+            int quantity = inventory.Stacks[selectedStackIndex].count;
+            if (quantity <= 1)
+                return;
+
+            if (gameplay.SplitInventoryStack(
+                selectedStackIndex, quantity / 2))
+                RefreshInventory();
+        }
+
         void BuildCrafting(Transform root)
         {
             RectTransform left = RectAt(root, "RecipesPanel",
@@ -808,11 +990,13 @@ namespace DeadSector
             if (gameplay == null || player == null || !player.Ready)
                 return;
 
+            // Read one-frame keyboard edges before the throttled UI redraw.
+            HandleJournalShortcut();
+
             if (Time.unscaledTime < refreshTime)
                 return;
 
             refreshTime = Time.unscaledTime + .12f;
-            HandleJournalShortcut();
             bool atlasOpen = minimap != null && minimap.TacticalOpen;
             if (mainCanvas != null)
                 mainCanvas.enabled = !atlasOpen;
