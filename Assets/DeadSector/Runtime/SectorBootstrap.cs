@@ -206,7 +206,14 @@ namespace DeadSector
                     .AddComponent<SectorModernUI>();
                 if (modern.Configure(gameplay, player, clock,
                     minimap, compass))
+                {
                     hud.enabled = false;
+                    var menu = new GameObject("DeadSector_FrontEnd")
+                        .AddComponent<SectorMenuUI>();
+                    if (!menu.Configure(gameplay, player, minimap))
+                        Debug.LogWarning("[Dead Sector] Modern front-end " +
+                            "was unavailable; gameplay HUD remains active.");
+                }
             }
         }
 
