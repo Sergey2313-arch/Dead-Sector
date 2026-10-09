@@ -1064,6 +1064,12 @@ namespace DeadSector
                 string id = gameplay.WeaponInSlot(i);
                 string name = SectorItems.TryGet(id, out SectorItemDefinition item)
                     ? item.Label : i == 2 ? "FISTS" : "EMPTY";
+                int magazine = gameplay.MagazineCapacityForSlot(i);
+                if (magazine > 0)
+                    name += "\n" + gameplay.RoundsForSlot(i) +
+                        "/" + magazine +
+                        (gameplay.IsReloading &&
+                         gameplay.ActiveWeaponSlot == i ? " ..." : "");
                 hotbarLabels[i].text = name;
                 hotbarIcons[i].enabled = !string.IsNullOrEmpty(id) || i == 2;
                 if (hotbarIcons[i].enabled)
