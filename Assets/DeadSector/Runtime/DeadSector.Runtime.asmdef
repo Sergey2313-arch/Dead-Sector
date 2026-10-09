@@ -2,6 +2,7 @@
   "name": "DeadSector.Runtime",
   "rootNamespace": "DeadSector",
   "references": [
-    "Unity.InputSystem"
+    "Unity.InputSystem",
+    "Unity.ugui"
   ]
 }
