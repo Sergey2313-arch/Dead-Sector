@@ -134,13 +134,64 @@ namespace DeadSector.Tests
             for (int i = 0; i < SectorBuildCatalog.Count; i++)
                 Assert.IsTrue(SectorInput.HasNewInputBinding(
                     KeyCode.Alpha1 + i),
-                    "Every construction plan needs a working 1-5 hotkey.");
+                    "Every construction plan needs a working 1-7 hotkey.");
         }
 
         [Test]
-        public void AllFivePlansHaveVisibleRussianCraftableKitsAtTop()
+        public void RoofAndCampfireAppendToLegacyEnumWithoutRenumbering()
         {
-            Assert.AreEqual(5, SectorBuildCatalog.Count);
+            Assert.AreEqual(0, (int)SectorBuildKind.Foundation);
+            Assert.AreEqual(1, (int)SectorBuildKind.Wall);
+            Assert.AreEqual(2, (int)SectorBuildKind.Barricade);
+            Assert.AreEqual(3, (int)SectorBuildKind.Storage);
+            Assert.AreEqual(4, (int)SectorBuildKind.Door);
+            Assert.AreEqual(5, (int)SectorBuildKind.Roof);
+            Assert.AreEqual(6, (int)SectorBuildKind.Campfire);
+            Assert.AreEqual("build_roof",
+                SectorBuildCatalog.KitId(SectorBuildKind.Roof));
+            Assert.AreEqual("build_campfire",
+                SectorBuildCatalog.KitId(SectorBuildKind.Campfire));
+        }
+
+        [Test]
+        public void DamagedWallsCanBeRepairedButNeverBeyondMaxHealth()
+        {
+            var parent = new GameObject("RepairRegression");
+            Material wood = null, metal = null;
+            try
+            {
+                Shader shader = Shader.Find("Universal Render Pipeline/Lit");
+                if (shader == null) shader = Shader.Find("Standard");
+                Assert.IsNotNull(shader);
+                wood = new Material(shader);
+                metal = new Material(shader);
+                var piece = parent.AddComponent<SectorBuildPiece>();
+                piece.Configure(new SectorBuildSnapshot
+                {
+                    id = "wall_repair",
+                    kind = SectorBuildKind.Wall,
+                    position = new Vector3(100f, 60f, -50f),
+                    health = 65f
+                }, wood, metal);
+                Assert.IsTrue(piece.CanRepair);
+                Assert.That(piece.Repair(35f), Is.EqualTo(35f).Within(.01f));
+                Assert.That(piece.Health, Is.EqualTo(100f).Within(.01f));
+                Assert.That(piece.Repair(200f), Is.EqualTo(40f).Within(.01f));
+                Assert.That(piece.Health, Is.EqualTo(piece.MaxHealth).Within(.01f));
+                Assert.IsFalse(piece.CanRepair);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(parent);
+                if (wood != null) UnityEngine.Object.DestroyImmediate(wood);
+                if (metal != null) UnityEngine.Object.DestroyImmediate(metal);
+            }
+        }
+
+        [Test]
+        public void AllSevenPlansHaveVisibleRussianCraftableKitsAtTop()
+        {
+            Assert.AreEqual(7, SectorBuildCatalog.Count);
             for (int i = 0; i < SectorBuildCatalog.Count; i++)
             {
                 SectorBuildSpecification plan = SectorBuildCatalog.At(i);
