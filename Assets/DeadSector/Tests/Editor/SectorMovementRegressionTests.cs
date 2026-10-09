@@ -79,6 +79,22 @@ namespace DeadSector.Tests
         }
 
         [Test]
+        public void GroundTileLookupIncludesEdgesAndRejectsOtherTiles()
+        {
+            Vector3 origin = new Vector3(-1000f, 0f, 2000f);
+            Vector3 size = new Vector3(1000f, 500f, 1000f);
+
+            Assert.IsTrue(SectorPlayer.IsInsideTerrainXZ(origin, size,
+                new Vector3(-500f, 100f, 2500f)));
+            Assert.IsTrue(SectorPlayer.IsInsideTerrainXZ(origin, size,
+                new Vector3(0f, -100f, 3000f)));
+            Assert.IsFalse(SectorPlayer.IsInsideTerrainXZ(origin, size,
+                new Vector3(0.01f, 0f, 2500f)));
+            Assert.IsFalse(SectorPlayer.IsInsideTerrainXZ(origin, size,
+                new Vector3(-500f, 0f, 1999.99f)));
+        }
+
+        [Test]
         public void TurnDampingIsSmoothAndFrameRateIndependent()
         {
             float oneStep = SectorPlayer.TurnBlend(24f, 1f / 60f);
