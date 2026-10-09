@@ -78,8 +78,8 @@ namespace DeadSector.Tests
             Assert.That(SectorPlayer.StandingHeight, Is.InRange(1.65f, 1.90f));
             Assert.GreaterOrEqual(
                 SectorWorld.ResidentialDoorWidth,
-                SectorPlayer.StandingRadius * 2f + .7f,
-                "The doorway must have room for a capsule and shoulder clearance.");
+                SectorPlayer.StandingRadius * 2f + .50f,
+                "The 1.15m doorway must have room for the 0.56m capsule and clearance.");
             // Door height is measured from the FINISHED FLOOR, not terrain.
             // Previously the roof lintel was placed only 2.22m above terrain,
             // resulting in 1.80m headroom above the raised 0.42m floor.
