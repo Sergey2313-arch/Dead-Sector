@@ -48,6 +48,7 @@ namespace DeadSector
         readonly List<SectorPointOfInterest> pointsOfInterest =
             new List<SectorPointOfInterest>();
         TerrainLayer[] layers;
+        Texture2D grassTexture;
         Material terrainMaterial;
         Material roadMaterial;
         Material waterMaterial;
@@ -59,6 +60,7 @@ namespace DeadSector
             if (Art != null) return;
             Art = new SectorArt();
             layers = new[] { Layer(new Color(.23f, .28f, .16f)), Layer(new Color(.3f, .26f, .2f)), Layer(new Color(.35f, .37f, .37f)) };
+            grassTexture = BuildGrassBladeTexture();
             Shader terrainShader = Shader.Find("Universal Render Pipeline/Terrain/Lit");
             if (terrainShader == null)
                 terrainShader = Shader.Find("Nature/Terrain/Standard");
@@ -174,9 +176,13 @@ namespace DeadSector
                 splat[z, x, layer] = 1;
             }
             data.SetAlphamaps(0, 0, splat);
+            BuildTerrainGrass(data, origin);
             var go = Terrain.CreateTerrainGameObject(data); go.name = "Terrain"; go.transform.SetParent(root.transform, false);
             var terrain = go.GetComponent<Terrain>(); terrain.materialTemplate = terrainMaterial; terrain.heightmapPixelError = 8;
             terrain.basemapDistance = 800; terrain.drawInstanced = true;
+            terrain.drawTreesAndFoliage = true;
+            terrain.detailObjectDistance = 65f;
+            terrain.detailObjectDensity = .8f;
             var random = new System.Random(key.x * 7919 + key.y * 104729 + 2026);
             for (int i = 0; i < 80; i++)
             {
@@ -228,6 +234,103 @@ namespace DeadSector
 
             return terrain;
         }
+        // Lightweight native Terrain vegetation. Details stream with each
+        // 1km tile and are culled past 65m, unlike thousands of GameObjects.
+        // The visible grass blades are a transparent procedural billboard;
+        // the existing TerrainLayer still supplies the ground's matte soil.
+        const int GrassResolution = 256;
+
+        static Texture2D BuildGrassBladeTexture()
+        {
+            const int width = 32;
+            const int height = 64;
+            var texture = new Texture2D(
+                width, height, TextureFormat.RGBA32, false);
+            texture.name = "DeadSector_Grass_Blade";
+            texture.wrapMode = TextureWrapMode.Clamp;
+            texture.filterMode = FilterMode.Bilinear;
+            var pixels = new Color32[width * height];
+            var blade = new Color32(164, 187, 100, 235);
+
+            for (int y = 0; y < height; y++)
+            {
+                float growth = (float)y / (height - 1);
+                float thickness = Mathf.Lerp(4.5f, .4f, growth);
+                // Three overlapping leaves create a recognisable tuft.
+                for (int x = 0; x < width; x++)
+                {
+                    bool leaf0 = Mathf.Abs(x - (15f - growth * 9f)) < thickness;
+                    bool leaf1 = Mathf.Abs(x - (16f + growth * 8f)) < thickness;
+                    bool leaf2 = Mathf.Abs(x - 16f) <
+                        Mathf.Lerp(3.2f, 0f, growth);
+                    if (leaf0 || leaf1 || leaf2)
+                        pixels[y * width + x] = blade;
+                }
+            }
+
+            texture.SetPixels32(pixels);
+            texture.Apply(false, false);
+            return texture;
+        }
+
+        public static bool CanGrowGrass(float x, float z)
+        {
+            // Suppress grass over built-up central roads/compound, highways,
+            // water and high barren mountain peaks.
+            if (x * x + z * z < 165f * 165f ||
+                SectorGeography.DistanceToRoad(x, z) < 7f ||
+                SectorGeography.TryGetWaterLevel(x, z, out _))
+                return false;
+            float ground = SectorLayout.Height(x, z);
+            return ground > 35f && ground < 185f;
+        }
+
+        void BuildTerrainGrass(TerrainData data, Vector3 origin)
+        {
+            data.SetDetailResolution(GrassResolution, 16);
+            data.detailPrototypes = new[]
+            {
+                new DetailPrototype
+                {
+                    prototypeTexture = grassTexture,
+                    renderMode = DetailRenderMode.GrassBillboard,
+                    healthyColor = new Color(.49f, .70f, .34f),
+                    dryColor = new Color(.62f, .61f, .34f),
+                    minWidth = .38f,
+                    maxWidth = .85f,
+                    minHeight = .25f,
+                    maxHeight = .55f,
+                    noiseSpread = .55f
+                }
+            };
+
+            int[,] density = new int[GrassResolution, GrassResolution];
+            float stride = SectorLayout.TileSize / (float)GrassResolution;
+            for (int z = 0; z < GrassResolution; z++)
+            {
+                for (int x = 0; x < GrassResolution; x++)
+                {
+                    // Sparse yet deterministic. Each detail cell spans ~4m
+                    // and visible grass is limited by detailObjectDistance.
+                    uint hash = unchecked(
+                        (uint)(x * 73856093 ^ z * 19349663 ^
+                               Mathf.RoundToInt(origin.x) * 83492791 ^
+                               Mathf.RoundToInt(origin.z) * 26544357));
+                    if ((hash & 3u) == 0u)
+                        continue;
+
+                    float wx = origin.x + (x + .5f) * stride;
+                    float wz = origin.z + (z + .5f) * stride;
+                    if (!CanGrowGrass(wx, wz))
+                        continue;
+
+                    density[z, x] = (hash & 4u) == 0u ? 1 : 2;
+                }
+            }
+
+            data.SetDetailLayer(0, 0, 0, density);
+        }
+
         TerrainLayer Layer(Color color)
         {
             var texture = new Texture2D(32, 32); texture.wrapMode = TextureWrapMode.Repeat;
@@ -1269,6 +1372,7 @@ namespace DeadSector
                 }
             }
 
+            if (grassTexture != null) Destroy(grassTexture);
             if (terrainMaterial != null) Destroy(terrainMaterial);
             if (waterMaterial != null) Destroy(waterMaterial);
             Art?.Dispose();
