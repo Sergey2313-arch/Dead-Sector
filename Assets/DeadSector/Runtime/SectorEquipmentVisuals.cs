@@ -223,6 +223,9 @@ namespace DeadSector
                 case "axe":
                     BuildAxe(root.transform, id == "stone_axe");
                     break;
+                case "stone_pickaxe":
+                    BuildPickaxe(root.transform);
+                    break;
                 case "wood_club":
                     BuildClub(root.transform);
                     break;
@@ -342,6 +345,19 @@ namespace DeadSector
             Part(root, "Grip_Binding", cloth,
                 new Vector3(0f, 0, .42f),
                 new Vector3(.09f, .095f, .065f));
+        }
+
+        void BuildPickaxe(Transform root)
+        {
+            Part(root, "Pickaxe_Wood_Handle", wood,
+                new Vector3(0f, 0f, .28f),
+                new Vector3(.075f, .08f, .57f));
+            Part(root, "Pickaxe_Stone_Head", rock,
+                new Vector3(0f, 0f, .52f),
+                new Vector3(.47f, .12f, .15f));
+            Part(root, "Pickaxe_Grip", cloth,
+                new Vector3(0f, 0f, .41f),
+                new Vector3(.09f, .09f, .08f));
         }
 
         void BuildClub(Transform root)
