@@ -27,7 +27,7 @@ namespace DeadSector.Tests
         }
 
         [Test]
-        public void ProceduralZombieFallsBackToSixBodyJointedRagdoll()
+        public void ProceduralZombieNeverSpawnsDetachedPhysicsLimbs()
         {
             GameObject root = new GameObject("ProceduralCorpse");
 
@@ -50,32 +50,29 @@ namespace DeadSector.Tests
 
                 Transform head = Bone(mannequin.torso, "Head",
                     new Vector3(0f, .63f, 0f));
-                head.gameObject.AddComponent<SphereCollider>();
 
                 var ragdoll = root.AddComponent<SectorZombieRagdoll>();
                 ragdoll.Configure(null, model.transform, mannequin);
 
-                Assert.IsTrue(ragdoll.CanActivate);
-                Assert.AreEqual(0, ragdoll.ActiveBodyCount,
-                    "Rigidbody objects must not be allocated while AI is alive");
-
-                mannequin.enabled = false;
-                Assert.IsTrue(ragdoll.TryActivate(
+                // The old six-body fallback exploded visible limbs when
+                // gameplay killed procedural (non-Mixamo) infected.
+                Assert.IsFalse(ragdoll.CanActivate);
+                Assert.IsFalse(ragdoll.TryActivate(
                     Vector3.forward * 2f,
                     root.transform.position + Vector3.up,
                     Vector3.forward));
+                Assert.IsFalse(ragdoll.IsActive);
+                Assert.AreEqual(0, ragdoll.ActiveBodyCount);
+                Assert.IsNull(mannequin.torso.GetComponent<Rigidbody>());
+                Assert.IsNull(mannequin.leftArm.GetComponent<Rigidbody>());
+                Assert.IsNull(mannequin.leftArm.GetComponent<CharacterJoint>());
+                Assert.IsNull(head.GetComponent<Rigidbody>());
 
-                Assert.IsTrue(ragdoll.IsActive);
-                Assert.AreEqual(6, ragdoll.ActiveBodyCount);
-                Assert.IsNotNull(
-                    mannequin.torso.GetComponent<Rigidbody>());
-                Assert.IsNotNull(
-                    mannequin.leftArm.GetComponent<CharacterJoint>());
-                Assert.IsFalse(
-                    mannequin.leftLeg.GetComponent<Rigidbody>().isKinematic);
-                Assert.IsFalse(ragdoll.TryActivate(
-                    Vector3.forward, Vector3.zero, Vector3.zero),
-                    "Repeated fatal damage must not recreate physics components");
+                // The visual fallback animates the intact model instead.
+                var reaction = root.AddComponent<SectorZombieReaction>();
+                reaction.Configure(model.transform);
+                reaction.Die();
+                Assert.IsTrue(reaction.HasDied);
             }
             finally
             {
