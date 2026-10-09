@@ -208,8 +208,8 @@ namespace DeadSector
             {
                 // Prevent one more zombie strike against a deferred corpse,
                 // remove it from exported save and persist the destroyed base.
-                gameObject.SetActive(false);
                 SectorBaseBuilding owner = GetComponentInParent<SectorBaseBuilding>();
+                gameObject.SetActive(false);
                 if (owner != null)
                     owner.RecordDestroyedPiece(this);
                 Destroy(gameObject);
