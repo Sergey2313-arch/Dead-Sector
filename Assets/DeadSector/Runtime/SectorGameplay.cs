@@ -64,6 +64,9 @@ namespace DeadSector
         bool externalUiBlocking;
         int suppressedPanelHotkeyFrame = -1;
         bool loadedOnce;
+        int activeSaveSlot = SectorSaveProfiles.LegacySlot;
+        public int ActiveSaveSlot => activeSaveSlot;
+        public string ActiveProfileName => SectorSaveProfiles.Name(activeSaveSlot);
         Vector2 inventoryScroll;
         Vector2 craftingScroll;
         string selectedInventoryItem = "";
@@ -753,13 +756,75 @@ namespace DeadSector
             messageUntil = Time.time + 3f;
         }
 
-        string SavePath =>
-            Path.Combine(Application.persistentDataPath, "DeadSector_Save_v1.json");
+        string SavePath => SectorSaveProfiles.FilePath(
+            Application.persistentDataPath, activeSaveSlot);
+
+        public string ProfileStatus(int slot) =>
+            SectorSaveProfiles.Description(
+                Application.persistentDataPath, slot);
+
+        /// <summary>
+        /// Only EMPTY numbered slots can be created. The original legacy
+        /// save is never overwritten, renamed or migrated in this action.
+        /// New world state comes from a deterministic starter snapshot,
+        /// never from the current in-memory character.
+        /// </summary>
+        public bool CreateNewProfile(int slot)
+        {
+            if (slot <= 0 || slot > SectorSaveProfiles.MaxProfileSlot)
+                return false;
+
+            if (!SectorSaveProfiles.TryCreateNew(
+                Application.persistentDataPath, slot,
+                SectorSaveProfiles.Starter()))
+                return false;
+
+            return LoadProfile(slot, true);
+        }
+
+        /// <summary>
+        /// Resolve and validate before changing the active save path.
+        /// On failure, the current profile and file remain selected.
+        /// </summary>
+        public bool LoadProfile(int slot, bool freshlyCreated = false)
+        {
+            if (!SectorSaveProfiles.IsValidSlot(slot) ||
+                !SectorSaveProfiles.TryRead(
+                    Application.persistentDataPath, slot,
+                    out SectorGameSave saved))
+            {
+                Notify("Cannot open profile " + slot);
+                return false;
+            }
+
+            if (!ApplySave(saved))
+            {
+                Notify("Profile load failed; current slot preserved");
+                return false;
+            }
+
+            activeSaveSlot = slot;
+            loadedOnce = true;
+
+            // A new character begins on the actual loaded starting tile,
+            // rather than hovering twelve metres above the terrain.
+            if (freshlyCreated)
+                player.ActivateAtSpawn();
+
+            autoSaveAt = Time.time + 90f;
+            Notify("Loaded " + ActiveProfileName);
+            return true;
+        }
 
         public void SaveGame(bool silent = false)
         {
+            TrySaveGame(silent);
+        }
+
+        public bool TrySaveGame(bool silent = false)
+        {
             if (player == null || !player.Ready)
-                return;
+                return false;
 
             var data = new SectorGameSave
             {
@@ -814,35 +879,41 @@ namespace DeadSector
 
                 if (!silent)
                     Notify("Game saved");
+                return true;
             }
             catch (Exception ex)
             {
                 Debug.LogError("[Dead Sector] Save failed: " + ex.Message);
                 Notify("Save failed: check Console");
+                return false;
             }
         }
 
         public void LoadGame(bool silent)
         {
-            if (!File.Exists(SavePath))
+            if (!SectorSaveProfiles.TryRead(
+                Application.persistentDataPath, activeSaveSlot,
+                out SectorGameSave saved))
             {
-                if (!silent) Notify("No save found");
+                if (!silent)
+                    Notify("No valid save for " + ActiveProfileName);
                 return;
             }
 
+            if (ApplySave(saved) && !silent)
+                Notify("Save loaded");
+        }
+
+        bool ApplySave(SectorGameSave data)
+        {
+            if (data == null || data.version != 1 ||
+                player == null || !player.Ready)
+                return false;
+
             try
             {
-                var data = JsonUtility.FromJson<SectorGameSave>(
-                    File.ReadAllText(SavePath));
-
-                if (data == null || data.version != 1)
-                {
-                    Notify("Incompatible save version");
-                    return;
-                }
-
-                // Set saved backpack capacity before item import, otherwise
-                // saves with 23-30 distinct stacks can lose their last items.
+                // Install capacity before import so equipped backpacks
+                // can carry their full 30 slots from previous saves.
                 bool savedBag = data.armor != null &&
                     data.armor.Length >= 5 &&
                     data.armor[4] == "cotton_bag";
@@ -864,8 +935,8 @@ namespace DeadSector
                 Journal?.Import(data.journal);
 
                 foreach (SectorLootContainer container in active.Values)
-                    Destroy(container.gameObject);
-
+                    if (container != null)
+                        Destroy(container.gameObject);
                 active.Clear();
                 persistent.Clear();
 
@@ -883,16 +954,17 @@ namespace DeadSector
                 p.x = Mathf.Clamp(p.x, -3990f, 3990f);
                 p.z = Mathf.Clamp(p.z, -3990f, 3990f);
 
-                // Allow time for the streaming world to load the new tile.
+                // Streaming will fetch this profile's terrain tile.
                 p.y = SectorLayout.Height(p.x, p.z) + 12f;
                 player.TeleportTo(p);
                 refreshAt = 0f;
-                Notify("Save loaded");
+                nextAttack = 0f;
+                return true;
             }
             catch (Exception ex)
             {
                 Debug.LogError("[Dead Sector] Load failed: " + ex.Message);
-                Notify("Load failed: check Console");
+                return false;
             }
         }
 
