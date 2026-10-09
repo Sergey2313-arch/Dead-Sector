@@ -495,6 +495,12 @@ namespace DeadSector
                 reaction.Die();
             }
 
+            // Loot is a persistent cache at the corpse location. Removing
+            // the corpse visual after 25s cannot erase or duplicate its loot.
+            SectorGameplay gameplay = FindFirstObjectByType<SectorGameplay>();
+            if (gameplay != null)
+                gameplay.AddZombieLoot(Kind, transform.position);
+
             // Corpses are retained briefly, then reclaimed for horde FPS.
             Destroy(gameObject, 25f);
         }
