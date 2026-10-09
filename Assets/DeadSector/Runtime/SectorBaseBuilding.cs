@@ -420,6 +420,20 @@ namespace DeadSector
             return closest;
         }
 
+        // Called by zombie destruction. A breached wall must stay breached
+        // after F9 or switching profile, not resurrect from an old checkpoint.
+        public void RecordDestroyedPiece(SectorBuildPiece piece)
+        {
+            if (piece == null || !piece.Destroyed)
+                return;
+            pieces.Remove(piece);
+            if (gameplay == null) return;
+            bool saved = gameplay.TrySaveGame(true);
+            gameplay.NotifyBuildFailure(
+                "УКРЕПЛЕНИЕ РАЗРУШЕНО" +
+                (saved ? " — сохранено" : " — ошибка сохранения F5"));
+        }
+
         public List<SectorBuildSnapshot> Export()
         {
             RemoveDestroyed();
