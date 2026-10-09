@@ -157,7 +157,7 @@ namespace DeadSector
             GUI.color = Color.white;
             GUI.Label(
                 new Rect(outer.x, 7f, side, 25f),
-                "DEAD SECTOR   /   WORLD PLAN 8×8 KM  [M — CLOSE]",
+                "DEAD SECTOR  /  КАРТА МИРА 8×8 КМ  [M — ЗАКРЫТЬ]",
                 headerStyle);
 
             GUI.DrawTexture(map, background, ScaleMode.StretchToFill);
@@ -230,7 +230,7 @@ namespace DeadSector
                 Mathf.Min(Screen.width - outer.x, side), 24f);
 
             GUI.Label(footer,
-                "ORANGE: PLANNED   |   TURQUOISE: WORLD BLOCKOUT (NOT FINAL ART)   |   BLUE: PLAYER",
+                "ОРАНЖЕВЫЙ: ПЛАН   |   БИРЮЗОВЫЙ: ПРОТОТИП   |   СИНИЙ: ИГРОК",
                 smallStyle);
         }
 
