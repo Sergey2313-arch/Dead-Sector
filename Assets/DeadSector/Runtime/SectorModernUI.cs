@@ -36,6 +36,9 @@ namespace DeadSector
         SectorGameplay gameplay;
         SectorPlayer player;
         SectorWorldClock clock;
+        SectorMinimap minimap;
+        SectorCompass compass;
+        Canvas mainCanvas;
         Font uiFont;
         GameObject canvasObject;
         GameObject modalRoot;
@@ -55,6 +58,18 @@ namespace DeadSector
         readonly List<RecipeDisplay> recipeDisplays = new List<RecipeDisplay>();
 
         Text dayLabel;
+        Text compassBearing;
+        RawImage tacticalMap;
+        Text mapScaleLabel;
+        Text mapCoordsLabel;
+        RectTransform playerArrow;
+        RectTransform mapRect;
+        Texture2D mapTexture;
+        Color32[] mapPixels;
+        Vector2 lastMapCenter = new Vector2(float.PositiveInfinity, float.PositiveInfinity);
+        float mapRefreshAt;
+        readonly List<CompassTick> compassTicks = new List<CompassTick>();
+        readonly List<MapPoiMarker> mapPoiMarkers = new List<MapPoiMarker>();
         Text bagSummary;
         Text selectedTitle;
         Text selectedDetails;
@@ -71,6 +86,19 @@ namespace DeadSector
         bool lastInventory;
         bool lastCrafting;
 
+        sealed class CompassTick
+        {
+            public RectTransform rect;
+            public Text text;
+            public Image line;
+        }
+
+        sealed class MapPoiMarker
+        {
+            public SectorPointOfInterest poi;
+            public RectTransform rect;
+        }
+
         sealed class RecipeDisplay
         {
             public SectorRecipe recipe;
@@ -80,7 +108,8 @@ namespace DeadSector
         }
 
         public bool Configure(SectorGameplay source, SectorPlayer target,
-            SectorWorldClock worldClock)
+            SectorWorldClock worldClock, SectorMinimap worldMinimap,
+            SectorCompass worldCompass)
         {
             if (source == null || target == null)
                 return false;
@@ -88,11 +117,17 @@ namespace DeadSector
             gameplay = source;
             player = target;
             clock = worldClock;
+            minimap = worldMinimap;
+            compass = worldCompass;
 
             try
             {
                 Build();
                 gameplay.ModernUiEnabled = true;
+                if (minimap != null)
+                    minimap.SetCanvasHudActive(true);
+                if (compass != null)
+                    compass.enabled = false;
                 return true;
             }
             catch (Exception error)
@@ -117,6 +152,7 @@ namespace DeadSector
                 typeof(CanvasScaler), typeof(GraphicRaycaster));
             canvasObject.transform.SetParent(transform, false);
             Canvas canvas = canvasObject.GetComponent<Canvas>();
+            mainCanvas = canvas;
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
             canvas.sortingOrder = 300;
             CanvasScaler scaler = canvasObject.GetComponent<CanvasScaler>();
@@ -129,6 +165,8 @@ namespace DeadSector
             RectTransform root = canvasObject.GetComponent<RectTransform>();
 
             BuildHud(root);
+            BuildCompass(root);
+            BuildMinimap(root);
             BuildModal(root);
         }
 
@@ -460,7 +498,15 @@ namespace DeadSector
                 return;
 
             refreshTime = Time.unscaledTime + .12f;
+            bool atlasOpen = minimap != null && minimap.TacticalOpen;
+            if (mainCanvas != null)
+                mainCanvas.enabled = !atlasOpen;
+            if (atlasOpen)
+                return;
+
             RefreshHud();
+            RefreshCompass();
+            RefreshMinimap();
             RefreshModal();
         }
 
@@ -814,7 +860,12 @@ namespace DeadSector
         {
             if (gameplay != null)
                 gameplay.ModernUiEnabled = false;
-
+            if (minimap != null)
+                minimap.SetCanvasHudActive(false);
+            if (compass != null)
+                compass.enabled = true;
+            if (mapTexture != null)
+                Destroy(mapTexture);
             if (uiFont != null)
                 Destroy(uiFont);
         }
