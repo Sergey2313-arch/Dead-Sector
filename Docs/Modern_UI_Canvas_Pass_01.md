@@ -21,6 +21,8 @@ Implemented:
 
 Source locations:
 - `Assets/DeadSector/Runtime/SectorModernUI.cs` (+ `.meta`)
+- `Assets/DeadSector/Runtime/SectorBagDragSource.cs` (+ `.meta`)
+- `Assets/DeadSector/Runtime/SectorGearDropTarget.cs` (+ `.meta`)
 - `Assets/DeadSector/Runtime/SectorGameplay.cs` (UI-facing nonduplicative APIs)
 - `Assets/DeadSector/Runtime/SectorBootstrap.cs` (bootstrap and fallback)
 - `Assets/DeadSector/Runtime/DeadSector.Runtime.asmdef` (Unity.ugui reference)
