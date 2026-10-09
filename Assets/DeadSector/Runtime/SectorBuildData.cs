@@ -9,7 +9,8 @@ namespace DeadSector
         Foundation,
         Wall,
         Barricade,
-        Storage
+        Storage,
+        Door
     }
 
     [Serializable]
@@ -20,6 +21,7 @@ namespace DeadSector
         public Vector3 position;
         public float angle;
         public float health;
+        public bool doorOpen;
         public List<SectorItemStack> storage =
             new List<SectorItemStack>();
     }
@@ -71,7 +73,11 @@ namespace DeadSector
             new SectorBuildSpecification(
                 SectorBuildKind.Storage, "Storage Crate",
                 new Vector3(1.3f, 1.1f, 1.1f), 80f,
-                new[] { "wood", "stick" }, new[] { 3, 1 })
+                new[] { "wood", "stick" }, new[] { 3, 1 }),
+            new SectorBuildSpecification(
+                SectorBuildKind.Door, "Hinged Door",
+                new Vector3(3f, 2.6f, .4f), 120f,
+                new[] { "wood", "stick" }, new[] { 4, 2 })
         };
 
         public static int Count => Plans.Length;
