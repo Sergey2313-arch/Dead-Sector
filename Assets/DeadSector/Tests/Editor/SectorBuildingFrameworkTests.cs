@@ -9,7 +9,13 @@ namespace DeadSector.Tests
         [Test]
         public void AllBuildPlansHaveSafeDimensionsAndRealItemCosts()
         {
-            Assert.AreEqual(5, SectorBuildCatalog.Count);
+            // Two new construction plans (Roof, Campfire) were appended
+            // without changing the five existing saved enum IDs.
+            Assert.AreEqual(7, SectorBuildCatalog.Count);
+            Assert.AreEqual(
+                System.Enum.GetValues(typeof(SectorBuildKind)).Length,
+                SectorBuildCatalog.Count,
+                "Every persisted building kind needs exactly one blueprint.");
 
             for (int i = 0; i < SectorBuildCatalog.Count; i++)
             {
