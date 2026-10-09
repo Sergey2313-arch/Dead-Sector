@@ -260,6 +260,27 @@ namespace DeadSector
             return made;
         }
 
+        /// <summary>
+        /// Save V1 serializes world progress, not individual live infected.
+        /// Switching profiles must clear zombies from the previous
+        /// playthrough and repopulate the starter region deterministically.
+        /// </summary>
+        public void ResetPopulationForProfile()
+        {
+            foreach (SectorZombie zombie in
+                FindObjectsByType<SectorZombie>(
+                    FindObjectsSortMode.None))
+            {
+                if (zombie != null)
+                    Destroy(zombie.gameObject);
+            }
+
+            ZombieCount = 0;
+
+            if (Ready && world != null && world.Ready)
+                SpawnGroup(buildSettings.agentTypeID);
+        }
+
         void SpawnGroup(int agentTypeId)
         {
             Vector3[] spawnPoints =
