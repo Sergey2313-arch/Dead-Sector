@@ -203,12 +203,19 @@ namespace DeadSector
             }
         }
 
-        void SpawnNode(string id, Vector2 pos, uint hash)
+        public static SectorResourceType ResourceForBiome(
+            SectorBiome biome, uint hash)
         {
-            // More stones and dry bushes than rare scrap: the first tools
-            // should be craftable by exploring the starting 160m area.
             int roll = (int)(hash % 18);
-            SectorResourceType type = roll < 3 ? SectorResourceType.GroundStone :
+            // Biome accents keep all core survival resources available.
+            if (biome == SectorBiome.RockyHighland && roll >= 10)
+                return SectorResourceType.Ore;
+            if (biome == SectorBiome.Meadow && roll >= 14)
+                return SectorResourceType.CottonPlant;
+            if (biome == SectorBiome.DrySteppe && roll >= 12 && roll < 16)
+                return SectorResourceType.DryBush;
+
+            return roll < 3 ? SectorResourceType.GroundStone :
                 roll < 6 ? SectorResourceType.DryBush :
                 roll < 8 ? SectorResourceType.FiberBush :
                 roll < 10 ? SectorResourceType.CottonPlant :
@@ -216,6 +223,14 @@ namespace DeadSector
                 roll == 11 ? SectorResourceType.TimberPile :
                 roll < 15 ? SectorResourceType.Tree :
                 SectorResourceType.Ore;
+        }
+
+        void SpawnNode(string id, Vector2 pos, uint hash)
+        {
+            // More stones and dry bushes than rare scrap: the first tools
+            // should be craftable by exploring the starting 160m area.
+            SectorResourceType type = ResourceForBiome(
+                SectorBiomeRules.At(pos.x, pos.y), hash);
 
             string item = type == SectorResourceType.GroundStone ? "stone" :
                 type == SectorResourceType.DryBush ? "stick" :
