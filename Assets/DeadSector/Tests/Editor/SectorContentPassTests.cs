@@ -32,6 +32,25 @@ namespace DeadSector.Tests
         }
 
         [Test]
+        public void BiomesShiftResourcesTowardOreCottonAndDryBrush()
+        {
+            // Hash 16 => ore/normal, cotton/meadow, ore/highland.
+            Assert.AreEqual(SectorResourceType.Ore,
+                SectorResources.ResourceForBiome(
+                    SectorBiome.RockyHighland, 16u));
+            Assert.AreEqual(SectorResourceType.CottonPlant,
+                SectorResources.ResourceForBiome(
+                    SectorBiome.Meadow, 16u));
+            Assert.AreEqual(SectorResourceType.DryBush,
+                SectorResources.ResourceForBiome(
+                    SectorBiome.DrySteppe, 13u));
+            // The baseline resources remain obtainable in every biome.
+            foreach (SectorBiome biome in Enum.GetValues(typeof(SectorBiome)))
+                Assert.AreEqual(SectorResourceType.GroundStone,
+                    SectorResources.ResourceForBiome(biome, 0u));
+        }
+
+        [Test]
         public void AllBiomeGrassColoursStayWithinDisplayRange()
         {
             foreach (SectorBiome biome in Enum.GetValues(typeof(SectorBiome)))
