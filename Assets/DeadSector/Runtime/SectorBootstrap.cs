@@ -279,11 +279,13 @@ namespace DeadSector
             GUI.Label(new Rect(24, hudY + 30f, 325, 24), "WASD ходьба | Shift бег | Space прыжок | V вид");
             GUI.Label(new Rect(24, hudY + 53f, 325, 24), "E собрать | ЛКМ/ПКМ удар | C крафт | J журнал");
             GUI.Label(new Rect(24, hudY + 76f, 325, 24), "Здоровье " + player.Health.ToString("0") + " | Карта: " + world.LoadedTiles + "/64 | Zombies: " + navigation.ZombieCount);
-            GUI.Label(new Rect(24, hudY + 99f, 325, 24), "Мир: " + world.Status + " | ИИ: " + navigation.Status);
+            GUI.Label(new Rect(24, hudY + 99f, 325, 24), "Мир: " + SectorRussian.DebugStatus(world.Status) +
+                " | ИИ: " + SectorRussian.DebugStatus(navigation.Status));
             GUI.Label(new Rect(24, hudY + 122f, 325, 24), "Позиция: " + player.transform.position.ToString("F0"));
             GUI.Label(new Rect(24, hudY + 145f, 325, 24),
-                "Анимация: " + player.AnimationState +
-                " | На земле: " + player.IsGrounded);
+                "Анимация: " + (player.AnimationState == "Procedural"
+                    ? "Манекен" : player.AnimationState) +
+                " | На земле: " + (player.IsGrounded ? "ДА" : "НЕТ"));
             GUI.Label(new Rect(24, hudY + 167f, 345, 24),
                 "Ноги Y: " + player.transform.position.y.ToString("F2") +
                 " | Земля Y: " + player.TerrainUnderPlayer.ToString("F2") +
