@@ -389,6 +389,11 @@ namespace DeadSector
                 body = GetComponent<CharacterController>();
 
             body.enabled = false;
+            // A new spawn starts upright even if the old character was
+            // crouching under cover at the moment of death/save.
+            IsCrouching = false;
+            body.height = StandingHeight;
+            body.center = Vector3.up * StandingHeight * .5f;
             cachedGroundTerrain = null;
             Vector3 spawn = SectorLayout.Spawn;
             spawn.y = GroundHeightAt(spawn) + .16f;
@@ -713,6 +718,9 @@ namespace DeadSector
                 body = GetComponent<CharacterController>();
 
             body.enabled = false;
+            IsCrouching = false;
+            body.height = StandingHeight;
+            body.center = Vector3.up * StandingHeight * .5f;
             transform.position = position;
             cachedGroundTerrain = null;
             body.enabled = true;
