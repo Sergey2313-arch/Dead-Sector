@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.AI;
 
 namespace DeadSector
 {
@@ -15,6 +16,7 @@ namespace DeadSector
         Quaternion closedRotation;
         bool isOpen;
         bool initialized;
+        NavMeshObstacle navObstacle;
 
         public bool IsOpen => isOpen;
 
@@ -25,12 +27,27 @@ namespace DeadSector
             initialized = true;
         }
 
+        void Start()
+        {
+            navObstacle = GetComponent<NavMeshObstacle>();
+            SynchronizeObstacle();
+        }
+
         public void Toggle()
         {
             if (!initialized)
                 Awake();
 
             isOpen = !isOpen;
+            if (navObstacle == null)
+                navObstacle = GetComponent<NavMeshObstacle>();
+            SynchronizeObstacle();
+        }
+
+        void SynchronizeObstacle()
+        {
+            if (navObstacle != null)
+                navObstacle.enabled = !isOpen;
         }
 
         void Update()
