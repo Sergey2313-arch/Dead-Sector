@@ -267,6 +267,7 @@ namespace DeadSector
                 return false;
             }
             bool saved = gameplay != null && gameplay.TrySaveGame(true);
+            gameplay?.Sounds?.PlayBuild();
             gameplay?.NotifyBuildFailure(
                 "Ремонт +" + restored.ToString("0") +
                 " прочности" + (saved ? " — сохранено" : " — F5 для сохранения"));
