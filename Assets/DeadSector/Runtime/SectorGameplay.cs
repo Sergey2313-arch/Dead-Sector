@@ -957,6 +957,8 @@ namespace DeadSector
             Notify("Экипировано: " + item.Label);
         }
 
+        public void NotifyBuildFailure(string reason) => Notify(reason);
+
         void Notify(string messageText)
         {
             message = messageText;
