@@ -557,24 +557,22 @@ namespace DeadSector
             return found && bounds.size.y > .05f;
         }
 
+        // The local avatar is hidden in FPP, but infected remain visible.
+        // Keep the calculation pure so culling regressions have EditMode tests.
+        public static int CullingMaskForView(int currentMask, bool thirdPersonView)
+        {
+            int playerVisual = 1 << SectorArt.PlayerVisualLayer;
+            int mask = thirdPersonView
+                ? currentMask | playerVisual : currentMask & ~playerVisual;
+            return mask & ~(1 << 31); // tactical arrow layer
+        }
+
         void ApplyViewVisibility()
         {
             if (visibleInThirdPerson == thirdPerson || view == null)
                 return;
 
-            // Every player mesh/weapon is assigned layer 2 (Ignore Raycast).
-            // Hiding that layer from the FPP camera prevents skin, helmet
-            // and weapon meshes from cutting across the near plane without
-            // disabling renderers seen by the tactical minimap.
-            const int playerLayerMask = 1 << 2;
-            if (thirdPerson)
-                view.cullingMask |= playerLayerMask;
-            else
-                view.cullingMask &= ~playerLayerMask;
-
-            // The tactical arrow has its own layer (31), never render it
-            // in the main gameplay camera.
-            view.cullingMask &= ~(1 << 31);
+            view.cullingMask = CullingMaskForView(view.cullingMask, thirdPerson);
             visibleInThirdPerson = thirdPerson;
         }
 
