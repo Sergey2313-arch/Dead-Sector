@@ -119,7 +119,7 @@ namespace DeadSector
             }
 
             part.GetComponent<Renderer>().sharedMaterial = material;
-            SectorArt.SetActorLayer(part.transform);
+            SectorArt.SetActorLayer(part.transform, SectorArt.EnemyVisualLayer);
         }
 
         void ApplyTint(Color color)
