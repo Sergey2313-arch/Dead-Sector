@@ -33,6 +33,46 @@ namespace DeadSector.Tests
         }
 
         [Test]
+        public void FirstPersonHidesOnlyPlayerButKeepsZombiesVisible()
+        {
+            Assert.AreNotEqual(
+                SectorArt.PlayerVisualLayer, SectorArt.EnemyVisualLayer);
+            const int originalMask = ~0;
+            int fpp = SectorPlayer.CullingMaskForView(originalMask, false);
+            int tpp = SectorPlayer.CullingMaskForView(fpp, true);
+
+            Assert.AreEqual(0,
+                fpp & (1 << SectorArt.PlayerVisualLayer));
+            Assert.AreNotEqual(0,
+                fpp & (1 << SectorArt.EnemyVisualLayer));
+            Assert.AreNotEqual(0,
+                tpp & (1 << SectorArt.EnemyVisualLayer));
+            Assert.AreNotEqual(0,
+                tpp & (1 << SectorArt.PlayerVisualLayer));
+
+            var root = new GameObject("ZombieVisual");
+            var child = new GameObject("ZombieBody");
+            try
+            {
+                child.transform.SetParent(root.transform, false);
+                SectorArt.SetActorLayer(root.transform, SectorArt.EnemyVisualLayer);
+                Assert.AreEqual(SectorArt.EnemyVisualLayer, root.layer);
+                Assert.AreEqual(SectorArt.EnemyVisualLayer, child.layer);
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+            }
+        }
+
+        [Test]
+        public void TerrainGrassAvoidsBuildingCenters()
+        {
+            Assert.IsFalse(SectorWorld.CanGrowGrass(0f, 0f),
+                "Never place billboard grass inside the starting settlement.");
+        }
+
+        [Test]
         public void ResidentialDoorAndPorchAreAccessibleToHumanPlayer()
         {
             Assert.That(SectorPlayer.StandingHeight, Is.InRange(1.65f, 1.90f));
