@@ -136,6 +136,15 @@ namespace DeadSector
             visible = true;
             restoreTimeScale = Time.timeScale > .001f
                 ? Time.timeScale : 1f;
+
+            // Close the journal before transferring input ownership.
+            // Otherwise it would remain visible behind the death screen
+            // and reclaim pointer focus after the player respawns.
+            if (gameplay.Journal != null && gameplay.Journal.Visible)
+                gameplay.SetJournalOpen(false);
+            gameplay.CloseInventoryPanels();
+            if (gameplay.Building != null)
+                gameplay.Building.ExitBuildMode();
             gameplay.SetExternalUiBlocking(true);
             Time.timeScale = 0f;
             root.SetActive(true);
