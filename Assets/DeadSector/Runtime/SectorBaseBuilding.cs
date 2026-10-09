@@ -30,6 +30,7 @@ namespace DeadSector
 
         public bool BuildMode => buildMode;
         public bool CanPlace => canPlace;
+        public string PlacementIssue { get; private set; } = "";
         public int PieceCount
         {
             get
@@ -147,8 +148,14 @@ namespace DeadSector
                 target + Vector3.up * spec.Dimensions.y * .5f,
                 Quaternion.Euler(0f, orientation, 0f));
             preview.transform.localScale = spec.Dimensions;
-            canPlace = ValidPlacement(spec, target, orientation) &&
-                SectorBuildCatalog.CanAfford(backpack, spec);
+            bool clearGround = ValidPlacement(spec, target, orientation);
+            bool hasMaterials = SectorBuildCatalog.CanAfford(backpack, spec);
+            canPlace = clearGround && hasMaterials;
+            PlacementIssue = !hasMaterials
+                ? "Нет готового комплекта или материалов. Откройте C."
+                : !clearGround
+                    ? "Место занято, слишком близко, склон или вода. Переместитесь."
+                    : "";
 
             if (previewMaterial != null)
                 previewMaterial.color = canPlace
@@ -158,10 +165,18 @@ namespace DeadSector
 
         public bool TryPlace()
         {
-            if (!buildMode || !canPlace ||
+            if (!buildMode)
+                return false;
+
+            if (!canPlace ||
                 !ValidPlacement(SelectedPlan, plannedPosition, orientation) ||
                 !SectorBuildCatalog.CanAfford(backpack, SelectedPlan))
+            {
+                gameplay?.Notify(string.IsNullOrEmpty(PlacementIssue)
+                    ? "Постройку пока нельзя поставить на этом месте."
+                    : PlacementIssue);
                 return false;
+            }
 
             SectorBuildSpecification plan = SelectedPlan;
             SectorBuildSnapshot snapshot = new SectorBuildSnapshot
