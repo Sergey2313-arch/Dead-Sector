@@ -211,6 +211,110 @@ namespace DeadSector
             Horde = director;
         }
 
+        // Public UI-facing API. The Canvas and the legacy IMGUI can use
+        // exactly the same inventory and save rules; no duplicated state.
+        public bool ModernUiEnabled { get; set; }
+        public bool InventoryOpen => inventoryOpen;
+        public bool CraftingOpen => craftingOpen;
+        public int ActiveWeaponSlot => selectedSlot;
+        public string RecentMessage => Time.time < messageUntil ? message : "";
+
+        public string WeaponInSlot(int slot)
+        {
+            if (slot < 0 || slot >= equipment.Length)
+                return "";
+            string id = equipment[slot];
+            return Inventory.Count(id) > 0 ? id : "";
+        }
+
+        public void SelectWeaponSlot(int slot)
+        {
+            if (slot >= 0 && slot < equipment.Length)
+                selectedSlot = slot;
+        }
+
+        public void ShowInventory()
+        {
+            if (!inventoryOpen)
+                ToggleInventory();
+        }
+
+        public void ShowCrafting()
+        {
+            if (!craftingOpen)
+                ToggleCrafting();
+        }
+
+        public void CloseInventoryPanels()
+        {
+            inventoryOpen = false;
+            craftingOpen = false;
+            UpdatePanelInput();
+        }
+
+        public void UseInventoryItem(string id) => UseItem(id);
+        public void EquipInventoryItem(string id) => EquipItem(id);
+
+        public void RemoveGear(SectorEquipment.GearSlot slot)
+        {
+            Armor?.Unequip(slot, Inventory);
+            Notify("Equipment removed");
+        }
+
+        public bool CraftRecipe(string id)
+        {
+            if (!SectorCrafting.Craft(Inventory, id))
+            {
+                Notify("Missing components or space");
+                return false;
+            }
+
+            Journal?.RecordCraft();
+            SectorRecipe recipe = SectorCrafting.Find(id);
+            Notify("Crafted " + (recipe != null
+                ? SectorItems.Get(recipe.OutputId).Label : id));
+            return true;
+        }
+
+        // Access the same nearest-interaction priority as E and the
+        // former IMGUI prompt. The modern HUD only reads this information.
+        public string InteractionHint()
+        {
+            if (player == null || !player.Ready ||
+                inventoryOpen || craftingOpen)
+                return "";
+
+            SectorLootContainer container = NearbyContainer();
+            SectorDoor door = NearbyDoor();
+            SectorResourceNode resource =
+                Resources != null ? Resources.Nearby() : null;
+            Vector3 position = player.transform.position;
+
+            float resourceDistance = resource != null
+                ? Vector3.Distance(resource.transform.position, position)
+                : float.PositiveInfinity;
+            float doorDistance = door != null
+                ? Vector3.Distance(door.transform.position, position)
+                : float.PositiveInfinity;
+            float containerDistance = container != null
+                ? Vector3.Distance(container.transform.position, position)
+                : float.PositiveInfinity;
+
+            if (resourceDistance < doorDistance &&
+                resourceDistance < containerDistance)
+                return "[E]  COLLECT  " + SectorItems.Get(resource.ItemId).Label;
+
+            if (doorDistance < containerDistance)
+                return door.IsOpen ? "[E]  CLOSE DOOR" : "[E]  OPEN DOOR";
+
+            if (container != null)
+                return "[E]  " + container.title +
+                    (container.Empty ? "  (EMPTY)" : "  TAKE");
+
+            return "";
+        }
+
+
         void ToggleInventory()
         {
             bool next = !inventoryOpen;
@@ -751,6 +855,9 @@ namespace DeadSector
 
         void OnGUI()
         {
+            if (ModernUiEnabled)
+                return;
+
             if (player == null || !player.Ready)
                 return;
 
