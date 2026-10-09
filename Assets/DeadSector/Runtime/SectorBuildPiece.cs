@@ -65,6 +65,56 @@ namespace DeadSector
                     storage = new SectorInventory(12, 60f);
                     storage.Import(snapshot.storage);
                     break;
+                case SectorBuildKind.Roof:
+                    // Two 3m long sloped wood panels; centre ridge rises
+                    // ~0.78m over the supported 2.5m wall top.
+                    Cube("Roof_Slope_Left",
+                        new Vector3(-.73f, .39f, 0f),
+                        new Vector3(1.85f, .18f, 3.20f),
+                        woodMaterial).transform.localRotation =
+                            Quaternion.Euler(0f, 0f, -25f);
+                    Cube("Roof_Slope_Right",
+                        new Vector3(.73f, .39f, 0f),
+                        new Vector3(1.85f, .18f, 3.20f),
+                        woodMaterial).transform.localRotation =
+                            Quaternion.Euler(0f, 0f, 25f);
+                    Cube("Ridge_Beam", new Vector3(0f, .77f, 0f),
+                        new Vector3(.22f, .22f, 3.25f), metalMaterial);
+                    break;
+                case SectorBuildKind.Campfire:
+                    for (int i = 0; i < 8; i++)
+                    {
+                        float theta = i * Mathf.PI / 4f;
+                        Cube("Fire_Stone_" + i,
+                            new Vector3(Mathf.Cos(theta) * .51f,
+                                .15f, Mathf.Sin(theta) * .51f),
+                            new Vector3(.28f, .28f, .30f), metalMaterial);
+                    }
+                    for (int i = -1; i <= 1; i += 2)
+                        Cube("Firewood_" + i,
+                            new Vector3(0f, .19f, 0f),
+                            new Vector3(.12f, .16f, 1f), woodMaterial)
+                            .transform.localRotation =
+                                Quaternion.Euler(0f, i * 36f, 0f);
+                    GameObject flame = GameObject.CreatePrimitive(
+                        PrimitiveType.Sphere);
+                    flame.name = "Fire_Core";
+                    flame.transform.SetParent(transform, false);
+                    flame.transform.localPosition =
+                        new Vector3(0f, .44f, 0f);
+                    flame.transform.localScale =
+                        new Vector3(.30f, .47f, .30f);
+                    flame.GetComponent<Renderer>().sharedMaterial =
+                        metalMaterial;
+                    Collider fireCollider = flame.GetComponent<Collider>();
+                    if (fireCollider != null) fireCollider.enabled = false;
+                    Light glow = flame.AddComponent<Light>();
+                    glow.type = LightType.Point;
+                    glow.color = new Color(1f, .48f, .18f);
+                    glow.range = 8f;
+                    glow.intensity = 1.7f;
+                    glow.shadows = LightShadows.None;
+                    break;
                 case SectorBuildKind.Door:
                     Cube("LeftPost", new Vector3(-1.38f, 1.3f, 0f),
                         new Vector3(.24f, 2.6f, .4f), woodMaterial);
@@ -122,7 +172,20 @@ namespace DeadSector
                 doorObstacle.enabled = !hingedDoor.IsOpen;
         }
 
-        void Cube(string label, Vector3 localPosition,
+        public bool CanRepair =>
+            !Destroyed && Health < MaxHealth - .01f;
+
+        // One plank (wood) restores 35 durability, never beyond max.
+        public float Repair(float amount)
+        {
+            if (Destroyed || amount <= 0f)
+                return 0f;
+            float restored = Mathf.Min(amount, MaxHealth - Health);
+            Health += restored;
+            return restored;
+        }
+
+        GameObject Cube(string label, Vector3 localPosition,
             Vector3 size, Material surface)
         {
             GameObject child = GameObject.CreatePrimitive(
@@ -132,6 +195,7 @@ namespace DeadSector
             child.transform.localPosition = localPosition;
             child.transform.localScale = size;
             child.GetComponent<Renderer>().sharedMaterial = surface;
+            return child;
         }
 
         public void Damage(float amount)
