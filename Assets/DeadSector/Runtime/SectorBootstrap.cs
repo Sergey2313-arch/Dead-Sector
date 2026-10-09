@@ -204,7 +204,8 @@ namespace DeadSector
             {
                 var modern = new GameObject("Tactical_UI")
                     .AddComponent<SectorModernUI>();
-                if (modern.Configure(gameplay, player, clock))
+                if (modern.Configure(gameplay, player, clock,
+                    minimap, compass))
                     hud.enabled = false;
             }
         }
