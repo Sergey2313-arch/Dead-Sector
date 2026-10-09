@@ -14,6 +14,7 @@ namespace DeadSector
         AudioClip construction;
         AudioClip chop;
         AudioClip hit;
+        AudioClip gunshot;
         AudioClip rain;
         float nextFootstep;
 
@@ -33,6 +34,7 @@ namespace DeadSector
             construction = CreateClip("DeadSector_Hammer", .24f, 180f, .44f, false);
             chop = CreateClip("DeadSector_Axe", .19f, 96f, .40f, false);
             hit = CreateClip("DeadSector_Impact", .15f, 135f, .42f, false);
+            gunshot = CreateClip("DeadSector_Gunshot", .30f, 69f, .68f, false);
             rain = CreateClip("DeadSector_Rain", 1.0f, 0f, .095f, true);
             ambience.clip = rain;
         }
@@ -40,6 +42,7 @@ namespace DeadSector
         public void PlayBuild() => Play(construction);
         public void PlayChop() => Play(chop);
         public void PlayHit() => Play(hit);
+        public void PlayGunshot() => Play(gunshot);
 
         void Play(AudioClip clip)
         {
@@ -72,7 +75,9 @@ namespace DeadSector
             {
                 nextFootstep = Time.time +
                     (player.Speed > 5.5f ? .31f : .46f);
-                Play(footstep);
+                if (effects != null && footstep != null)
+                    effects.PlayOneShot(footstep,
+                        player.IsCrouching ? .22f : .85f);
             }
         }
 
@@ -109,6 +114,7 @@ namespace DeadSector
             if (construction != null) Destroy(construction);
             if (chop != null) Destroy(chop);
             if (hit != null) Destroy(hit);
+            if (gunshot != null) Destroy(gunshot);
             if (rain != null) Destroy(rain);
         }
     }
