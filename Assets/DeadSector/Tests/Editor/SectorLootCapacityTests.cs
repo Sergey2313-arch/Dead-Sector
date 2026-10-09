@@ -26,7 +26,7 @@ namespace DeadSector.Tests
                 Assert.AreEqual(1, inventory.Count("bandage"));
                 Assert.AreEqual(2, cache.Contents.Count > 0
                     ? cache.Contents[0].count : 0);
-                StringAssert.Contains("Bandage", label);
+                StringAssert.Contains(SectorItems.Get("bandage").Label, label);
             }
             finally
             {
