@@ -119,6 +119,92 @@ namespace DeadSector.Tests
         }
 
         [Test]
+        public void ChoppedTreeSplitsYieldBetweenBagAndPersistentGroundCache()
+        {
+            var nodeObject = new GameObject("ChoppedPine");
+            var resourceObject = new GameObject("ResourceRegistry");
+            try
+            {
+                var pine = nodeObject.AddComponent<SectorResourceNode>();
+                pine.Configure("pine_4_4_44", SectorResourceType.Tree, "wood", 5);
+                var resources = resourceObject.AddComponent<SectorResources>();
+                resources.RegisterWorldTree(pine);
+
+                // Same scenario as screenshot: 1 kg of free capacity,
+                // five 1-kg logs should produce 1 carried + 4 on ground.
+                var bag = new SectorInventory(10, 3f);
+                Assert.IsTrue(bag.Add("wood", 2));
+                var spilled = new System.Collections.Generic.List<SectorItemStack>();
+                resources.StoreOverflow = (node, remaining) =>
+                {
+                    Assert.AreSame(pine, node);
+                    spilled.AddRange(remaining);
+                    return true;
+                };
+
+                Assert.IsTrue(resources.HarvestToolNode(pine, bag, out string label));
+                Assert.AreEqual(3, bag.Count("wood"));
+                Assert.AreEqual(1, spilled.Count);
+                Assert.AreEqual("wood", spilled[0].id);
+                Assert.AreEqual(4, spilled[0].count);
+                Assert.IsTrue(resources.WasHarvested("pine_4_4_44"));
+                StringAssert.Contains("На земле", label);
+            }
+            finally
+            {
+                Object.DestroyImmediate(nodeObject);
+                Object.DestroyImmediate(resourceObject);
+            }
+        }
+
+        [Test]
+        public void NoOverflowStoragePreservesTreeAndItemsWithoutLoss()
+        {
+            var nodeObject = new GameObject("PreservedPine");
+            var resourceObject = new GameObject("ResourceRegistry");
+            try
+            {
+                var pine = nodeObject.AddComponent<SectorResourceNode>();
+                pine.Configure("pine_4_4_45", SectorResourceType.Tree, "wood", 5);
+                var resources = resourceObject.AddComponent<SectorResources>();
+                resources.RegisterWorldTree(pine);
+                var bag = new SectorInventory(10, 2f);
+                Assert.IsTrue(bag.Add("wood", 2));
+
+                Assert.IsFalse(resources.HarvestToolNode(pine, bag, out _));
+                Assert.AreEqual(2, bag.Count("wood"));
+                Assert.IsFalse(resources.WasHarvested(pine.Id));
+            }
+            finally
+            {
+                Object.DestroyImmediate(nodeObject);
+                Object.DestroyImmediate(resourceObject);
+            }
+        }
+
+        [Test]
+        public void HarvestCachePositionAndContentsSurviveVersionOneSaveJson()
+        {
+            var state = new SectorGameSave();
+            state.containers.Add(new SectorContainerSnapshot
+            {
+                id = "harvest_pine_4_4_44",
+                position = new Vector3(73.5f, 0f, -141.25f),
+                items = new System.Collections.Generic.List<SectorItemStack>
+                {
+                    new SectorItemStack("wood", 4)
+                }
+            });
+            string json = JsonUtility.ToJson(state);
+            var restored = JsonUtility.FromJson<SectorGameSave>(json);
+            Assert.AreEqual(1, restored.version);
+            Assert.AreEqual("harvest_pine_4_4_44", restored.containers[0].id);
+            Assert.AreEqual(new Vector3(73.5f, 0f, -141.25f),
+                restored.containers[0].position);
+            Assert.AreEqual(4, restored.containers[0].items[0].count);
+        }
+
+        [Test]
         public void StonePickaxeCanBeCraftedAndEquippedAsMelee()
         {
             var inventory = new SectorInventory();
