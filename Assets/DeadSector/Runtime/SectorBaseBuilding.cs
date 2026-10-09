@@ -5,7 +5,7 @@ using UnityEngine;
 namespace DeadSector
 {
     /// <summary>
-    /// Survival base construction: B mode, 1..4 plans, Q/E rotation,
+    /// Survival base construction: B mode, 1..5 plans, Q/E rotation,
     /// left click to pay/place, right click to cancel. All parts use
     /// physics collisions and serialize per save profile.
     /// </summary>
@@ -41,7 +41,7 @@ namespace DeadSector
         public SectorBuildSpecification SelectedPlan =>
             SectorBuildCatalog.At(selected);
         public string ControlHint => buildMode
-            ? "B EXIT | 1-4 SELECT | Q/E ROTATE | LMB BUILD | RMB CANCEL"
+            ? "B EXIT | 1-5 SELECT | Q/E ROTATE | LMB BUILD | RMB CANCEL"
             : "[B] BUILD";
 
         public void Configure(SectorPlayer target,
