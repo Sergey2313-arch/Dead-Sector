@@ -50,11 +50,15 @@ namespace DeadSector
         readonly Image[] meterFill = new Image[4];
         readonly Text[] meterValues = new Text[4];
         readonly Text[] hotbarLabels = new Text[3];
+        readonly Image[] hotbarIcons = new Image[3];
         readonly Image[] hotbarAccent = new Image[3];
         readonly Text[] bagTexts = new Text[30];
+        readonly Image[] bagIcons = new Image[30];
         readonly Image[] bagBackgrounds = new Image[30];
         readonly Image[] bagCategoryStripes = new Image[30];
         readonly Text[] gearLabels = new Text[5];
+        readonly Image[] gearIcons = new Image[5];
+        Image selectedIcon;
         readonly List<RecipeDisplay> recipeDisplays = new List<RecipeDisplay>();
 
         Text dayLabel;
@@ -241,7 +245,9 @@ namespace DeadSector
                     (i == 0 ? "PRIMARY" : i == 1 ? "SIDEARM" : "MELEE"),
                     10f, 10f, 120f, 17f, 11, Muted, FontStyle.Bold);
                 hotbarLabels[i] = Label(frame, "ItemName", "EMPTY",
-                    10f, 34f, 125f, 26f, 13, White, FontStyle.Bold);
+                    48f, 30f, 88f, 35f, 12, White, FontStyle.Bold);
+                hotbarIcons[i] = IconImage(frame, "WeaponIcon",
+                    8f, 28f, 37f, 37f);
             }
 
             RectTransform dayPanel = Rect(root, "Day_Readout",
@@ -621,7 +627,9 @@ namespace DeadSector
                 Label(tile, "GearType", names[i], 13f, 6f,
                     254f, 18f, 10, Muted, FontStyle.Bold);
                 gearLabels[i] = Label(tile, "GearItem", "EMPTY",
-                    13f, 26f, 264f, 25f, 13, White);
+                    55f, 26f, 223f, 25f, 13, White);
+                gearIcons[i] = IconImage(tile,
+                    "GearIcon", 12f, 16f, 36f, 36f);
                 Button click = tile.gameObject.AddComponent<Button>();
                 click.targetGraphic = tile.GetComponent<Image>();
                 tile.GetComponent<Image>().raycastTarget = true;
@@ -658,8 +666,14 @@ namespace DeadSector
                     "CategoryStripe", 0f, 0f, 3f, 82f, Muted)
                     .GetComponent<Image>();
                 bagTexts[i] = button.GetComponentInChildren<Text>();
-                bagTexts[i].fontSize = 12;
+                bagTexts[i].fontSize = 10;
                 bagTexts[i].alignment = TextAnchor.MiddleCenter;
+                bagTexts[i].rectTransform.anchoredPosition =
+                    new Vector2(4f, -57f);
+                bagTexts[i].rectTransform.sizeDelta =
+                    new Vector2(78f, 22f);
+                bagIcons[i] = IconImage(button.transform,
+                    "ItemThumb", 19f, 5f, 48f, 48f);
                 SectorBagDragSource drag =
                     button.gameObject.AddComponent<SectorBagDragSource>();
                 drag.Configure(this, slot);
@@ -671,8 +685,10 @@ namespace DeadSector
             RectAt(details, "SelectionAccent", 0f, 0f, 253f, 3f, Accent);
             Label(details, "Label", "SELECTED ITEM", 15f, 16f,
                 225f, 24f, 12, Muted, FontStyle.Bold);
+            selectedIcon = IconImage(details, "SelectedThumb",
+                14f, 52f, 76f, 76f);
             selectedTitle = Label(details, "ItemTitle", "NO ITEM",
-                15f, 56f, 221f, 68f, 19, White, FontStyle.Bold);
+                103f, 55f, 138f, 75f, 17, White, FontStyle.Bold);
             selectedDetails = Label(details, "ItemMeta", "",
                 15f, 139f, 222f, 200f, 13, Muted);
             useButton = MakeButton(details, "UseItem", "USE",
@@ -811,6 +827,10 @@ namespace DeadSector
                 string name = SectorItems.TryGet(id, out SectorItemDefinition item)
                     ? item.Label : i == 2 ? "FISTS" : "EMPTY";
                 hotbarLabels[i].text = name;
+                hotbarIcons[i].enabled = !string.IsNullOrEmpty(id) || i == 2;
+                if (hotbarIcons[i].enabled)
+                    hotbarIcons[i].sprite = SectorItemIcons.Get(
+                        string.IsNullOrEmpty(id) ? "fists" : id);
                 hotbarAccent[i].color = gameplay.ActiveWeaponSlot == i
                     ? Accent : Edge;
             }
@@ -950,7 +970,10 @@ namespace DeadSector
                 {
                     SectorItemStack stack = inventory.Stacks[i];
                     SectorItemDefinition item = SectorItems.Get(stack.id);
-                    bagTexts[i].text = item.Label + "\n×" + stack.count;
+                    bagTexts[i].text = ShortItemLabel(item.Label) +
+                        " ×" + stack.count;
+                    bagIcons[i].enabled = true;
+                    bagIcons[i].sprite = SectorItemIcons.Get(stack.id);
                     bagBackgrounds[i].color = selectedId == stack.id
                         ? new Color(.20f, .32f, .24f, 1f) : Cell;
                     bagCategoryStripes[i].color = CategoryColor(item.Kind);
@@ -958,6 +981,7 @@ namespace DeadSector
                 else
                 {
                     bagTexts[i].text = i < inventory.SlotLimit ? "·" : "—";
+                    bagIcons[i].enabled = false;
                     bagBackgrounds[i].color =
                         i < inventory.SlotLimit ? Cell : Panel;
                     bagCategoryStripes[i].color = Edge;
@@ -969,14 +993,20 @@ namespace DeadSector
                 string id = gameplay.Armor != null
                     ? gameplay.Armor.Equipped((SectorEquipment.GearSlot)i)
                     : "";
-                gearLabels[i].text =
-                    SectorItems.TryGet(id, out SectorItemDefinition item)
-                        ? item.Label + "   [REMOVE]" : "EMPTY";
+                bool filled = SectorItems.TryGet(
+                    id, out SectorItemDefinition item);
+                gearLabels[i].text = filled
+                    ? item.Label + "   [REMOVE]" : "EMPTY";
+                gearIcons[i].enabled = filled;
+                if (filled)
+                    gearIcons[i].sprite = SectorItemIcons.Get(id);
             }
 
             if (SectorItems.TryGet(selectedId, out SectorItemDefinition selected))
             {
                 selectedTitle.text = selected.Label;
+                selectedIcon.enabled = true;
+                selectedIcon.sprite = SectorItemIcons.Get(selected.Id);
                 selectedDetails.text = selected.Kind + "\n\n" +
                     "WEIGHT   " + selected.Weight.ToString("0.00") + " KG\n" +
                     "STACK   " + inventory.Count(selected.Id) + "\n\n" +
@@ -995,10 +1025,18 @@ namespace DeadSector
             else
             {
                 selectedTitle.text = "NO ITEM";
+                selectedIcon.enabled = false;
                 selectedDetails.text = "Choose an item from your backpack.";
                 useButton.interactable = false;
                 equipButton.interactable = false;
             }
+        }
+
+        static string ShortItemLabel(string title)
+        {
+            return title != null && title.Length > 12
+                ? title.Substring(0, 11) + "…"
+                : title;
         }
 
         static Color CategoryColor(SectorItemKind kind)
@@ -1083,6 +1121,20 @@ namespace DeadSector
             return image;
         }
 
+        static Image IconImage(Transform parent, string name,
+            float x, float y, float width, float height)
+        {
+            RectTransform rect = Rect(parent, name,
+                new Vector2(0f, 1f), new Vector2(0f, 1f),
+                new Vector2(0f, 1f), new Vector2(x, -y),
+                new Vector2(width, height));
+            Image image = rect.gameObject.AddComponent<Image>();
+            image.color = Color.white;
+            image.preserveAspect = true;
+            image.raycastTarget = false;
+            return image;
+        }
+
         Text Label(Transform parent, string name, string text,
             float x, float y, float width, float height,
             int fontSize, Color color,
@@ -1142,6 +1194,7 @@ namespace DeadSector
                 compass.enabled = true;
             if (mapTexture != null)
                 Destroy(mapTexture);
+            SectorItemIcons.Release();
             if (uiFont != null)
                 Destroy(uiFont);
         }
