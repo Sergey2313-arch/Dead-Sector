@@ -64,6 +64,7 @@ namespace DeadSector
         bool externalUiBlocking;
         int suppressedPanelHotkeyFrame = -1;
         bool loadedOnce;
+        const string LastSelectedProfileKey = "DeadSector.Save.LastActiveSlotV1";
         int activeSaveSlot = SectorSaveProfiles.LegacySlot;
         public int ActiveSaveSlot => activeSaveSlot;
         public string ActiveProfileName => SectorSaveProfiles.Name(activeSaveSlot);
@@ -90,6 +91,17 @@ namespace DeadSector
         {
             player = target;
             world = streamedWorld;
+
+            // Preserve access to the original legacy slot on first boot.
+            // Later boots resume the last *valid existing* numbered slot;
+            // an unreadable/empty last slot never becomes the autosave target.
+            int previousSlot = PlayerPrefs.GetInt(
+                LastSelectedProfileKey, SectorSaveProfiles.LegacySlot);
+            if (previousSlot > SectorSaveProfiles.LegacySlot &&
+                SectorSaveProfiles.TryRead(
+                    Application.persistentDataPath, previousSlot,
+                    out SectorGameSave _))
+                activeSaveSlot = previousSlot;
 
             Needs = target.GetComponent<SectorSurvival>();
             if (Needs == null)
@@ -805,6 +817,15 @@ namespace DeadSector
 
             activeSaveSlot = slot;
             loadedOnce = true;
+            PlayerPrefs.SetInt(LastSelectedProfileKey, slot);
+
+            // Reset live NPC actors when crossing independent timelines.
+            // An already dead NPC or horde from the previous profile is
+            // not part of the newly chosen save.
+            SectorNavigation navigation =
+                FindFirstObjectByType<SectorNavigation>();
+            if (navigation != null)
+                navigation.ResetPopulationForProfile();
 
             // A new character begins on the actual loaded starting tile,
             // rather than hovering twelve metres above the terrain.
@@ -825,6 +846,18 @@ namespace DeadSector
         {
             if (player == null || !player.Ready)
                 return false;
+
+            // Never replace corrupted, unreadable or unsupported files.
+            // Such files must remain available for manual recovery.
+            if (SectorSaveProfiles.Exists(
+                    Application.persistentDataPath, activeSaveSlot) &&
+                !SectorSaveProfiles.TryRead(
+                    Application.persistentDataPath, activeSaveSlot,
+                    out SectorGameSave _))
+            {
+                Notify("Unreadable save preserved; choose empty profile");
+                return false;
+            }
 
             var data = new SectorGameSave
             {
