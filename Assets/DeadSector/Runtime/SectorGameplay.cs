@@ -147,6 +147,10 @@ namespace DeadSector
             if (Resources == null)
                 Resources = gameObject.AddComponent<SectorResources>();
             Resources.Configure(target);
+            // World-generated pines join the same gather/save registry.
+            // Bootstrap creates gameplay before World.Start streams its tiles.
+            if (world != null)
+                world.resources = Resources;
 
             Journal = GetComponent<SectorJournal>();
             if (Journal == null)
