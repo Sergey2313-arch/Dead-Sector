@@ -29,7 +29,7 @@ namespace DeadSector
             int outputCount, params SectorIngredient[] ingredients)
         {
             Id = id;
-            Name = name;
+            Name = SectorRussian.RecipeName(id, name);
             Tier = id.StartsWith("cotton_") || id == "cloth_cotton" ? 2 :
                 id.StartsWith("wood_") || id == "hatchet" ? 1 : 0;
             OutputId = outputId;
