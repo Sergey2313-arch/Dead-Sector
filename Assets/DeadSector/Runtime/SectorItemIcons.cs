@@ -85,6 +85,7 @@ namespace DeadSector
                     break;
                 case "stone_axe":
                 case "axe":
+                case "stone_pickaxe":
                     Axe(p);
                     break;
                 case "spear":
