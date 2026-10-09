@@ -50,25 +50,26 @@ namespace DeadSector
             ParticleSystem.MainModule main = rain.main;
             main.loop = true;
             main.duration = 2f;
-            main.startLifetime = 1.6f;
-            main.startSpeed = 29f;
-            main.startSize = .035f;
-            main.maxParticles = 1000;
+            main.startLifetime = 1.15f;
+            main.startSpeed = 21f;
+            main.startSize = .018f;
+            main.maxParticles = 650;
             main.simulationSpace = ParticleSystemSimulationSpace.World;
-            main.startColor = new Color(.7f, .8f, .92f, .5f);
+            main.startColor = new Color(.7f, .8f, .92f, .26f);
 
             ParticleSystem.EmissionModule emission = rain.emission;
             emission.rateOverTime = 0f;
 
             ParticleSystem.ShapeModule shape = rain.shape;
             shape.shapeType = ParticleSystemShapeType.Box;
-            shape.scale = new Vector3(42f, 1f, 42f);
+            shape.scale = new Vector3(34f, 1f, 34f);
 
             ParticleSystemRenderer renderer =
                 obj.GetComponent<ParticleSystemRenderer>();
             renderer.renderMode = ParticleSystemRenderMode.Stretch;
-            renderer.lengthScale = 4.5f;
-            renderer.velocityScale = .04f;
+            // Original stretched streaks appeared as metre-long white poles.
+            renderer.lengthScale = .42f;
+            renderer.velocityScale = .01f;
             renderer.shadowCastingMode =
                 UnityEngine.Rendering.ShadowCastingMode.Off;
 
@@ -111,7 +112,7 @@ namespace DeadSector
 
                 ParticleSystem.EmissionModule emission = rain.emission;
                 emission.rateOverTime =
-                    Weather == SectorWeatherKind.Rain ? 380f : 0f;
+                    Weather == SectorWeatherKind.Rain ? 210f : 0f;
 
                 if (Weather != SectorWeatherKind.Rain)
                     rain.Clear();
