@@ -213,28 +213,30 @@ namespace DeadSector
             if (pendingTitle || !SectorInput.Pressed(KeyCode.Escape))
                 return;
 
-            if (open)
+            SectorEscapeAction action = SectorMenuRules.OnEscape(
+                open, settings,
+                gameplay.InventoryOpen, gameplay.CraftingOpen,
+                minimap != null && minimap.TacticalOpen);
+
+            switch (action)
             {
-                if (settings)
+                case SectorEscapeAction.CloseSettings:
                     ShowHome();
-                else
+                    break;
+                case SectorEscapeAction.Resume:
                     Resume();
-                return;
+                    break;
+                case SectorEscapeAction.CloseInventory:
+                    gameplay.CloseInventoryPanels();
+                    break;
+                case SectorEscapeAction.CloseAtlas:
+                    if (minimap != null)
+                        minimap.CloseTacticalMap();
+                    break;
+                case SectorEscapeAction.OpenPause:
+                    OpenMenu();
+                    break;
             }
-
-            if (gameplay.InventoryOpen || gameplay.CraftingOpen)
-            {
-                gameplay.CloseInventoryPanels();
-                return;
-            }
-
-            if (minimap != null && minimap.TacticalOpen)
-            {
-                minimap.CloseTacticalMap();
-                return;
-            }
-
-            OpenMenu();
         }
 
         void OpenMenu()
