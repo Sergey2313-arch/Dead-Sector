@@ -30,6 +30,19 @@ namespace DeadSector
         bool visible;
         float nextScan;
 
+        public bool ModernUiEnabled { get; set; }
+        public bool Visible => visible;
+
+        public void SetVisible(bool value)
+        {
+            visible = value;
+        }
+
+        public int SuppliesTaken => state.suppliesTaken;
+        public int ResourcesHarvested => state.resourceNodesHarvested;
+        public int ItemsCrafted => state.itemsCrafted;
+        public int ZombiesKilled => state.zombiesKilled;
+
         public void Configure(SectorPlayer target)
         {
             player = target;
@@ -89,7 +102,8 @@ namespace DeadSector
             if (player == null || !player.Ready)
                 return;
 
-            if (SectorInput.Pressed(KeyCode.J))
+            if (!ModernUiEnabled &&
+                SectorInput.Pressed(KeyCode.J))
                 visible = !visible;
 
             if (Time.time < nextScan)
@@ -133,7 +147,8 @@ namespace DeadSector
 
         void OnGUI()
         {
-            if (!visible || player == null || !player.Ready)
+            if (ModernUiEnabled || !visible ||
+                player == null || !player.Ready)
                 return;
 
             GUI.depth = -160;
