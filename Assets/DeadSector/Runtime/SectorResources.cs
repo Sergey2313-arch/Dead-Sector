@@ -11,7 +11,9 @@ namespace DeadSector
         FiberBush,
         CottonPlant,
         ScrapPile,
-        TimberPile
+        TimberPile,
+        Tree,
+        Ore
     }
 
     public sealed class SectorResourceNode : MonoBehaviour
@@ -74,7 +76,9 @@ namespace DeadSector
                 new Color(.25f, .41f, .16f), // live fiber shrub
                 new Color(.92f, .87f, .76f), // cotton
                 new Color(.32f, .33f, .34f), // scrap
-                new Color(.36f, .21f, .11f)  // timber
+                new Color(.36f, .21f, .11f), // timber
+                new Color(.32f, .22f, .12f), // standing tree trunk
+                new Color(.40f, .44f, .45f)  // ore outcrop
             };
 
             materials = new Material[colors.Length];
@@ -161,44 +165,76 @@ namespace DeadSector
         {
             // More stones and dry bushes than rare scrap: the first tools
             // should be craftable by exploring the starting 160m area.
-            int roll = (int)(hash % 12);
+            int roll = (int)(hash % 18);
             SectorResourceType type = roll < 3 ? SectorResourceType.GroundStone :
                 roll < 6 ? SectorResourceType.DryBush :
                 roll < 8 ? SectorResourceType.FiberBush :
                 roll < 10 ? SectorResourceType.CottonPlant :
                 roll == 10 ? SectorResourceType.ScrapPile :
-                SectorResourceType.TimberPile;
+                roll == 11 ? SectorResourceType.TimberPile :
+                roll < 15 ? SectorResourceType.Tree :
+                SectorResourceType.Ore;
 
             string item = type == SectorResourceType.GroundStone ? "stone" :
                 type == SectorResourceType.DryBush ? "stick" :
                 type == SectorResourceType.FiberBush ? "plant_fiber" :
                 type == SectorResourceType.CottonPlant ? "cotton" :
-                type == SectorResourceType.ScrapPile ? "scrap" : "wood";
+                type == SectorResourceType.ScrapPile ||
+                type == SectorResourceType.Ore ? "scrap" : "wood";
 
             string extra = type == SectorResourceType.DryBush
                 ? "plant_fiber" : string.Empty;
 
-            int count = 1 + (int)((hash >> 4) % 3);
+            int count = type == SectorResourceType.Tree
+                ? 4 + (int)((hash >> 4) % 3) :
+                type == SectorResourceType.Ore
+                    ? 2 + (int)((hash >> 4) % 3)
+                    : 1 + (int)((hash >> 4) % 3);
             float height = SectorLayout.Height(pos.x, pos.y);
             GameObject node = GameObject.CreatePrimitive(
                 type == SectorResourceType.GroundStone ||
-                type == SectorResourceType.ScrapPile
-                    ? PrimitiveType.Cube : PrimitiveType.Capsule);
+                type == SectorResourceType.ScrapPile ||
+                type == SectorResourceType.Ore
+                    ? PrimitiveType.Cube :
+                type == SectorResourceType.Tree
+                    ? PrimitiveType.Cylinder : PrimitiveType.Capsule);
 
             node.name = "Gather_" + type + "_" + id;
             node.transform.SetParent(transform, true);
-            node.transform.position = new Vector3(pos.x, height + .36f, pos.y);
+            node.transform.position = new Vector3(
+                pos.x, height + (type == SectorResourceType.Tree ? 1.8f :
+                    type == SectorResourceType.Ore ? .55f : .36f), pos.y);
             node.transform.localScale =
-                type == SectorResourceType.GroundStone
-                    ? new Vector3(.65f, .45f, .55f)
+                type == SectorResourceType.Tree
+                    ? new Vector3(.42f, 1.75f, .42f)
+                    : type == SectorResourceType.Ore
+                        ? new Vector3(1.4f, 1.1f, 1.25f)
+                    : type == SectorResourceType.GroundStone
+                        ? new Vector3(.65f, .45f, .55f)
                     : type == SectorResourceType.CottonPlant
                         ? new Vector3(.65f, 1.15f, .65f)
-                        : type == SectorResourceType.DryBush
-                            ? new Vector3(1f, .72f, 1f)
-                            : new Vector3(.8f, .75f, .8f);
+                    : type == SectorResourceType.DryBush
+                        ? new Vector3(1f, .72f, 1f)
+                        : new Vector3(.8f, .75f, .8f);
 
             node.GetComponent<Renderer>().sharedMaterial =
                 materials[(int)type];
+
+            // Distinct canopy makes harvestable trees obvious at a glance.
+            if (type == SectorResourceType.Tree)
+            {
+                var crown = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                crown.name = "Harvestable_Tree_Canopy";
+                crown.transform.SetParent(node.transform, true);
+                crown.transform.position = node.transform.position +
+                    Vector3.up * 1.8f;
+                crown.transform.localScale = new Vector3(2.4f, 2.1f, 2.4f);
+                crown.GetComponent<Renderer>().sharedMaterial =
+                    materials[(int)SectorResourceType.FiberBush];
+                // Only the trunk is targetable; leaves must not block players.
+                Collider canopyCollider = crown.GetComponent<Collider>();
+                if (canopyCollider != null) canopyCollider.enabled = false;
+            }
 
             var resource = node.AddComponent<SectorResourceNode>();
             resource.Configure(id, type, item, count, extra,
@@ -226,7 +262,76 @@ namespace DeadSector
             return nearest;
         }
 
+        public static bool RequiresTool(SectorResourceType type) =>
+            type == SectorResourceType.Tree || type == SectorResourceType.Ore;
+
+        public static string RequiredToolName(SectorResourceType type) =>
+            type == SectorResourceType.Tree ? "ТОПОР" :
+            type == SectorResourceType.Ore ? "КИРКА" : "";
+
+        public static bool CorrectTool(SectorResourceType type, string itemId)
+        {
+            if (type == SectorResourceType.Tree)
+                return itemId == "stone_axe" || itemId == "axe";
+            if (type == SectorResourceType.Ore)
+                return itemId == "stone_pickaxe" || itemId == "pickaxe";
+            return true;
+        }
+
+        public SectorResourceNode NearbyToolNode(Vector3 forward)
+        {
+            if (player == null) return null;
+            forward.y = 0f;
+            if (forward.sqrMagnitude < .01f) return null;
+            forward.Normalize();
+            SectorResourceNode nearest = null;
+            float best = InteractRange * InteractRange;
+            foreach (SectorResourceNode node in active.Values)
+            {
+                if (node == null || !RequiresTool(node.Type))
+                    continue;
+                Vector3 delta = node.transform.position - player.transform.position;
+                delta.y = 0f;
+                float sqr = delta.sqrMagnitude;
+                if (sqr < .01f || sqr >= best) continue;
+                if (Vector3.Dot(forward, delta / Mathf.Sqrt(sqr)) < .45f)
+                    continue;
+                best = sqr;
+                nearest = node;
+            }
+            return nearest;
+        }
+
+        public bool StrikeNearest(
+            string toolId, SectorInventory inventory, Vector3 forward,
+            out string label, out string warning)
+        {
+            label = string.Empty;
+            warning = string.Empty;
+            SectorResourceNode node = NearbyToolNode(forward);
+            if (node == null) return false;
+
+            if (!CorrectTool(node.Type, toolId))
+            {
+                warning = "Нужен инструмент: " + RequiredToolName(node.Type) +
+                    ". Создайте его в меню C.";
+                return true;
+            }
+            if (!HarvestInternal(node, inventory, out label))
+                warning = "Не хватает свободного места в рюкзаке";
+            return true;
+        }
+
         public bool Harvest(
+            SectorResourceNode node, SectorInventory inventory, out string label)
+        {
+            label = string.Empty;
+            if (node == null || RequiresTool(node.Type))
+                return false;
+            return HarvestInternal(node, inventory, out label);
+        }
+
+        bool HarvestInternal(
             SectorResourceNode node, SectorInventory inventory, out string label)
         {
             label = string.Empty;
