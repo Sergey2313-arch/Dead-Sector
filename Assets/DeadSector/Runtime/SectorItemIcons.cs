@@ -133,6 +133,12 @@ namespace DeadSector
                 case "build_door":
                     BuildingKit(p, 4);
                     break;
+                case "build_roof":
+                    BuildingKit(p, 5);
+                    break;
+                case "build_campfire":
+                    BuildingKit(p, 6);
+                    break;
                 case "stone":
                     Stone(p);
                     break;
@@ -415,6 +421,17 @@ namespace DeadSector
             else if (kind == 3)
             {
                 Crate(p);
+            }
+            else if (kind == 5)
+            {
+                Triangle(p, 4, 30, 24, 8, 44, 30, Warm);
+                Line(p, 6, 32, 42, 32, Shadow, 4);
+            }
+            else if (kind == 6)
+            {
+                Circle(p, 24, 31, 15, Metal);
+                Triangle(p, 15, 26, 27, 8, 33, 26, Red);
+                Triangle(p, 20, 30, 31, 12, 37, 30, Warm);
             }
             else
             {
