@@ -21,7 +21,20 @@ namespace DeadSector
         public SectorWorldClock clock;
 
         public SectorWeatherKind Weather { get; private set; }
-        public string WeatherLabel => Weather.ToString();
+        public string WeatherLabel
+        {
+            get
+            {
+                switch (Weather)
+                {
+                    case SectorWeatherKind.Clear: return "Ясно";
+                    case SectorWeatherKind.Overcast: return "Облачно";
+                    case SectorWeatherKind.Rain: return "Дождь";
+                    case SectorWeatherKind.Mist: return "Туман";
+                    default: return "Неизвестно";
+                }
+            }
+        }
 
         ParticleSystem rain;
         Material rainMaterial;
@@ -146,8 +159,8 @@ namespace DeadSector
                 return;
 
             GUI.Label(new Rect(14f, 202f, 250f, 24f),
-                "Weather: " + WeatherLabel +
-                "  |  Time: " + clock.hourOfDay.ToString("00.0") + "h");
+                "Погода: " + WeatherLabel +
+                "  |  Время: " + clock.hourOfDay.ToString("00.0") + "h");
         }
 
         void OnDestroy()
