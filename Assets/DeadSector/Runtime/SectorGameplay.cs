@@ -56,6 +56,7 @@ namespace DeadSector
         public SectorArmorVisuals ArmorVisuals { get; private set; }
         public SectorHordeDirector Horde { get; private set; }
         public SectorBaseBuilding Building { get; private set; }
+        public SectorSoundscape Sounds { get; private set; }
         public string StorageDepositItemId { get; private set; } = "";
 
         readonly Dictionary<string, SectorLootContainer> active =
@@ -221,6 +222,11 @@ namespace DeadSector
             if (Building == null)
                 Building = gameObject.AddComponent<SectorBaseBuilding>();
             Building.Configure(target, this, Inventory);
+
+            Sounds = GetComponent<SectorSoundscape>();
+            if (Sounds == null)
+                Sounds = gameObject.AddComponent<SectorSoundscape>();
+            Sounds.Configure(target);
 
             WorldClock = FindFirstObjectByType<SectorWorldClock>();
 
@@ -417,8 +423,11 @@ namespace DeadSector
             Notify("Рюкзак отсортирован");
         }
 
-        public void NotifyConstruction(string description) =>
+        public void NotifyConstruction(string description)
+        {
+            Sounds?.PlayBuild();
             Notify("Построено: " + description);
+        }
 
         public void SelectStorageDepositItem(string id)
         {
@@ -794,7 +803,10 @@ namespace DeadSector
                 // when the harvested node has already been removed.
                 if (!harvestInfo.StartsWith(
                         "Нужен инструмент:", StringComparison.Ordinal))
+                {
                     PunchVisual?.Play(false, true);
+                    Sounds?.PlayChop();
+                }
 
                 if (!string.IsNullOrEmpty(resourcesObtained))
                 {
