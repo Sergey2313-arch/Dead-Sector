@@ -34,6 +34,18 @@ namespace DeadSector
         Transform back;
         Transform hip;
         Transform leftLeg;
+        SectorMannequin mannequinPose;
+
+        public static SectorCarryPose PoseFor(string equippedId)
+        {
+            if (string.IsNullOrEmpty(equippedId))
+                return SectorCarryPose.Unarmed;
+            if (equippedId == "pistol")
+                return SectorCarryPose.Pistol;
+            if (equippedId == "rifle")
+                return SectorCarryPose.Rifle;
+            return SectorCarryPose.Tool;
+        }
 
         public void Configure(SectorPlayer target)
         {
@@ -58,6 +70,7 @@ namespace DeadSector
             // Use the mannequin's animated right forearm/hand attachment instead.
             SectorMannequin mannequin = player != null && player.visual != null
                 ? player.visual.GetComponent<SectorMannequin>() : null;
+            mannequinPose = mannequin;
             if (mannequin != null)
             {
                 if (rightHand == null && mannequin.rightArm != null)
@@ -142,6 +155,10 @@ namespace DeadSector
         {
             string[] values = { primary ?? "", sidearm ?? "", melee ?? "" };
 
+            string heldId = slot >= 0 && slot < values.Length
+                ? values[slot] : "";
+            mannequinPose?.SetCarryPose(PoseFor(heldId));
+
             bool dirty = activeSlot != slot;
 
             for (int i = 0; i < equipped.Length; i++)
@@ -198,13 +215,17 @@ namespace DeadSector
             root.transform.SetParent(bone, false);
 
             root.transform.localPosition = held
-                ? new Vector3(.02f, -.08f, .08f)
+                ? (id == "rifle" ? new Vector3(.06f, -.03f, .21f)
+                   : id == "pistol" ? new Vector3(.04f, -.05f, .12f)
+                   : new Vector3(.05f, -.11f, .07f))
                 : bone == back
                     ? new Vector3(.24f, .12f, -.31f)
                     : new Vector3(.14f, -.18f, -.10f);
 
             root.transform.localRotation = held
-                ? Quaternion.Euler(90f, 0f, 0f)
+                ? Quaternion.Euler(
+                    id == "rifle" ? 76f : id == "pistol" ? 84f : 95f,
+                    0f, id == "rifle" ? -6f : 0f)
                 : Quaternion.Euler(0f, 0f, 28f);
 
             switch (id)
