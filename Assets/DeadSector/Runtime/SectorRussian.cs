@@ -33,7 +33,9 @@ namespace DeadSector
             { "build_wall", "Комплект стены" },
             { "build_barricade", "Комплект баррикады" },
             { "build_storage", "Комплект хранилища" },
-            { "build_door", "Комплект двери" }
+            { "build_door", "Комплект двери" },
+            { "build_roof", "Комплект крыши" },
+            { "build_campfire", "Комплект костра" }
         };
 
         static readonly Dictionary<string, string> Recipes = new Dictionary<string, string>(StringComparer.Ordinal)
@@ -59,7 +61,9 @@ namespace DeadSector
             { "build_wall", "Собрать деревянную стену" },
             { "build_barricade", "Собрать баррикаду" },
             { "build_storage", "Собрать ящик для хранения" },
-            { "build_door", "Собрать дверь на петлях" }
+            { "build_door", "Собрать дверь на петлях" },
+            { "build_roof", "Собрать скатную крышу" },
+            { "build_campfire", "Сложить костёр" }
         };
 
         public static string ItemName(string id, string fallback = "")
