@@ -116,7 +116,7 @@ namespace DeadSector.Tests
             Assert.IsFalse(SectorSaveProfiles.TryCreateNew(
                 sandbox, 2, SectorSaveProfiles.Starter()));
             Assert.AreEqual("{corrupted json", File.ReadAllText(slot));
-            StringAssert.Contains("UNREADABLE",
+            StringAssert.Contains("ПОВРЕЖДЕНО",
                 SectorSaveProfiles.Description(sandbox, 2));
 
             string other = SectorSaveProfiles.FilePath(sandbox, 1);
