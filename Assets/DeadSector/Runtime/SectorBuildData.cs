@@ -59,23 +59,23 @@ namespace DeadSector
         static readonly SectorBuildSpecification[] Plans =
         {
             new SectorBuildSpecification(
-                SectorBuildKind.Foundation, "Wood Foundation",
+                SectorBuildKind.Foundation, "Деревянное основание",
                 new Vector3(3f, .25f, 3f), 170f,
                 new[] { "wood", "stick" }, new[] { 4, 2 }),
             new SectorBuildSpecification(
-                SectorBuildKind.Wall, "Wood Wall",
+                SectorBuildKind.Wall, "Деревянная стена",
                 new Vector3(3f, 2.5f, .3f), 140f,
                 new[] { "wood", "stick" }, new[] { 5, 2 }),
             new SectorBuildSpecification(
-                SectorBuildKind.Barricade, "Barricade",
+                SectorBuildKind.Barricade, "Баррикада",
                 new Vector3(3f, 1.25f, .5f), 90f,
                 new[] { "wood", "stone" }, new[] { 3, 2 }),
             new SectorBuildSpecification(
-                SectorBuildKind.Storage, "Storage Crate",
+                SectorBuildKind.Storage, "Ящик для хранения",
                 new Vector3(1.3f, 1.1f, 1.1f), 80f,
                 new[] { "wood", "stick" }, new[] { 3, 1 }),
             new SectorBuildSpecification(
-                SectorBuildKind.Door, "Hinged Door",
+                SectorBuildKind.Door, "Дверь на петлях",
                 new Vector3(3f, 2.6f, .4f), 120f,
                 new[] { "wood", "stick" }, new[] { 4, 2 })
         };
