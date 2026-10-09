@@ -41,6 +41,7 @@ namespace DeadSector
         float nextWander;
         float nextAttack;
         float pendingDamageAt = -1f;
+        float nextStructureHit;
         bool alerted;
         readonly HashSet<int> parameters = new HashSet<int>();
 
@@ -89,6 +90,12 @@ namespace DeadSector
                 }
             }
 
+            if (target.Health > 0 && Time.time >= nextStructureHit)
+            {
+                nextStructureHit = Time.time + 1.3f;
+                AttackBlockingStructure();
+            }
+
             if (target.Health <= 0)
             {
                 agent.isStopped = true;
@@ -123,6 +130,37 @@ namespace DeadSector
             }
 
             SetMotion(agent.velocity.magnitude, alerted);
+        }
+
+        /// <summary>
+        /// Infected break player-built barriers that physically block the
+        /// line towards their target. No damage to arbitrary scenery.
+        /// </summary>
+        void AttackBlockingStructure()
+        {
+            if (target == null || target.Health <= 0f ||
+                Vector3.Distance(transform.position,
+                    target.transform.position) > 22f)
+                return;
+
+            Vector3 origin = transform.position + Vector3.up * 1.1f;
+            Vector3 destination =
+                target.transform.position + Vector3.up * 1.1f;
+            Vector3 delta = destination - origin;
+            float distance = delta.magnitude;
+            if (distance < .05f)
+                return;
+
+            if (!Physics.Raycast(origin, delta / distance,
+                out RaycastHit hit, distance, ~(1 << 2),
+                QueryTriggerInteraction.Ignore) ||
+                hit.distance > 2.5f)
+                return;
+
+            SectorBuildPiece piece =
+                hit.collider.GetComponentInParent<SectorBuildPiece>();
+            if (piece != null && !piece.Destroyed)
+                piece.Damage(AttackDamage);
         }
 
         public void ConfigureArchetype(SectorZombieKind kind, Transform model)
