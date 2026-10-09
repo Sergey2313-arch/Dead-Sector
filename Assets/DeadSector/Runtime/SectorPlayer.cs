@@ -103,7 +103,11 @@ namespace DeadSector
             if (SectorInput.Click && Health > 0 && !InputBlockedByUI)
                 SetCursor(true);
 
-            if (SectorInput.Pressed(KeyCode.R) && !InputBlockedByUI)
+            // R is reserved for weapon reload while alive.
+            // Respawn is allowed only after actual death, never as a
+            // free heal during combat.
+            if (Health <= 0f && !InputBlockedByUI &&
+                SectorInput.Pressed(KeyCode.R))
                 Respawn();
 
             if (!Ready || Health <= 0 || InputBlockedByUI ||
