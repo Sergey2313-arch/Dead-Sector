@@ -97,6 +97,32 @@ namespace DeadSector
             return true;
         }
 
+        // Corpse drops use the same persistent, streamable pickup crates as
+        // logged trees and ore. Existing V1 containers remain compatible.
+        public bool AddZombieLoot(SectorZombieKind kind, Vector3 position)
+        {
+            string id = "corpse_" + Guid.NewGuid().ToString("N");
+            var loot = new List<SectorItemStack>();
+            switch (kind)
+            {
+                case SectorZombieKind.Brute:
+                    loot.Add(new SectorItemStack("scrap", 2));
+                    loot.Add(new SectorItemStack("bandage", 1));
+                    break;
+                case SectorZombieKind.Runner:
+                    loot.Add(new SectorItemStack("9mm", 4));
+                    loot.Add(new SectorItemStack("cloth", 1));
+                    break;
+                default:
+                    loot.Add(new SectorItemStack("cloth", 1));
+                    break;
+            }
+            harvestCacheLocations[id] = new Vector2(position.x, position.z);
+            persistent[id] = loot;
+            refreshAt = 0f;
+            return true;
+        }
+
         string[] equipment = { "", "", "" };
         int selectedSlot = 2;
         int pistolRounds;
@@ -539,7 +565,8 @@ namespace DeadSector
                     contents == null || contents.Count == 0)
                     continue;
                 EnsureNearby(
-                    pair.Key, "Добытые материалы", pair.Value,
+                    pair.Key, pair.Key.StartsWith("corpse_", StringComparison.Ordinal)
+                        ? "Трофеи заражённого" : "Добытые материалы", pair.Value,
                     origin, expected);
             }
 
@@ -1244,7 +1271,9 @@ namespace DeadSector
                         persistent[state.id] = state.items ??
                             new List<SectorItemStack>();
                         if (state.id.StartsWith(
-                                HarvestCachePrefix, StringComparison.Ordinal))
+                                HarvestCachePrefix, StringComparison.Ordinal) ||
+                            state.id.StartsWith(
+                                "corpse_", StringComparison.Ordinal))
                             harvestCacheLocations[state.id] = new Vector2(
                                 state.position.x, state.position.z);
                     }
