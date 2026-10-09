@@ -20,6 +20,8 @@ namespace DeadSector
         public string secondary = "";
         public string melee = "";
         public int selectedSlot = 2;
+        public int pistolRounds;
+        public int rifleRounds;
         public List<SectorItemStack> inventory = new List<SectorItemStack>();
         public List<SectorContainerSnapshot> containers =
             new List<SectorContainerSnapshot>();
@@ -64,6 +66,9 @@ namespace DeadSector
 
         string[] equipment = { "", "", "" };
         int selectedSlot = 2;
+        int pistolRounds;
+        int rifleRounds;
+        float reloadingUntil;
         bool inventoryOpen;
         bool craftingOpen;
         bool externalUiBlocking;
@@ -219,6 +224,9 @@ namespace DeadSector
                 if (SectorInput.Pressed(KeyCode.E))
                     Interact();
 
+                if (SectorInput.Pressed(KeyCode.R))
+                    ReloadEquipped();
+
                 string selected = EquippedId();
                 bool gunEquipped = SectorItems.TryGet(
                     selected, out SectorItemDefinition selectedItem) &&
@@ -271,6 +279,17 @@ namespace DeadSector
         public bool InventoryOpen => inventoryOpen;
         public bool CraftingOpen => craftingOpen;
         public int ActiveWeaponSlot => selectedSlot;
+        public bool IsReloading => Time.time < reloadingUntil;
+
+        public int RoundsForSlot(int slot)
+        {
+            string id = WeaponInSlot(slot);
+            return id == "rifle" ? rifleRounds :
+                id == "pistol" ? pistolRounds : 0;
+        }
+
+        public int MagazineCapacityForSlot(int slot) =>
+            SectorMagazineRules.Capacity(WeaponInSlot(slot));
         public string RecentMessage => Time.time < messageUntil ? message : "";
 
         public string WeaponInSlot(int slot)
@@ -654,7 +673,7 @@ namespace DeadSector
         {
             // No charging or wind-up. One mouse press resolves a hit in this
             // frame; the short arm animation is independent visual feedback.
-            if (Time.time < nextAttack)
+            if (Time.time < nextAttack || IsReloading)
                 return;
 
             string id = EquippedId();
@@ -662,10 +681,17 @@ namespace DeadSector
 
             if (attack.Kind == SectorAttackKind.Firearm)
             {
-                string ammunition = id == "rifle" ? "556" : "9mm";
-                if (!Inventory.Remove(ammunition, 1))
+                if (id == "rifle")
                 {
-                    Notify("No " + SectorItems.Get(ammunition).Label);
+                    if (!SectorMagazineRules.Fire(ref rifleRounds))
+                    {
+                        Notify("Magazine empty — press R");
+                        return;
+                    }
+                }
+                else if (!SectorMagazineRules.Fire(ref pistolRounds))
+                {
+                    Notify("Magazine empty — press R");
                     return;
                 }
             }
@@ -760,6 +786,36 @@ namespace DeadSector
             CombatFeedback?.ShowAttack(
                 target != null, strong, firearm,
                 target != null ? damage : 0f);
+        }
+
+        public bool ReloadEquipped()
+        {
+            if (player == null || player.Health <= 0f || IsReloading)
+                return false;
+
+            string gun = EquippedId();
+            int loaded;
+            if (gun == "rifle")
+                loaded = SectorMagazineRules.Reload(
+                    gun, Inventory, ref rifleRounds);
+            else if (gun == "pistol")
+                loaded = SectorMagazineRules.Reload(
+                    gun, Inventory, ref pistolRounds);
+            else
+                return false;
+
+            if (loaded <= 0)
+            {
+                Notify("No ammunition or magazine already full");
+                return false;
+            }
+
+            // Reserve ammunition transfers immediately; firing resumes
+            // only after the animation-ready reload window completes.
+            reloadingUntil = Time.time +
+                (gun == "rifle" ? 1.8f : 1.35f);
+            Notify("Reloading " + gun + " (+" + loaded + ")");
+            return true;
         }
 
         void UseItem(string id)
@@ -925,6 +981,8 @@ namespace DeadSector
                 secondary = equipment[1],
                 melee = equipment[2],
                 selectedSlot = selectedSlot,
+                pistolRounds = pistolRounds,
+                rifleRounds = rifleRounds,
                 inventory = Inventory.Export(),
                 structures = Building != null
                     ? Building.Export() : new List<SectorBuildSnapshot>(),
@@ -1051,6 +1109,13 @@ namespace DeadSector
                 equipment[1] = ValidEquipped(data.secondary);
                 equipment[2] = ValidEquipped(data.melee);
                 selectedSlot = Mathf.Clamp(data.selectedSlot, 0, 2);
+                pistolRounds = equipment[1] == "pistol"
+                    ? SectorMagazineRules.ClampLoaded(
+                        "pistol", data.pistolRounds) : 0;
+                rifleRounds = equipment[0] == "rifle"
+                    ? SectorMagazineRules.ClampLoaded(
+                        "rifle", data.rifleRounds) : 0;
+                reloadingUntil = 0f;
 
                 Needs?.ApplySaved(data.hunger, data.thirst, data.stamina);
                 player.RestoreHealth(data.health);
