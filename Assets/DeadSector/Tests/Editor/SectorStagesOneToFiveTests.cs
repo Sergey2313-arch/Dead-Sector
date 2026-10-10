@@ -130,6 +130,31 @@ namespace DeadSector.Tests
         }
 
         [Test]
+        public void StageTwoRainCollidesWithRoofsInsteadOfPassingThroughThem()
+        {
+            GameObject root = new GameObject("RainCollisionTest");
+            try
+            {
+                ParticleSystem particles = root.AddComponent<ParticleSystem>();
+                SectorWeather.ConfigureRainWorldCollision(particles);
+
+                ParticleSystem.CollisionModule collision = particles.collision;
+                Assert.IsTrue(collision.enabled);
+                Assert.AreEqual(ParticleSystemCollisionType.World, collision.type);
+                Assert.AreEqual(ParticleSystemCollisionMode.Collision3D, collision.mode);
+                Assert.AreEqual(ParticleSystemCollisionQuality.High, collision.quality);
+                Assert.That(collision.lifetimeLoss.constant,
+                    Is.EqualTo(1f).Within(.001f));
+                Assert.IsTrue((collision.collidesWith.value & (1 << 0)) != 0,
+                    "Rain must hit default-layer building roofs.");
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+            }
+        }
+
+        [Test]
         public void StageTwoDaylightFogRetainsVisibleTerrainDetail()
         {
             float daylight = SectorWorldClock.BaseFogDensity(1f);
