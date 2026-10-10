@@ -72,6 +72,30 @@ namespace DeadSector.Tests
         }
 
         [Test]
+        public void CrouchingDropsTorsoMoreThanLegRoots()
+        {
+            // Procedural foot meshes pivot around their own hips; moving
+            // the torso only was the cause of the stiff, tall crouch.
+            Assert.That(SectorMannequin.CrouchTorsoDrop,
+                Is.GreaterThan(.4f).And.LessThan(.8f));
+            Assert.That(SectorMannequin.CrouchLegDrop,
+                Is.GreaterThan(0f).And.LessThan(.25f));
+            Assert.Greater(SectorMannequin.CrouchTorsoDrop,
+                SectorMannequin.CrouchLegDrop * 2f);
+        }
+
+        [Test]
+        public void ZombieGroundCorrectionIsPositiveOnlyAndClamped()
+        {
+            Assert.That(SectorZombieVisualGrounding.RequiredLift(59f, 60f),
+                Is.EqualTo(1.025f).Within(.0001f));
+            Assert.AreEqual(0f,
+                SectorZombieVisualGrounding.RequiredLift(60.2f, 60f));
+            Assert.AreEqual(3f,
+                SectorZombieVisualGrounding.RequiredLift(50f, 60f));
+        }
+
+        [Test]
         public void StageThreeConstructionSupportsIgnoreOnlyIntendedContacts()
         {
             Assert.IsTrue(SectorBaseBuilding.CanOverlapSupports(
