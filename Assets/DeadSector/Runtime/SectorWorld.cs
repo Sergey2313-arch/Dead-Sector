@@ -179,6 +179,28 @@ namespace DeadSector
             last = center; streaming = false; Status = "Ready";
         }
         Terrain Get(Vector2Int key) => tiles.TryGetValue(key, out var terrain) ? terrain : null;
+        // A painted meadow/dirt/rock palette. Previously every pixel
+        // belonged to exactly one layer, leaving enormous flat patches.
+        // Returns normalized weights; safe to calculate deterministically
+        // for independently streamed tiles.
+        public static Vector3 GroundBlend(
+            float x, float z, bool road, bool exposedRock)
+        {
+            if (road)
+                return new Vector3(.015f, .97f, .015f);
+            if (exposedRock)
+                return new Vector3(.09f, .24f, .67f);
+
+            float broad = Mathf.PerlinNoise(
+                (x + 713f) * .0073f, (z - 291f) * .0073f);
+            float grain = Mathf.PerlinNoise(
+                (x - 143f) * .029f, (z + 481f) * .029f);
+            float patch = Mathf.Clamp01(broad * .7f + grain * .3f);
+            float dirt = Mathf.Lerp(.10f, .42f, patch);
+            float stone = Mathf.Lerp(.015f, .075f, grain);
+            return new Vector3(1f - dirt - stone, dirt, stone);
+        }
+
         Terrain BuildTile(Vector2Int key)
         {
             var origin = SectorLayout.Origin(key);
@@ -194,11 +216,14 @@ namespace DeadSector
                 float wx = origin.x + x * 1000f / 127, wz = origin.z + z * 1000f / 127;
                 float road = Mathf.Min(Mathf.Abs(wz), Mathf.Abs(wx - 300));
                 float plannedRoad = SectorGeography.DistanceToRoad(wx, wz);
-                int layer = (road < 9 && Mathf.Max(Mathf.Abs(wx), Mathf.Abs(wz)) < 540f) ||
-                            plannedRoad < 9f
-                    ? 1
-                    : SectorLayout.Height(wx, wz) > 185f ? 2 : 0;
-                splat[z, x, layer] = 1;
+                bool onRoad = (road < 9 &&
+                    Mathf.Max(Mathf.Abs(wx), Mathf.Abs(wz)) < 540f) ||
+                    plannedRoad < 9f;
+                bool rock = SectorLayout.Height(wx, wz) > 185f;
+                Vector3 blend = GroundBlend(wx, wz, onRoad, rock);
+                splat[z, x, 0] = blend.x;
+                splat[z, x, 1] = blend.y;
+                splat[z, x, 2] = blend.z;
             }
             data.SetAlphamaps(0, 0, splat);
             BuildTerrainGrass(data, origin);
