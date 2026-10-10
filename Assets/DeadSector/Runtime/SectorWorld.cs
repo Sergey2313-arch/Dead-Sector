@@ -65,6 +65,9 @@ namespace DeadSector
         readonly List<SectorPointOfInterest> pointsOfInterest =
             new List<SectorPointOfInterest>();
         TerrainLayer[] layers;
+        // Only these temporary layers are owned by the world and destroyed
+        // on teardown; never destroy a TerrainLayer loaded from Resources.
+        TerrainLayer[] generatedLayers;
         Texture2D grassTexture;
         Mesh pineConeMesh;
         Material terrainMaterial;
@@ -77,7 +80,28 @@ namespace DeadSector
         {
             if (Art != null) return;
             Art = new SectorArt();
-            layers = new[] { Layer(new Color(.23f, .28f, .16f)), Layer(new Color(.3f, .26f, .2f)), Layer(new Color(.35f, .37f, .37f)) };
+            generatedLayers = new[]
+            {
+                Layer(new Color(.23f, .28f, .16f)),
+                Layer(new Color(.3f, .26f, .2f)),
+                Layer(new Color(.35f, .37f, .37f))
+            };
+            TerrainLayer forestGround =
+                SectorTerrainAssetCatalog.LoadForestGround();
+            if (forestGround != null)
+            {
+                layers = new[]
+                {
+                    generatedLayers[0], generatedLayers[1],
+                    generatedLayers[2], forestGround
+                };
+            }
+            else
+            {
+                layers = generatedLayers;
+                Debug.LogWarning("[Dead Sector] Forest Ground 03 is unavailable. " +
+                    "Using procedural terrain paint.");
+            }
             grassTexture = BuildGrassBladeTexture();
             pineConeMesh = SectorVegetationMesh.CreateConiferCone();
             Shader terrainShader = Shader.Find("Universal Render Pipeline/Terrain/Lit");
@@ -201,6 +225,30 @@ namespace DeadSector
             return new Vector3(1f - dirt - stone, dirt, stone);
         }
 
+        // Percentage of the grassy terrain layer replaced with natural
+        // forest-floor texture. Roads retain their dirt layer and high peaks
+        // remain rocky. World-space noise keeps tile borders seamless.
+        public static float ForestFloorFraction(float x, float z,
+            bool onRoad, bool rock)
+        {
+            if (onRoad || rock ||
+                SectorGeography.TryGetWaterLevel(x, z, out _))
+                return 0f;
+
+            float amount;
+            switch (SectorBiomeRules.At(x, z))
+            {
+                case SectorBiome.ConiferForest: amount = .90f; break;
+                case SectorBiome.MixedForest: amount = .74f; break;
+                case SectorBiome.DrySteppe: amount = .20f; break;
+                case SectorBiome.RockyHighland: amount = .10f; break;
+                default: amount = .48f; break;
+            }
+            float scattered = Mathf.PerlinNoise(
+                (x + 478f) * .014f, (z - 602f) * .014f);
+            return Mathf.Clamp01(amount * Mathf.Lerp(.70f, 1f, scattered));
+        }
+
         Terrain BuildTile(Vector2Int key)
         {
             var origin = SectorLayout.Origin(key);
@@ -210,7 +258,7 @@ namespace DeadSector
             for (int z = 0; z < resolution; z++) for (int x = 0; x < resolution; x++)
                 heights[z, x] = SectorLayout.Height(origin.x + x * 1000f / (resolution - 1), origin.z + z * 1000f / (resolution - 1)) / 500f;
             data.SetHeights(0, 0, heights); data.terrainLayers = layers;
-            var splat = new float[128, 128, 3];
+            var splat = new float[128, 128, layers.Length];
             for (int z = 0; z < 128; z++) for (int x = 0; x < 128; x++)
             {
                 float wx = origin.x + x * 1000f / 127, wz = origin.z + z * 1000f / 127;
@@ -221,9 +269,13 @@ namespace DeadSector
                     plannedRoad < 9f;
                 bool rock = SectorLayout.Height(wx, wz) > 185f;
                 Vector3 blend = GroundBlend(wx, wz, onRoad, rock);
-                splat[z, x, 0] = blend.x;
+                float forest = layers.Length > 3
+                    ? ForestFloorFraction(wx, wz, onRoad, rock) : 0f;
+                splat[z, x, 0] = blend.x * (1f - forest);
                 splat[z, x, 1] = blend.y;
                 splat[z, x, 2] = blend.z;
+                if (layers.Length > 3)
+                    splat[z, x, 3] = blend.x * forest;
             }
             data.SetAlphamaps(0, 0, splat);
             BuildTerrainGrass(data, origin);
@@ -1577,11 +1629,13 @@ namespace DeadSector
                 Destroy(t.terrainData);
             }
 
-            if (layers != null)
+            if (generatedLayers != null)
             {
-                foreach (TerrainLayer layer in layers)
+                foreach (TerrainLayer layer in generatedLayers)
                 {
-                    Destroy(layer.diffuseTexture);
+                    if (layer == null) continue;
+                    if (layer.diffuseTexture != null)
+                        Destroy(layer.diffuseTexture);
                     Destroy(layer);
                 }
             }
