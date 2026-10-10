@@ -55,6 +55,10 @@ namespace DeadSector.Tests
             Assert.That(forest.tileSize.y, Is.EqualTo(4f).Within(.01f));
             Assert.That(forest.metallic, Is.EqualTo(0f));
             Assert.That(forest.smoothness, Is.EqualTo(0f));
+            // Regression for mirror-like terrain despite the Smoothness=0
+            // Inspector slider: Diffuse Alpha Source overrides the constant.
+            Assert.AreEqual(TerrainLayerSmoothnessSource.ConstantOnly,
+                forest.smoothnessSource);
         }
 
         [Test]
