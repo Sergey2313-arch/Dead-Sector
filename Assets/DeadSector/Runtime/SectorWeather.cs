@@ -122,6 +122,19 @@ namespace DeadSector
             }
         }
 
+        // A SolidColor player camera is our temporary horizon until a
+        // full skybox is built. Unlike fog, Camera.backgroundColor is not
+        // updated by RenderSettings; keep both colors in sync every frame.
+        public static void SyncCameraBackdrop(Camera camera, Color fogColor)
+        {
+            if (camera == null ||
+                camera.clearFlags != CameraClearFlags.SolidColor)
+                return;
+
+            camera.backgroundColor = new Color(
+                fogColor.r, fogColor.g, fogColor.b, 1f);
+        }
+
         void LateUpdate()
         {
             if (clock == null || player == null || !player.Ready)
@@ -169,6 +182,11 @@ namespace DeadSector
                     RenderSettings.fogColor,
                     weatherFog,
                     Weather == SectorWeatherKind.Mist ? .7f : .35f);
+
+            // Do this after clock and weather have both computed the current
+            // atmospheric color, so the 1600m camera clip plane never reveals
+            // the stale blue-grey startup clear color.
+            SyncCameraBackdrop(player.view, RenderSettings.fogColor);
         }
 
         void OnGUI()
