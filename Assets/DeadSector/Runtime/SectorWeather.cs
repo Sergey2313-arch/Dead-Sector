@@ -87,6 +87,11 @@ namespace DeadSector
             velocity.space = ParticleSystemSimulationSpace.World;
             velocity.y = new ParticleSystem.MinMaxCurve(-17f);
 
+            // Buildings and player-built roof panels have real colliders.
+            // World collision kills rain when it reaches roofs or the ground,
+            // while rain outside windows and doorways stays visible.
+            ConfigureRainWorldCollision(rain);
+
             ParticleSystemRenderer renderer =
                 obj.GetComponent<ParticleSystemRenderer>();
             renderer.renderMode = ParticleSystemRenderMode.Stretch;
@@ -107,6 +112,28 @@ namespace DeadSector
             }
 
             rain.Play();
+        }
+
+        public static void ConfigureRainWorldCollision(ParticleSystem particles)
+        {
+            if (particles == null)
+                return;
+
+            ParticleSystem.CollisionModule collision = particles.collision;
+            collision.enabled = true;
+            collision.type = ParticleSystemCollisionType.World;
+            collision.mode = ParticleSystemCollisionMode.Collision3D;
+            collision.quality = ParticleSystemCollisionQuality.High;
+
+            // Layer 2 is used by the player rig (Ignore Raycast).
+            // Collide with the world geometry, including TerrainColliders,
+            // houses, industrial roofs and player-built roof panels.
+            collision.collidesWith = ~(1 << 2);
+            collision.bounce = 0f;
+            collision.dampen = 0f;
+            collision.lifetimeLoss = 1f;
+            collision.radiusScale = .25f;
+            collision.sendCollisionMessages = false;
         }
 
         public static float FogMultiplier(SectorWeatherKind state)
