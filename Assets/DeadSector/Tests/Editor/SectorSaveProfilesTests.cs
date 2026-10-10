@@ -83,6 +83,66 @@ namespace DeadSector.Tests
         }
 
         [Test]
+        public void DeletingOneProfileLeavesLegacyAndOtherSlotsUntouched()
+        {
+            string legacy = SectorSaveProfiles.FilePath(sandbox, 0);
+            File.WriteAllText(legacy, "ORIGINAL V1");
+            Assert.IsTrue(SectorSaveProfiles.TryCreateNew(
+                sandbox, 1, SectorSaveProfiles.Starter()));
+            Assert.IsTrue(SectorSaveProfiles.TryCreateNew(
+                sandbox, 2, SectorSaveProfiles.Starter()));
+            Assert.IsTrue(SectorSaveProfiles.TryCreateNew(
+                sandbox, 3, SectorSaveProfiles.Starter()));
+
+            string first = SectorSaveProfiles.FilePath(sandbox, 1);
+            string second = SectorSaveProfiles.FilePath(sandbox, 2);
+            string third = SectorSaveProfiles.FilePath(sandbox, 3);
+            string firstContent = File.ReadAllText(first);
+            string thirdContent = File.ReadAllText(third);
+            File.WriteAllText(second + ".bak", "OLDER CHECKPOINT");
+            File.WriteAllText(second + ".tmp", "INTERRUPTED CHECKPOINT");
+
+            Assert.IsTrue(SectorSaveProfiles.TryDelete(sandbox, 2));
+            Assert.IsFalse(File.Exists(second));
+            Assert.IsFalse(File.Exists(second + ".bak"));
+            Assert.IsFalse(File.Exists(second + ".tmp"));
+            Assert.IsTrue(File.Exists(first));
+            Assert.IsTrue(File.Exists(third));
+            Assert.AreEqual(firstContent, File.ReadAllText(first));
+            Assert.AreEqual(thirdContent, File.ReadAllText(third));
+            Assert.AreEqual("ORIGINAL V1", File.ReadAllText(legacy));
+            Assert.IsTrue(SectorSaveProfiles.TryCreateNew(
+                sandbox, 2, SectorSaveProfiles.Starter()),
+                "A deleted profile must be available as a new game slot.");
+        }
+
+        [Test]
+        public void ProfileDeletionRefusesLegacyInvalidAndEmptySlots()
+        {
+            string legacy = SectorSaveProfiles.FilePath(sandbox, 0);
+            File.WriteAllText(legacy, "DO NOT DELETE LEGACY");
+
+            Assert.IsFalse(SectorSaveProfiles.TryDelete(sandbox, 0));
+            Assert.IsFalse(SectorSaveProfiles.TryDelete(sandbox, -1));
+            Assert.IsFalse(SectorSaveProfiles.TryDelete(sandbox, 4));
+            Assert.IsFalse(SectorSaveProfiles.TryDelete(sandbox, 1));
+            Assert.IsFalse(SectorSaveProfiles.TryDelete("", 1));
+            Assert.AreEqual("DO NOT DELETE LEGACY",
+                File.ReadAllText(legacy));
+        }
+
+        [Test]
+        public void CorruptNonActiveProfileCanBeRemovedAfterConfirmation()
+        {
+            string corruptPath = SectorSaveProfiles.FilePath(sandbox, 3);
+            File.WriteAllText(corruptPath, "{broken profile");
+            Assert.IsTrue(SectorSaveProfiles.Exists(sandbox, 3));
+            Assert.IsFalse(SectorSaveProfiles.TryRead(sandbox, 3, out _));
+            Assert.IsTrue(SectorSaveProfiles.TryDelete(sandbox, 3));
+            Assert.IsFalse(SectorSaveProfiles.Exists(sandbox, 3));
+        }
+
+        [Test]
         public void FreshProfileHasProperUnarmedStarterInventory()
         {
             SectorGameSave starter = SectorSaveProfiles.Starter();
