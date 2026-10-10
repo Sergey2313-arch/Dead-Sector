@@ -40,7 +40,7 @@ namespace DeadSector
         Material rainMaterial;
         public bool ModernUiEnabled { get; set; }
         SectorWeatherKind lastWeather = (SectorWeatherKind)(-1);
-        readonly Color weatherFog = new Color(.29f, .34f, .37f);
+        readonly Color weatherFog = new Color(.34f, .36f, .34f);
 
         public void Configure(SectorPlayer target, SectorWorldClock time)
         {
@@ -109,6 +109,19 @@ namespace DeadSector
             rain.Play();
         }
 
+        public static float FogMultiplier(SectorWeatherKind state)
+        {
+            // Keep mist visible while preventing normal overcast afternoons
+            // from turning the entire inland terrain into a blue-grey sheet.
+            switch (state)
+            {
+                case SectorWeatherKind.Mist: return 2.0f;
+                case SectorWeatherKind.Rain: return 1.4f;
+                case SectorWeatherKind.Overcast: return 1.12f;
+                default: return 1f;
+            }
+        }
+
         void LateUpdate()
         {
             if (clock == null || player == null || !player.Ready)
@@ -147,10 +160,7 @@ namespace DeadSector
 
             // The world clock owns time-of-day fog. Apply atmospheric
             // weather modifiers after the clock changes its values.
-            float fogModifier = Weather == SectorWeatherKind.Mist
-                ? 2.8f : Weather == SectorWeatherKind.Rain
-                    ? 1.65f : Weather == SectorWeatherKind.Overcast
-                        ? 1.25f : 1f;
+            float fogModifier = FogMultiplier(Weather);
 
             RenderSettings.fogDensity *= fogModifier;
 
