@@ -286,6 +286,12 @@ namespace DeadSector
                 !SectorInput.Pressed(KeyCode.Escape))
                 return;
 
+            if (open && pendingDeleteSlot >= 0)
+            {
+                CancelDeleteProfile();
+                return;
+            }
+
             SectorEscapeAction action = SectorMenuRules.OnEscape(
                 open, settings,
                 gameplay.InventoryOpen, gameplay.CraftingOpen,
@@ -340,6 +346,7 @@ namespace DeadSector
             if (!open)
                 return;
 
+            CancelDeleteProfile();
             open = false;
             initialTitle = false;
             settings = false;
@@ -352,6 +359,7 @@ namespace DeadSector
 
         void ShowHome()
         {
+            CancelDeleteProfile();
             settings = false;
             homePage.SetActive(true);
             settingsPage.SetActive(false);
@@ -362,6 +370,7 @@ namespace DeadSector
 
         void ShowSettings()
         {
+            CancelDeleteProfile();
             settings = true;
             homePage.SetActive(false);
             settingsPage.SetActive(true);
@@ -402,12 +411,72 @@ namespace DeadSector
                     (active ? "    ● АКТИВНЫЙ" : "");
                 profileStatuses[slot].text =
                     gameplay.ProfileStatus(slot);
+                if (slot > SectorSaveProfiles.LegacySlot &&
+                    deleteButtons[slot] != null)
+                    deleteButtons[slot].interactable = occupied && !active;
             }
+        }
+
+        void RequestDeleteProfile(int slot)
+        {
+            if (!open || gameplay == null ||
+                !gameplay.HasLoadedInitialSave ||
+                slot <= SectorSaveProfiles.LegacySlot ||
+                slot > SectorSaveProfiles.MaxProfileSlot)
+                return;
+
+            if (slot == gameplay.ActiveSaveSlot)
+            {
+                profileHelp.text =
+                    "АКТИВНЫЙ СЛОТ: СНАЧАЛА ВЫБЕРИ ДРУГОЙ ПРОФИЛЬ.";
+                return;
+            }
+
+            if (!SectorSaveProfiles.Exists(
+                Application.persistentDataPath, slot))
+            {
+                profileHelp.text = "СЛОТ УЖЕ ПУСТ.";
+                RefreshProfiles();
+                return;
+            }
+
+            pendingDeleteSlot = slot;
+            deleteConfirmationText.text =
+                SectorSaveProfiles.Name(slot) +
+                "\nФайл сохранения и его резервная копия будут удалены." +
+                "\nОтменить удаление после подтверждения нельзя.";
+            deleteConfirmation.SetActive(true);
+        }
+
+        void CancelDeleteProfile()
+        {
+            pendingDeleteSlot = -1;
+            if (deleteConfirmation != null)
+                deleteConfirmation.SetActive(false);
+        }
+
+        void ConfirmDeleteProfile()
+        {
+            int slot = pendingDeleteSlot;
+            if (slot < 1 || slot > SectorSaveProfiles.MaxProfileSlot)
+                return;
+
+            // Never delete the original legacy file or the active timeline.
+            bool success = gameplay != null &&
+                gameplay.DeleteProfile(slot);
+            CancelDeleteProfile();
+            RefreshProfiles();
+
+            profileHelp.text = success
+                ? "УДАЛЕНО: " + SectorSaveProfiles.Name(slot) +
+                  " — МОЖНО СОЗДАТЬ НОВУЮ ИГРУ."
+                : "НЕ УДАЛОСЬ УДАЛИТЬ — СМОТРИ КОНСОЛЬ.";
         }
 
         void SelectProfile(int slot)
         {
             if (gameplay == null || !gameplay.HasLoadedInitialSave ||
+                pendingDeleteSlot >= 0 ||
                 !SectorSaveProfiles.IsValidSlot(slot))
                 return;
 
