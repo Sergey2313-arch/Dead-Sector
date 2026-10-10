@@ -43,9 +43,13 @@ namespace DeadSector
         Text menuSubtitle;
         Text profileHelp;
         readonly Button[] profileButtons = new Button[4];
+        readonly Button[] deleteButtons = new Button[4];
         readonly Text[] profileLabels = new Text[4];
         readonly Text[] profileStatuses = new Text[4];
         GameObject backButton;
+        GameObject deleteConfirmation;
+        Text deleteConfirmationText;
+        int pendingDeleteSlot = -1;
         bool pendingTitle = true;
         bool open;
         bool settings;
@@ -145,22 +149,33 @@ namespace DeadSector
                 int slot = i;
                 Button choice = MakeButton(status,
                     "Profile_" + slot, "",
-                    14f, 73f + i * 77f, 341f, 68f,
+                    14f, 73f + i * 77f, 271f, 68f,
                     PanelLight, White, () => SelectProfile(slot));
                 profileButtons[i] = choice;
                 Text label = choice.GetComponentInChildren<Text>();
                 label.rectTransform.anchoredPosition =
                     new Vector2(12f, -7f);
-                label.rectTransform.sizeDelta = new Vector2(306f, 25f);
-                label.fontSize = 15;
+                label.rectTransform.sizeDelta = new Vector2(244f, 25f);
+                label.fontSize = 14;
                 profileLabels[i] = label;
                 profileStatuses[i] = Label(choice.transform,
-                    "ProfileStatus", "", 15f, 32f, 315f, 26f,
+                    "ProfileStatus", "", 15f, 32f, 244f, 26f,
                     11, Muted);
+
+                if (slot > SectorSaveProfiles.LegacySlot)
+                {
+                    Button erase = MakeButton(status,
+                        "DeleteProfile_" + slot, "УДАЛ.",
+                        293f, 91f + i * 77f, 62f, 33f,
+                        new Color(.24f, .086f, .077f), White,
+                        () => RequestDeleteProfile(slot));
+                    erase.GetComponentInChildren<Text>().fontSize = 12;
+                    deleteButtons[slot] = erase;
+                }
             }
 
             profileHelp = Label(status, "ProfileMessage",
-                "СТАРЫЙ СЛОТ ХРАНИТСЯ ОТДЕЛЬНО.",
+                "УДАЛЕНИЕ ТОЛЬКО НЕАКТИВНЫХ ПРОФИЛЕЙ 01–03.",
                 18f, 395f, 332f, 61f, 11, Accent);
 
             homePage = At(left, "HomeActions", 22f, 363f,
@@ -212,6 +227,40 @@ namespace DeadSector
                 () => ShowHome()).gameObject;
             backButton.SetActive(false);
             settingsPage.SetActive(false);
+
+            // Modal confirmation covers the entire menu. An opaque input
+            // blocker prevents accidental profile switching or resuming
+            // while the destructive action awaits explicit confirmation.
+            Image modalBackdrop = Background(root, "DeleteConfirmationOverlay",
+                Vector2.zero, Vector2.one,
+                new Vector2(.5f, .5f), Vector2.zero, Vector2.zero,
+                new Color(0f, 0f, 0f, .87f));
+            modalBackdrop.raycastTarget = true;
+            deleteConfirmation = modalBackdrop.gameObject;
+
+            RectTransform confirm = Rect(
+                deleteConfirmation.transform, "DeleteConfirmPanel",
+                new Vector2(.5f, .5f), new Vector2(.5f, .5f),
+                new Vector2(.5f, .5f), Vector2.zero,
+                new Vector2(570f, 270f));
+            Image confirmImage = confirm.gameObject.AddComponent<Image>();
+            confirmImage.color = Panel;
+            confirmImage.raycastTarget = true;
+
+            Label(confirm, "Heading", "УДАЛЕНИЕ СОХРАНЕНИЯ",
+                30f, 22f, 512f, 35f, 25, White, FontStyle.Bold);
+            deleteConfirmationText = Label(confirm, "Warning",
+                "", 30f, 77f, 510f, 92f, 17, Accent);
+            MakeButton(confirm, "ConfirmErase",
+                "УДАЛИТЬ НАВСЕГДА",
+                30f, 195f, 235f, 53f,
+                new Color(.30f, .085f, .07f), White,
+                () => ConfirmDeleteProfile());
+            MakeButton(confirm, "CancelErase",
+                "ОТМЕНА",
+                290f, 195f, 250f, 53f,
+                PanelLight, White, () => CancelDeleteProfile());
+            deleteConfirmation.SetActive(false);
             canvasObject.SetActive(false);
         }
 
