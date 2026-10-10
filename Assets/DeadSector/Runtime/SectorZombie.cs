@@ -235,6 +235,12 @@ namespace DeadSector
                 if (ragdoll == null)
                     ragdoll = gameObject.AddComponent<SectorZombieRagdoll>();
                 ragdoll.Configure(animator, model, rig);
+
+                SectorZombieVisualGrounding grounding =
+                    GetComponent<SectorZombieVisualGrounding>();
+                if (grounding == null)
+                    grounding = gameObject.AddComponent<SectorZombieVisualGrounding>();
+                grounding.Configure(this, model, rig);
             }
 
             CapsuleCollider bodyCollider = GetComponent<CapsuleCollider>();
