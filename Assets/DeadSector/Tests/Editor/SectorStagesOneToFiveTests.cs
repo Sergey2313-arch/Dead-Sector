@@ -41,6 +41,37 @@ namespace DeadSector.Tests
         }
 
         [Test]
+        public void StageTwoForestGroundResourceKeepsReferencedTextures()
+        {
+            // Real asset integration test. A broken YAML GUID or missing
+            // Resources catalog must fail visibly, not silently use flat paint.
+            TerrainLayer forest =
+                SectorTerrainAssetCatalog.LoadForestGround();
+            Assert.IsNotNull(forest,
+                "Forest Ground 03 must resolve from TerrainCatalog");
+            Assert.IsNotNull(forest.diffuseTexture);
+            Assert.IsNotNull(forest.normalMapTexture);
+            Assert.That(forest.tileSize.x, Is.EqualTo(4f).Within(.01f));
+            Assert.That(forest.tileSize.y, Is.EqualTo(4f).Within(.01f));
+            Assert.That(forest.metallic, Is.EqualTo(0f));
+            Assert.That(forest.smoothness, Is.EqualTo(0f));
+        }
+
+        [Test]
+        public void StageTwoForestGroundCoverageProtectsRoadsAndHighRock()
+        {
+            Assert.AreEqual(0f, SectorWorld.ForestFloorFraction(
+                285f, -416f, true, false));
+            Assert.AreEqual(0f, SectorWorld.ForestFloorFraction(
+                285f, -416f, false, true));
+            float forest = SectorWorld.ForestFloorFraction(
+                285f, -416f, false, false);
+            Assert.That(forest, Is.GreaterThan(0f).And.LessThan(1f));
+            Assert.AreEqual(forest, SectorWorld.ForestFloorFraction(
+                285f, -416f, false, false));
+        }
+
+        [Test]
         public void StageTwoGroundPaintBlendsSoilAndRockWithoutBlueWater()
         {
             Vector2[] sites =
