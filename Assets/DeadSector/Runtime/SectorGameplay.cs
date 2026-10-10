@@ -1049,6 +1049,20 @@ namespace DeadSector
             SectorSaveProfiles.Description(
                 Application.persistentDataPath, slot);
 
+        // Deletion is never allowed for the currently running timeline.
+        // Otherwise the next 90-second autosave would silently recreate
+        // the supposedly deleted file with the active character's progress.
+        public bool DeleteProfile(int slot)
+        {
+            if (slot <= SectorSaveProfiles.LegacySlot ||
+                slot > SectorSaveProfiles.MaxProfileSlot ||
+                slot == activeSaveSlot)
+                return false;
+
+            return SectorSaveProfiles.TryDelete(
+                Application.persistentDataPath, slot);
+        }
+
         /// <summary>
         /// Only EMPTY numbered slots can be created. The original legacy
         /// save is never overwritten, renamed or migrated in this action.
