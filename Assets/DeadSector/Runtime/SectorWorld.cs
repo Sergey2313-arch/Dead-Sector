@@ -536,7 +536,11 @@ namespace DeadSector
                 diffuseTexture = texture,
                 tileSize = Vector2.one * 8,
                 metallic = 0f,
-                smoothness = 0f
+                smoothness = 0f,
+                // Opaque RGBA textures have alpha=1. Using Diffuse Alpha
+                // as smoothness makes flat soil mirror-like even though
+                // the constant smoothness value above is zero.
+                smoothnessSource = TerrainLayerSmoothnessSource.ConstantOnly
             };
         }
         public Transform Settlement { get; private set; }
