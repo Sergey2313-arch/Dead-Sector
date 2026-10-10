@@ -13,8 +13,26 @@ namespace DeadSector
         SectorCarryPose carryPose;
         float crouchBlend;
         bool crouching;
+        bool basePoseCaptured;
+        Vector3 torsoRest, leftLegRest, rightLegRest;
+
+        // Procedural hips/head must descend as well as rotating joints.
+        // Leg pivots descend less: bending the legs already raises the boots.
+        public const float CrouchTorsoDrop = .56f;
+        public const float CrouchLegDrop = .14f;
 
         public void SetCrouching(bool value) => crouching = value;
+
+        void CaptureBasePose()
+        {
+            if (basePoseCaptured || torso == null ||
+                leftLeg == null || rightLeg == null)
+                return;
+            torsoRest = torso.localPosition;
+            leftLegRest = leftLeg.localPosition;
+            rightLegRest = rightLeg.localPosition;
+            basePoseCaptured = true;
+        }
 
         public SectorCarryPose CarryPose => carryPose;
 
@@ -64,10 +82,24 @@ namespace DeadSector
                 rightLeg == null || torso == null)
                 return;
 
+            CaptureBasePose();
             float normalized = Mathf.Clamp01(speed / 7f);
             float dt = Time.deltaTime;
             crouchBlend = Mathf.MoveTowards(crouchBlend,
                 crouching ? 1f : 0f, dt * 5f);
+            float poseDamping = 1f - Mathf.Exp(-12f * dt);
+            torso.localPosition = Vector3.Lerp(
+                torso.localPosition,
+                torsoRest + new Vector3(0f, -CrouchTorsoDrop * crouchBlend,
+                    .085f * crouchBlend), poseDamping);
+            leftLeg.localPosition = Vector3.Lerp(
+                leftLeg.localPosition,
+                leftLegRest + Vector3.down * CrouchLegDrop * crouchBlend,
+                poseDamping);
+            rightLeg.localPosition = Vector3.Lerp(
+                rightLeg.localPosition,
+                rightLegRest + Vector3.down * CrouchLegDrop * crouchBlend,
+                poseDamping);
             phase += dt * Mathf.Lerp(0.75f, 12f, normalized);
             float stride = Mathf.Sin(phase) * 48f * normalized *
                 (1f - airborne);
