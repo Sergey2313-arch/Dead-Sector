@@ -21,9 +21,11 @@ namespace DeadSector
         public int DaysSurvived { get; private set; }
         public int DayNumber => DaysSurvived + 1;
 
-        readonly Color dayFog = new Color(.48f, .55f, .60f);
-        readonly Color nightFog = new Color(.045f, .075f, .105f);
-        readonly Color dayAmbient = new Color(.48f, .53f, .58f);
+        // Distant ground used to fade into bright blue-grey, looking like
+        // a giant lake even in dry inland regions.
+        readonly Color dayFog = new Color(.43f, .47f, .43f);
+        readonly Color nightFog = new Color(.052f, .064f, .073f);
+        readonly Color dayAmbient = new Color(.49f, .50f, .44f);
         readonly Color nightAmbient = new Color(.075f, .09f, .125f);
 
         void Update()
@@ -49,6 +51,13 @@ namespace DeadSector
             ApplyLighting();
         }
 
+        // Kept independent of current weather for predictable time-of-day
+        // fog and an inexpensive EditMode regression check.
+        public static float BaseFogDensity(float daylight)
+        {
+            return Mathf.Lerp(.0011f, .00038f, Mathf.Clamp01(daylight));
+        }
+
         void ApplyLighting()
         {
             float sunHeight = Mathf.Sin(
@@ -72,7 +81,7 @@ namespace DeadSector
                 Color.Lerp(nightAmbient, dayAmbient, daylight);
             RenderSettings.fogColor =
                 Color.Lerp(nightFog, dayFog, daylight);
-            RenderSettings.fogDensity = Mathf.Lerp(.0015f, .0009f, daylight);
+            RenderSettings.fogDensity = BaseFogDensity(daylight);
         }
     }
 }
