@@ -41,6 +41,53 @@ namespace DeadSector.Tests
         }
 
         [Test]
+        public void StageTwoGroundPaintBlendsSoilAndRockWithoutBlueWater()
+        {
+            Vector2[] sites =
+            {
+                new Vector2(285f, -416f),
+                new Vector2(-600f, 820f),
+                new Vector2(1350f, -1740f)
+            };
+            foreach (Vector2 site in sites)
+            {
+                Vector3 meadow = SectorWorld.GroundBlend(
+                    site.x, site.y, false, false);
+                Assert.That(meadow.x + meadow.y + meadow.z,
+                    Is.EqualTo(1f).Within(.00001f));
+                Assert.Greater(meadow.x, .50f);
+                Assert.Greater(meadow.y, .09f);
+                Assert.GreaterOrEqual(meadow.z, 0f);
+                Assert.AreEqual(meadow, SectorWorld.GroundBlend(
+                    site.x, site.y, false, false));
+            }
+
+            Vector3 road = SectorWorld.GroundBlend(0f, 0f, true, false);
+            Vector3 mountain = SectorWorld.GroundBlend(
+                0f, 0f, false, true);
+            Assert.Greater(road.y, .9f);
+            Assert.Greater(mountain.z, .6f);
+            Assert.That(road.x + road.y + road.z,
+                Is.EqualTo(1f).Within(.00001f));
+        }
+
+        [Test]
+        public void StageTwoDaylightFogRetainsVisibleTerrainDetail()
+        {
+            float daylight = SectorWorldClock.BaseFogDensity(1f);
+            float nighttime = SectorWorldClock.BaseFogDensity(0f);
+            Assert.Greater(nighttime, daylight);
+            Assert.That(daylight, Is.GreaterThan(0f).And.LessThan(.0005f));
+            Assert.That(SectorWeather.FogMultiplier(
+                    SectorWeatherKind.Clear),
+                Is.EqualTo(1f));
+            Assert.Greater(SectorWeather.FogMultiplier(
+                SectorWeatherKind.Mist), 1f);
+            Assert.Less(SectorWeather.FogMultiplier(
+                SectorWeatherKind.Overcast), 1.3f);
+        }
+
+        [Test]
         public void StageTwoLowPolyConiferMeshHasOutwardFacesAndBounds()
         {
             Mesh cone = SectorVegetationMesh.CreateConiferCone(10);
