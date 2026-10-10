@@ -103,6 +103,29 @@ namespace DeadSector.Tests
         }
 
         [Test]
+        public void StageTwoCameraBackdropUpdatesWithFog()
+        {
+            GameObject obj = new GameObject("Backdrop");
+            try
+            {
+                Camera camera = obj.AddComponent<Camera>();
+                camera.clearFlags = CameraClearFlags.SolidColor;
+                SectorWeather.SyncCameraBackdrop(camera,
+                    new Color(.43f, .47f, .43f));
+                Assert.That(camera.backgroundColor.g,
+                    Is.EqualTo(.47f).Within(.0001f));
+                camera.clearFlags = CameraClearFlags.Skybox;
+                camera.backgroundColor = Color.red;
+                SectorWeather.SyncCameraBackdrop(camera, Color.black);
+                Assert.AreEqual(Color.red, camera.backgroundColor);
+            }
+            finally
+            {
+                Object.DestroyImmediate(obj);
+            }
+        }
+
+        [Test]
         public void StageTwoDaylightFogRetainsVisibleTerrainDetail()
         {
             float daylight = SectorWorldClock.BaseFogDensity(1f);
