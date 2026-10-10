@@ -20,6 +20,18 @@
 - **Ограничения:** 100 растений используют 1501 SRP draw call и 0 standard instanced draw calls; массовые поля требуют оптимизации. Standalone-сборка и большой игровой мир не профилировались. На средней дистанции заметны ступенчатые края тонкой геометрии.
 - **Статус:** лицензия проверена; импорт, префаб и визуальная проверка в Unity выполнены; массовое размещение пока не утверждено по производительности.
 
+## DS-TERRAIN-001 — Forest Ground 03 (Poly Haven)
+
+- **Автор:** Rob Tuytel; источник и распространитель — Poly Haven.
+- **Исходная страница:** https://polyhaven.com/a/forrest_ground_03
+- **Лицензия:** CC0 1.0 (Public Domain Dedication), https://polyhaven.com/license ; https://creativecommons.org/publicdomain/zero/1.0/ . Проверено 2026-10-10.
+- **Разрешения:** разрешено коммерческое использование, изменение и распространение, в том числе хранение исходных текстур в публичном GitHub; указание авторства добровольное.
+- **Благодарность для титров (необязательная):** "Forest Ground 03 — Rob Tuytel / Poly Haven (CC0)."
+- **Исходники:** `Terrain/Textures/ForestGround03/forrest_ground_03_diff_2k.jpg`, `forrest_ground_03_nor_gl_2k.exr`, `forrest_ground_03_rough_2k.jpg`, `forrest_ground_03_disp_2k.png` (2K).
+- **Unity TerrainLayer:** `Terrain/Materials/DS_ForestGround03.terrainlayer`; Diffuse + OpenGL Normal, tile 4×4m, Metallic=0, Smoothness=0, Roughness и Displacement сохранены, пока не подключены к маске или изменению геометрии.
+- **Runtime-подключение:** `Assets/DeadSector/Resources/DeadSector/TerrainCatalog.asset` ссылается на исходный TerrainLayer, не дублируя изображения. `SectorWorld` использует слой выборочно по биомам и не уничтожает импортированный ассет.
+- **Проверка:** корректность файлов, GUID и ссылок подтверждена чтением GitHub; фактическую компиляцию Unity, PlayMode и FPS новой версии должен подтвердить пользователь.
+
 ## Шаблон записи на каждый пакет / набор анимаций
 
 - **Название, версия и внутренний ID:**
