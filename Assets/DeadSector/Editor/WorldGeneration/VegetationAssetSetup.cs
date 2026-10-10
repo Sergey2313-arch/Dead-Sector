@@ -31,9 +31,9 @@ namespace DeadSector.Editor.WorldGeneration
             foreach (var path in paths)
             {
                 if (AssetImporter.GetAtPath(path) is not ModelImporter importer) continue;
-                bool change = !importer.importMaterials || !importer.importCameras || !importer.importLights;
+                bool change = importer.materialImportMode != ModelImporterMaterialImportMode.None || importer.importCameras || importer.importLights;
                 // Use external materials so textures can be consistently assigned in Unity.
-                if (importer.importMaterials) importer.materialImportMode = ModelImporterMaterialImportMode.None;
+                if (importer.materialImportMode != ModelImporterMaterialImportMode.None) importer.materialImportMode = ModelImporterMaterialImportMode.None;
                 if (importer.importCameras) importer.importCameras = false;
                 if (importer.importLights) importer.importLights = false;
                 if (change) { importer.SaveAndReimport(); updated++; }
