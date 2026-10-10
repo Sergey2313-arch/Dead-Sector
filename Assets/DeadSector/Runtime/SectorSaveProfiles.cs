@@ -135,6 +135,47 @@ namespace DeadSector
             }
         }
 
+        /// <summary>
+        /// Permanently remove a numbered, occupied save slot. Slot zero is
+        /// the legacy V1 file and can never be deleted through this API.
+        /// Callers must reject deleting the active profile before invoking it.
+        /// The only associated files removed are the known backup and
+        /// temporary file for the same fixed, validated slot path.
+        /// A corrupt profile is intentionally deletable.
+        /// </summary>
+        public static bool TryDelete(string directory, int slot)
+        {
+            if (slot <= LegacySlot || slot > MaxProfileSlot ||
+                string.IsNullOrEmpty(directory))
+                return false;
+
+            string path = FilePath(directory, slot);
+            if (!File.Exists(path))
+                return false;
+
+            try
+            {
+                File.Delete(path);
+                // File.Replace creates a backup on normal saves.
+                // Do not leave a previous playthrough behind as .bak.
+                string backup = path + ".bak";
+                if (File.Exists(backup))
+                    File.Delete(backup);
+
+                string temporary = path + ".tmp";
+                if (File.Exists(temporary))
+                    File.Delete(temporary);
+
+                return true;
+            }
+            catch (Exception error)
+            {
+                Debug.LogError("[Dead Sector Save] Cannot delete " +
+                    Name(slot) + ": " + error.Message);
+                return false;
+            }
+        }
+
         public static SectorGameSave Starter()
         {
             return new SectorGameSave
