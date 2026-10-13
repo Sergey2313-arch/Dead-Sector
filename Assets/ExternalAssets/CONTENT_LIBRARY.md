@@ -13,7 +13,7 @@
 
 ## Файлы
 
-- `ASSET_DOWNLOAD_MANIFEST.csv`: список 30 ассетов/пакетов, цели, статус и официальные страницы.
+- `ASSET_DOWNLOAD_MANIFEST.csv`: список 38 ассетов/пакетов, цели, статус и официальные страницы.
 - Все новые модели: `Assets/ExternalAssets/<Category>/Models/<Subtype>/`.
 - Все новые PBR-карты: `Assets/ExternalAssets/<Category>/Textures/`.
 - Материалы URP/Lit: `.../Materials/`; игровые префабы: `.../Prefabs/`.
@@ -74,3 +74,18 @@
 ## Концепция
 
 Задача этой библиотеки — собрать рабочий реестр моделей для полного Dead Sector, **а не объявить весь контент уже скачанным или интегрированным**. Приоритет сейчас — лес/земля, затем рабочая игровая сцена и тест производительности на Radeon 680M.
+
+## Более реалистичные детали (Poly Haven, CC0)
+
+Для уменьшения визуального разрыва со сканированной природой можно добавить эти отдельные модели, после оптимизации и теста производительности:
+
+- [Modular Factory Facade](https://polyhaven.com/a/modular_factory_facade) — реалистичный заводской фасад; `Buildings/Models/Industrial`.
+- [Modular Industrial Pipes 01](https://polyhaven.com/a/modular_industrial_pipes_01) — трубы; `Props/Models/Industrial`.
+- [Portable Generator](https://polyhaven.com/a/portable_generator) — генератор; `Props/Models/Industrial`.
+- [Steel Frame Shelves 01](https://polyhaven.com/a/steel_frame_shelves_01) — складские стеллажи; `Props/Models/Interiors`.
+- [Wooden Crate 01](https://polyhaven.com/a/wooden_crate_01) — ящики с лутом; `Props/Models/Storage`.
+- [Concrete Road Barrier](https://polyhaven.com/a/concrete_road_barrier) — блокпост; `Props/Models/Roadside`.
+- [Crowbar 01](https://polyhaven.com/a/crowbar_01) — лом; `Weapons/Models/Melee`.
+- [Wooden Axe 02](https://polyhaven.com/a/wooden_axe_02) — топор; `Weapons/Models/Melee`.
+
+Все восемь находятся в CSV со статусом `TO_DOWNLOAD`, не импортированы.
