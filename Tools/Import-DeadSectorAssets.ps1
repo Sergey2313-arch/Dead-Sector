@@ -40,8 +40,8 @@ if (-not (Test-Path -LiteralPath $Downloads -PathType Container)) {
 $git = Get-Command git -ErrorAction SilentlyContinue
 if ($git) {
     $branch = ((& git -C $ProjectRoot branch --show-current 2>$null) | Out-String).Trim()
-    if ($LASTEXITCODE -ne 0 -or $branch -ne 'test/assets-library') {
-        throw "Safety stop: current Git branch is '$branch', expected test/assets-library. No files copied."
+    if ($LASTEXITCODE -ne 0 -or $branch -notin @('test/assets-library', 'assets/forest-ground-03')) {
+        throw "Safety stop: current Git branch is '$branch', expected test/assets-library or assets/forest-ground-03. No files copied."
     }
 } else {
     throw "Git is required to check the current branch safely."
