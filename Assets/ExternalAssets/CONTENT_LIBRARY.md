@@ -1,91 +1,80 @@
-# Dead Sector — тестовая библиотека ассетов
+# Dead Sector — фотореалистичная тестовая библиотека ассетов
 
-**Ветка:** `test/assets-library` (от `assets/forest-ground-03`). **Только тестовая копия:** `D:\DEAD SECTOR\Dead Sector_Test`. Не вносить изменения в `main` или оригинальную локальную папку.
+**Ветка:** `test/assets-library`. **Локальная тестовая копия:** `Dead Sector_Test`.
+**Не изменять** `main` или оригинальную папку `Dead Sector`. Дата переработки требований: 2026-10-13.
 
-Этот коммит создаёт **структуру и план импорта**. Он **не содержит** новых FBX, ZIP, Blend, текстур, анимаций или готовых префабов. Папки закреплены временными `.gitkeep`, Unity создаст их `.meta` при первом открытии.
+## СТРОГОЕ ПРАВИЛО СТИЛЯ
 
-## Проверенное существующее состояние
+Dead Sector — реалистичная постапокалиптика: ориентиры по визуальному качеству и атмосфере S.T.A.L.K.E.R. 2 и DayZ. Критерии: реальные пропорции, PBR-материалы, фотограмметрия / правдоподобные формы, следы износа, характерная постсоветская индустриальная архитектура, анатомически убедительные герои и зомби.
 
-- `Assets/ExternalAssets/Terrain/Textures/ForestGround03/`: diffuse, OpenGL normal, roughness, displacement 2K.
-- `Assets/ExternalAssets/Terrain/Materials/DS_ForestGround03.terrainlayer` и `Assets/DeadSector/Resources/DeadSector/TerrainCatalog.asset` уже существуют; **не копировать ещё раз**.
-- Старый список `ASSET_SOURCES.md` содержит локальную подготовку `Maize Corn Plant` CC BY 4.0. Новые файлы кукурузы в GitHub на этой ветке отсутствуют; сохраните авторство и не публикуйте без проверки условий.
-- Внешние деревья и трава из прошлой сессии были скачаны пользователем, но *отсутствуют в репозитории*. Сначала использовать локальные архивы, не скачивать дубли.
+**Стилизованные/low-poly мультяшные пакеты Kenney, Quaternius не использовать даже для тестовой карты.** Предыдущие рекомендации таких ассетов отозваны и удалены из `ASSET_DOWNLOAD_MANIFEST.csv`. Low-poly оптимизированная сетка допустима **только при сохранении реалистичного визуального стиля**.
 
-## Файлы
+Этот коммит содержит реестр/папки, **не импортирует** новые FBX/GLB/Blend/ZIP модели или текстуры.
 
-- `ASSET_DOWNLOAD_MANIFEST.csv`: список 38 ассетов/пакетов, цели, статус и официальные страницы.
-- Все новые модели: `Assets/ExternalAssets/<Category>/Models/<Subtype>/`.
-- Все новые PBR-карты: `Assets/ExternalAssets/<Category>/Textures/`.
-- Материалы URP/Lit: `.../Materials/`; игровые префабы: `.../Prefabs/`.
-- Террейн остаётся в прежнем `Assets/ExternalAssets/Terrain/`.
+## Что уже есть
 
-## Приоритет загрузки
+- Реально присутствуют в ветке GitHub: `Terrain/Textures/ForestGround03`, `Terrain/Materials/DS_ForestGround03.terrainlayer`, Unity TerrainCatalog ссылка. Не дублировать.
+- Ранее пользователь скачал 13 архивов Poly Haven: `fir_tree_01`, `pine_sapling_medium`, `pine_sapling_small`, `shrub_sorrel_01`, `shrub_03`, `nettle_plant`, `dandelion_01`, `weed_plant_02`, `grass_medium_01`, `grass_medium_02`, `grass_bermuda_01`, `tree_stump_01`, `rock_moss_set_02`. **Не подтверждено**, что эти архивы импортированы и находятся в GitHub.
+- Локальная кукуруза `Maize Corn Plant` уже проходила подготовку с лицензией CC BY 4.0; см. `ASSET_SOURCES.md`. Эти файлы в тестовой GitHub-ветке не присутствуют.
 
-### 1. Лес и первый игровой участок
+## Проверенные страницы загрузок — природа / индустрия / декорации (Poly Haven, CC0)
 
-Уже скачано — 13 Poly Haven: `fir_tree_01`, `pine_sapling_medium`, `pine_sapling_small`, `shrub_sorrel_01`, `shrub_03`, `nettle_plant`, `dandelion_01`, `weed_plant_02`, `grass_medium_01`, `grass_medium_02`, `grass_bermuda_01`, `tree_stump_01`, `rock_moss_set_02`.
+- [Dead Tree Trunk 02](https://polyhaven.com/a/dead_tree_trunk_02) — сухой ствол, 156K исходных трис, оптимизировать LOD.
+- [Boulder 01](https://polyhaven.com/a/boulder_01) — крупный камень.
+- [Modular Factory Facade](https://polyhaven.com/a/modular_factory_facade) — **175K трис на полный набор модулей**, PBR индустриальный фасад завода. Предпочесть 2K при импорте, не весь 8K пакет.
+- [Modular Urban Apartments Facade](https://polyhaven.com/a/modular_urban_apartments_facade) — жилые фасады, не содержит автоматически готовых игровых интерьеров.
+- [Modular Industrial Pipes 01](https://polyhaven.com/a/modular_industrial_pipes_01) — трубы.
+- [Modular Airduct Circular 01](https://polyhaven.com/a/modular_airduct_circular_01) — вентиляция.
+- [Portable Generator](https://polyhaven.com/a/portable_generator) — генератор.
+- [Steel Frame Shelves 01](https://polyhaven.com/a/steel_frame_shelves_01) — стеллажи.
+- [Wooden Crate 01](https://polyhaven.com/a/wooden_crate_01) — ящик.
+- [Concrete Road Barrier](https://polyhaven.com/a/concrete_road_barrier) — заграждение.
+- [Covered Car](https://polyhaven.com/a/covered_car) — накрытый старый автомобиль.
+- [Old Tyre](https://polyhaven.com/a/old_tyre) — старая шина.
+- [Rusted Wheel Rim 01](https://polyhaven.com/a/rusted_wheel_rim_01) — ржавый диск колеса.
+- [Crowbar 01](https://polyhaven.com/a/crowbar_01) и [Wooden Axe 02](https://polyhaven.com/a/wooden_axe_02) — игровой реквизит оружия ближнего боя.
 
-Скачать дополнительно: [Dead Tree Trunk 02](https://polyhaven.com/a/dead_tree_trunk_02), [Boulder 01](https://polyhaven.com/a/boulder_01). Все модели Poly Haven под CC0: https://polyhaven.com/license.
+Лицензия Poly Haven: https://polyhaven.com/license ; CC0 разрешает коммерческий релиз и исходные ассеты в публичном GitHub (без претензий на авторство).
 
-**Осторожно:** исходники отдельных деревьев/травы рассчитаны на высокодетальные сцены, а не массовый runtime-scatter. Использовать готовые LOD либо экспортировать облегчённую геометрию из Blender в FBX. Начать с 1K для травы/кустов и 2K для близких крупных объектов. Настроить Alpha Clipping, двухсторонность по необходимости, MeshCollider только для крупных стволов/камней, LODGroup и profiling.
+## Проверенные страницы загрузок — реалистичный постсоветский сеттинг (Sketchfab, CC BY)
 
-### 2. Посёлок, промышленная зона и дороги
+Ссылки проверены как страницы моделей с кнопкой **Download 3D Model** и лицензией **CC Attribution**. При публикации игры сохранять имя автора, URL модели, лицензию и описание переработки; сырые файлы не пушить до оформления реестра лицензий и подтверждения условий.
 
-- [City Kit (Suburban)](https://kenney.nl/assets/city-kit-suburban) — дома, посёлок.
-- [City Kit (Industrial)](https://kenney.nl/assets/city-kit-industrial) — фабрика/склады.
-- [City Kit (Roads)](https://kenney.nl/assets/city-kit-roads) — дороги, знаки и уличные детали.
-- [Building Kit](https://kenney.nl/assets/building-kit) — модульные здания.
-- [Factory Kit](https://kenney.nl/assets/factory-kit) — промышленный реквизит.
-- [Furniture Kit](https://kenney.nl/assets/furniture-kit) — интерьеры домов.
-- [Car Kit](https://kenney.nl/assets/car-kit) — автомобили/обломки.
+- [Abandoned Soviet Garages Pack Game-Ready](https://sketchfab.com/3d-models/abandoned-soviet-garages-pack-game-ready-fcf453872c2d4cfbad12197d072fbfc4), автор `olegolegperepelica` — 4 гаража, PBR 4K, 9.8K tris.
+- [Abandoned Soviet Gas Station](https://sketchfab.com/3d-models/abandoned-soviet-gas-station-76f8b45993f14303a5071e456b668290), автор `olegolegperepelica` — 12.9K tris.
+- [Abandoned Building Modular Environment Kit](https://sketchfab.com/3d-models/abandoned-building-modular-environment-kit-376aead6cd3d41bda715cbab99c440fa), автор `olegolegperepelica` — модульные внутренние помещения.
+- [Abandoned Soviet Generator](https://sketchfab.com/3d-models/abandoned-soviet-generator-game-ready-ue5-prop-0f11d8e9b59b431295e42ddf579c38ce), автор `olegolegperepelica` — 15.1K tris, 4K текстуры (снизить до 2K).
+- [Abandoned Soviet BTR-80](https://sketchfab.com/3d-models/abandoned-soviet-btr-80-32145d6303e5487e9d92097b9845ef02), автор `Coozy` — 107.7K tris, оптимизировать.
+- [Abandoned Soviet Car IZH-2715](https://sketchfab.com/3d-models/abandoned-soviet-car-izh-2715-b97884f0730d42a68c1a6a9a9874159d), автор `Mikhail Volkov` — скан 200K tris; требуется ретопология.
+- [Zombie Character](https://sketchfab.com/3d-models/zombie-character-5535cecb720f4682bd29a591f745cd6e), автор `Harri Jokinen` — 32.2K tris; **кандидат**, ещё надо визуально проверить реалистичность, скелет и анимацию.
+- [Zombie Soldier](https://sketchfab.com/3d-models/zombie-soldier-dc349067a1fa466680ecce844caab06d), автор `Am I dead?` — визуально реалистичный, но 376.8K tris: **только после ретопологии**, не для толпы в исходном виде.
 
-Это CC0-пакеты для **быстрого теста механик**; их стилизованная графика будет заметно отличаться от фотограмметрических растений Poly Haven. Для финального реалистичного стиля подбирать замену отдельно.
+## Реалистичные PBR текстуры
 
-### 3. Выживание, еда, герои, зомби
+Источник https://ambientcg.com (CC0): асфальт, мокрая грязь, бетон, облезлая штукатурка, кирпич, ржавчина. Выбирать конкретные карты на сайте, вносить ID и ссылку в `ASSET_SOURCES.md` перед импортом. Сейчас `ASSET_DOWNLOAD_MANIFEST.csv` помечает сайт `SOURCE_LIBRARY`, а не якобы уже скачанный пакет.
 
-- [Food Kit](https://kenney.nl/assets/food-kit) и [Survival Kit](https://kenney.nl/assets/survival-kit) — добыча, интерьерные предметы, еда.
-- [Quaternius Survival Pack](https://quaternius.com/packs/survival.html) — дополнительные предметы; CC0.
-- [Quaternius Zombie Apocalypse Kit](https://quaternius.com/packs/zombieapocalypsekit.html) — 4 персонажа, 4 типа врагов, анимации и другое окружение; CC0.
-- [Mixamo](https://www.mixamo.com) — для выбранных скелетов и анимаций при необходимости. Коммерческое использование в игре возможно, но **не добавлять сырые Mixamo FBX/анимации в публичный репозиторий** без отдельной проверки прав на распространение. https://helpx.adobe.com/creative-cloud/faq/mixamo-faq.html
-- `Maize Corn Plant` ранее уже подготовлена локально; см. `ASSET_SOURCES.md`. Это **CC BY 4.0**, указание автора обязательно.
+## Структура директорий
 
-## Ещё требуются модели по геймдизайну (поиск после теста мира)
+`Assets/ExternalAssets/Vegetation/` — модели травы, деревьев, кустарников, камней, текстуры и LOD.
+`Assets/ExternalAssets/Terrain/` — карты земли, асфальта, грязи, бетона, прежний ForestGround03.
+`Assets/ExternalAssets/Buildings/` — жилые, индустриальные, руины, модульные здания.
+`Assets/ExternalAssets/Props/` — интерьеры, заводские объекты, лут, уличные объекты.
+`Assets/ExternalAssets/Vehicles/` — машины и обломки.
+`Assets/ExternalAssets/Characters/` — игрок/зомби/анимации.
+`Assets/ExternalAssets/Weapons/` — оружие.
+`Assets/ExternalAssets/Farming/` — растения и еда.
 
-- Разные реалистичные зомби (мужской/женский, гражданский/рабочий/военный), с единым Humanoid rig и базовыми состояниями idle/walk/run/attack/death.
-- Игрок в гражданской одежде; разгрузка, рюкзак, броня, 3 визуальных оружейных слота для FPP/TPP.
-- Дома с интерьером, фермерские постройки, магазин, медпункт, полицейский участок, военный пост, склады, завод, руины.
-- Мусор, контейнеры, коробки, двери, оконные рамы, заборы, бетонные блоки, уличные фонари.
-- Автомобили/обломки, пикап, грузовик, запчасти; интерактивные багажники и капоты позже.
-- Предметы выживания: вода, консервы, бинты, аптечки, инструменты, строительные ресурсы, батарейки, фонарик, посуда.
-- Сельхозкультуры: кукуруза, картофель, пшеница, томаты; стадии роста и LOD.
-- Оружие как игровые пропсы: пистолет, винтовка, дробовик, нож, топор, бита, патроны и магазины.
-- Мир: леса, поля, овраги, камни, коряги, тропы, грунтовка, асфальт, болото/грязь, вода.
+## Технические правила импорта в Unity 6000.6.4f1 / URP 17.7.0
 
-## Протокол импорта в Unity 6 / URP
+1. Прежде чем переключать локальную `Dead Sector_Test` ветку, проверить `git status` и сохранить изменения. `main` и оригинальный проект не трогать.
+2. Для моделей брать FBX/glTF и PBR-карты. Архивы хранить **вне папки Unity Assets**; исходные Blender файлы не загружать массово без оптимизации.
+3. Трава/кусты — 1K, крупные ближние пропсы и здания — 2K; Hero-объекты 4K только если доказана необходимость.
+4. URP/Lit: Base Color, Normal map (OpenGL нормаль), Metallic/Smoothness, Alpha Clip для листьев.
+5. LODGroup для растительности, отдельные простые коллайдеры, Terrain detail / GPU instancing, culling и стриминг 8×8км. Скан из 100–400K трис нельзя массово размножать в игровом мире.
+6. Начать с участка 100×100м и визуального теста: 10 деревьев, трава, 5 кустов, 3 камня, 1 реалистичный гараж. Затем — растительность + завод и сравнение FPS/Draw Calls на Radeon 680M.
+7. Перед публичным пушем стороннего ассета записать автора, ссылку, лицензию, текст атрибуции и преобразования; Unity `.meta` сохранять вместе с импортом.
+8. Сырые файлы Mixamo не публиковать в публичном репозитории. https://helpx.adobe.com/creative-cloud/faq/mixamo-faq.html
 
-1. В тестовой копии Unity открыть только `Dead Sector_Test`; сначала `git status` и сохранить локальные изменения, **не делать `git reset --hard`**.
-2. Предпочитать FBX/GLB + PBR текстуры из лицензированных источников. Не импортировать сразу весь исходный ZIP в Unity; размещать архивы вне `Assets`.
-3. Для фотограмметрических деревьев/травы выбирать или создавать LOD: дальние деревья как billboards/низкополигональные меши, трава низкой плотности. Никогда не размножать исходный mesh на миллионы треугольников.
-4. В Unity URP/Lit: Albedo/Diffuse в Base Map, Normal GL в Normal Map (mark as Normal), карты прозрачности в Alpha Clip по необходимости. Для roughness подобрать преобразование в smoothness, не подключать напрямую в metallic.
-5. После визуальной проверки создавать материалы, `LODGroup`, `Prefab`, коллизии и записывать источник, лицензию, изменения и тесты в `ASSET_SOURCES.md`.
-6. Сначала тестировать участок 100×100м с травой, 10 деревьями, 5 кустами, 3 камнями; проверить Unity Console, FPP/TPP, FPS, Draw Calls, shadows. Затем расширять до 1 км и стриминговой 8×8 км карты.
-7. Фиксировать вместе с ассетами `.meta`; изображения 8K и сырые архивы не добавлять в публичный GitHub по умолчанию. Git LFS применять **только после настройки в тестовом репозитории**.
+**Что ещё нужно подобрать в реализме:** мужская и женская модели игроков с Humanoid rig, гражданские/рабочие/военные зомби, полноценные интерьеры домов, продукты, рюкзаки, броня, три слота оружия. Эти позиции пока **не закрыты**: не объявлять их уже найденными/скачанными.
 
-## Концепция
-
-Задача этой библиотеки — собрать рабочий реестр моделей для полного Dead Sector, **а не объявить весь контент уже скачанным или интегрированным**. Приоритет сейчас — лес/земля, затем рабочая игровая сцена и тест производительности на Radeon 680M.
-
-## Более реалистичные детали (Poly Haven, CC0)
-
-Для уменьшения визуального разрыва со сканированной природой можно добавить эти отдельные модели, после оптимизации и теста производительности:
-
-- [Modular Factory Facade](https://polyhaven.com/a/modular_factory_facade) — реалистичный заводской фасад; `Buildings/Models/Industrial`.
-- [Modular Industrial Pipes 01](https://polyhaven.com/a/modular_industrial_pipes_01) — трубы; `Props/Models/Industrial`.
-- [Portable Generator](https://polyhaven.com/a/portable_generator) — генератор; `Props/Models/Industrial`.
-- [Steel Frame Shelves 01](https://polyhaven.com/a/steel_frame_shelves_01) — складские стеллажи; `Props/Models/Interiors`.
-- [Wooden Crate 01](https://polyhaven.com/a/wooden_crate_01) — ящики с лутом; `Props/Models/Storage`.
-- [Concrete Road Barrier](https://polyhaven.com/a/concrete_road_barrier) — блокпост; `Props/Models/Roadside`.
-- [Crowbar 01](https://polyhaven.com/a/crowbar_01) — лом; `Weapons/Models/Melee`.
-- [Wooden Axe 02](https://polyhaven.com/a/wooden_axe_02) — топор; `Weapons/Models/Melee`.
-
-Все восемь находятся в CSV со статусом `TO_DOWNLOAD`, не импортированы.
+Этот документ является планом загрузки; сами новые модели в тестовый Unity проект **не импортированы**.
