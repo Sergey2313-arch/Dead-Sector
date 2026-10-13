@@ -14,6 +14,7 @@ param(
     [string]$ProjectRoot = "D:\DEAD SECTOR\Dead Sector_Test",
     [string]$Downloads = (Join-Path $env:USERPROFILE "Downloads"),
     [string]$StagingRoot = "",
+    [string]$Only = "",
     [switch]$Apply
 )
 $ErrorActionPreference = "Stop"
@@ -54,6 +55,11 @@ $modelExt = @('.fbx','.obj','.dae','.mtl')
 $textureExt = @('.png','.jpg','.jpeg','.tga','.tif','.tiff','.exr','.bmp','.psd','.dds')
 $eligible = @('TO_DOWNLOAD','ALREADY_DOWNLOADED_LOCAL')
 $rows = @(Import-Csv -LiteralPath $manifestPath -Encoding UTF8)
+# Optional comma-separated asset IDs for a small test import.
+$OnlyIds = @()
+if (-not [string]::IsNullOrWhiteSpace($Only)) {
+    $OnlyIds = @($Only.Split(',') | ForEach-Object { $_.Trim() } | Where-Object { $_ })
+}
 $archiveFiles = @(Get-ChildItem -LiteralPath $Downloads -File)
 [int]$matched = 0
 [int]$copied = 0
@@ -95,9 +101,11 @@ Write-Host "Dead Sector TEST Asset Importer" -ForegroundColor Cyan
 Write-Host "Project: $ProjectRoot"
 Write-Host "Mode: $(if ($Apply) { 'APPLY (copy only)' } else { 'PREVIEW (no changes)' })"
 Write-Host "Manifest entries: $($rows.Count). Source: $Downloads"
+if ($OnlyIds.Count -gt 0) { Write-Host "Only requested IDs: $($OnlyIds -join ', ')" }
 
 foreach ($row in $rows) {
     if ($eligible -notcontains $row.status) { continue }
+    if ($OnlyIds.Count -gt 0 -and $OnlyIds -notcontains $row.asset_id) { continue }
     $id = [string]$row.asset_id
     $relativeTarget = [string]$row.target_folder_under_Assets_ExternalAssets
     if ($id -notmatch '^[A-Za-z0-9_]+$') { Write-Warning "Invalid asset_id: $id"; continue }
